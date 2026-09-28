@@ -32,7 +32,10 @@ export interface InputManager {
   isArmed(): boolean;
   /** Handle an event type that is only listened to while armed. */
   on<K extends ArmedEventType>(type: K, fn: (e: ArmedEventMap[K]) => GestureResult): () => void;
-  /** Handle every non-modifier `keydown` (armed or not). */
+  /**
+   * Handle every non-modifier `keydown` (armed or not). Like `on`, handlers
+   * run in registration order and the first `'consume'` stops the rest.
+   */
   onKeyDown(fn: (e: KeyboardEvent) => GestureResult): () => void;
   /** Called with `true` on arm and `false` on disarm. */
   onArmChange(fn: (armed: boolean) => void): () => void;
@@ -72,11 +75,16 @@ export function createInputManager(options: InputOptions = {}): InputManager {
     }
   }
 
+  /** Run handlers in registration order; the first `'consume'` ends the chain. */
   function run<E extends Event>(fns: Iterable<(e: E) => GestureResult>, e: E) {
     let result: GestureResult = undefined;
     for (const fn of [...fns]) {
       const r = fn(e);
-      if (r === 'consume' || (r === 'handled' && result !== 'consume')) result = r;
+      if (r === 'consume') {
+        result = r;
+        break;
+      }
+      if (r === 'handled') result = r;
     }
     apply(e, result);
   }

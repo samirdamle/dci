@@ -1,9 +1,11 @@
 import { resolveBindings, type Bindings, type BindingsConfig } from './bindings';
 import { createEmitter, type Emitter } from './emitter';
+import { announceGesture } from './announce';
 import { createHoverState, type HoverState } from './hover';
 import { createInputManager, type InputManager } from './input';
 import type { ModifierKey } from './keys';
 import { clickGesture, hoverGesture } from './pointer';
+import { keyboardGesture } from './keyboard';
 import { marqueeGesture } from './marquee';
 import { sameTypeGesture, selectSameType, type SelectSameTypeOptions } from './same-type';
 import { wheelGesture } from './wheel';
@@ -41,6 +43,11 @@ export interface InteractionOptions extends SelectionOptions {
   clearOnEmptyClick?: boolean;
   /** Let DCI clicks reach the host app too. Default `false` (they are swallowed). */
   passthroughClicks?: boolean;
+  /**
+   * Called on Esc before the selection is cleared. Return `true` when it
+   * handled the key (e.g. closed the chat), so the selection is kept.
+   */
+  onEscape?: () => boolean;
   /** Window select picks the innermost (`'leaf'`, default) or outermost (`'top'`) matches. */
   windowSelectLevel?: 'leaf' | 'top';
   /** Gesture modules to attach. Defaults to every built-in gesture. */
@@ -73,6 +80,8 @@ export const DEFAULT_GESTURES: Gesture[] = [
   wheelGesture,
   marqueeGesture,
   sameTypeGesture,
+  keyboardGesture,
+  announceGesture,
 ];
 
 /**

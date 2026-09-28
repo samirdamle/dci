@@ -89,3 +89,5 @@ export {
   selectSameType,
   type SelectSameTypeOptions,
 } from './same-type';
+export { announceGesture, createAnnouncer, describeNode, nodeName } from './announce';
+export { keyboardGesture } from './keyboard';

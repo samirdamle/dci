@@ -151,12 +151,6 @@ export const marqueeGesture: Gesture = (ctx) => {
     if (drag && e.pointerId === drag.pointerId) end(true);
   };
   const onCancel = () => end(false);
-  const onKey = (e: KeyboardEvent) => {
-    if (e.key !== 'Escape' || !drag?.started) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    end(false);
-  };
   const onScroll = () => {
     if (!drag?.started) return;
     drag.dirty = true;
@@ -168,7 +162,6 @@ export const marqueeGesture: Gesture = (ctx) => {
     ['pointermove', onMove],
     ['pointerup', onUp],
     ['pointercancel', onCancel],
-    ['keydown', onKey],
     ['scroll', onScroll],
   ] as const;
   const attach = () => {
@@ -177,6 +170,13 @@ export const marqueeGesture: Gesture = (ctx) => {
   const detach = () => {
     for (const [type, fn] of listeners) window.removeEventListener(type, fn as EventListener, true);
   };
+
+  // Registered before the keyboard gesture, so Esc cancels a drag first.
+  const offKey = ctx.input.onKeyDown((e) => {
+    if (e.key !== 'Escape' || !drag?.started) return;
+    end(false);
+    return 'consume';
+  });
 
   const offDown = ctx.input.on('pointerdown', (e) => {
     if (!ctx.bindings.windowSelect || e.button !== 0 || drag) return;
@@ -205,6 +205,7 @@ export const marqueeGesture: Gesture = (ctx) => {
 
   return () => {
     offDown();
+    offKey();
     end(false);
   };
 };

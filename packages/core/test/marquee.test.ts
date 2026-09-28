@@ -264,12 +264,12 @@ describe('Mod+Drag window select', () => {
     const remove = vi.spyOn(window, 'removeEventListener');
     down(90, 90);
     expect(add.mock.calls.map((c) => c[0])).toEqual(
-      expect.arrayContaining(['pointermove', 'pointerup', 'pointercancel', 'keydown', 'scroll']),
+      expect.arrayContaining(['pointermove', 'pointerup', 'pointercancel', 'scroll']),
     );
     await move(250, 210);
     up(250, 210);
     expect(remove.mock.calls.map((c) => c[0])).toEqual(
-      expect.arrayContaining(['pointermove', 'pointerup', 'pointercancel', 'keydown', 'scroll']),
+      expect.arrayContaining(['pointermove', 'pointerup', 'pointercancel', 'scroll']),
     );
   });
 
