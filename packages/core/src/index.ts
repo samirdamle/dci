@@ -10,3 +10,4 @@ export {
   type ParsedDci,
 } from './parse';
 export type { Warn } from './env';
+export { createDciTree, type DciTree, type TreeOptions } from './tree';
