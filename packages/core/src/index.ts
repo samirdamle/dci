@@ -1,2 +1,12 @@
 /** Placeholder package version; replaced by real exports in later milestones. */
 export const VERSION = '0.0.0';
+
+export {
+  DEFAULT_ATTRIBUTE,
+  isDciElement,
+  parseDciAttribute,
+  readDci,
+  type ParseOptions,
+  type ParsedDci,
+} from './parse';
+export type { Warn } from './env';

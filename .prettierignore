@@ -3,3 +3,5 @@ coverage
 playwright-report
 test-results
 pnpm-lock.yaml
+# Authored spec; Prettier would rewrite its HTML examples
+SPEC.md
