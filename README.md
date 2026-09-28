@@ -6,10 +6,11 @@ exactly those things as context for an AI conversation, instead of describing th
 [![CI](https://github.com/samirdamle/dci/actions/workflows/ci.yml/badge.svg)](https://github.com/samirdamle/dci/actions/workflows/ci.yml)
 &nbsp;**Live demo:** https://samirdamle.github.io/dci/
 
-> **Status:** early development. Milestones M0–M2 are done: annotation parsing, the DCI tree,
-> context extraction, the selection store and every selection gesture. The overlay, chat UI,
-> backend protocol and public `createDci()` API are next; see [Roadmap](#roadmap). Packages are not
-> on npm yet.
+> **Status:** early development. Milestones M0–M3 are done: annotation parsing, the DCI tree,
+> context extraction, the selection store, every selection gesture and the highlight overlay. You
+> can try selecting in the [live demo](https://samirdamle.github.io/dci/). The chat UI, backend
+> protocol and public `createDci()` API are next; see [Roadmap](#roadmap). Packages are not on npm
+> yet.
 
 ---
 
@@ -128,7 +129,8 @@ Alt+arrows are deliberately left alone, because Alt+← is the browser's Back sh
 - **Configurable.** Every binding can be remapped or turned off, including the modifier itself.
 - **Accessible.** Full keyboard control and polite screen-reader announcements such as
   "Selected Invoice #2, row 2 of 20".
-- **Isolated.** DCI's own UI renders in Shadow DOM and never touches your styles (from M3).
+- **Isolated.** DCI's own UI renders in a Shadow DOM layer (`<dci-root>`): your page's CSS can't
+  break it, and it never touches your elements' styles.
 
 ## How it works
 
@@ -279,7 +281,7 @@ anything sensitive `private`.
 ### Step 2: turn on interactions (available now)
 
 `@dci/core` exposes the pieces built so far. `createInteractions` wires the modifier, gestures,
-DCI tree and selection store together:
+DCI tree, selection store and highlight overlay together:
 
 ```ts
 import { createInteractions } from '@dci/core';
@@ -294,6 +296,7 @@ const dci = createInteractions({
     windowSelect: true,
     keyboard: { selectFocused: 'Alt+Enter' }, // any key can be remapped or set to false
   },
+  overlay: { labels: 'hover', theme: 'auto' }, // or false to draw your own
 });
 
 // React to selection changes
@@ -304,7 +307,7 @@ dci.selection.subscribe(({ elements, added, removed, primary }) => {
 // Build the payload for your backend
 const context = dci.selection.toContext(); // DciContextNode[]
 
-// State for your own highlight UI (until the built-in overlay lands in M3)
+// The same state the built-in overlay draws, if you want your own UI
 dci.bus.on('hover', ({ node, depth }) => {
   /* highlight node */
 });
@@ -369,6 +372,31 @@ const { selection, open, send } = useDci();
 | `clearOnEmptyClick` | `true`          | Alt+Click on empty space clears the selection                  |
 | `passthroughClicks` | `false`         | Let DCI clicks also reach your app's handlers                  |
 | `onEscape`          | —               | Runs before Esc clears (e.g. close your chat first)            |
+| `overlay`           | `{}`            | Highlight overlay options (below), or `false` to turn it off   |
+
+**Overlay options:** `mode: 'boxes' | 'outline'` (default `'boxes'`; `'outline'` is a lightweight
+mode that styles targets inline, can be clipped by `overflow: hidden` and has no labels),
+`labels: 'hover' | 'all' | 'none'`, `theme: 'light' | 'dark' | 'auto'`, and `container` (where
+`<dci-root>` is appended).
+
+### Theming
+
+Colors, radius, font and stacking are CSS custom properties, so you can override them from your own
+stylesheet:
+
+```css
+dci-root {
+  --dci-accent: #0ea5e9; /* labels, marquee */
+  --dci-hover: #0ea5e9; /* hover box */
+  --dci-selected: #0ea5e9; /* selected boxes */
+  --dci-preview: #a855f7; /* window-select preview */
+  --dci-radius: 4px;
+  --dci-font: 'Inter', sans-serif;
+  --dci-z: 1000;
+}
+```
+
+Animations respect `prefers-reduced-motion`.
 
 ## Privacy and security
 
@@ -388,8 +416,8 @@ const { selection, open, send } = useDci();
 | M0        | Monorepo, tooling, CI, test harness                                 | Done    |
 | M1        | `data-dci` parsing, DCI tree, context extraction, selection store   | Done    |
 | M2        | Modifier, Alt+Click, Alt+Wheel, window select, same-type, keyboard  | Done    |
-| M3        | Overlay: Shadow DOM highlight layer, labels, marquee                | Next    |
-| M4        | `@dci/protocol`, SSE transport, client actions, `@dci/server`       | Planned |
+| M3        | Overlay: Shadow DOM highlight layer, labels, marquee                | Done    |
+| M4        | `@dci/protocol`, SSE transport, client actions, `@dci/server`       | Next    |
 | M5        | Chat UI: popover/panel, chips, breadcrumb, suggested actions        | Planned |
 | M6        | `createDci()` public API and React bindings                         | Planned |
 | M7        | Demo: a mock CRM with a Claude-powered agent and a no-key mock mode | Planned |
