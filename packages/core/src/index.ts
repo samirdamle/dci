@@ -66,3 +66,20 @@ export {
 export { createHoverState, type HoverState } from './hover';
 export { clickGesture, eventTarget, hoverGesture, resolveTarget } from './pointer';
 export { WHEEL_STEP, wheelGesture, wheelPixels } from './wheel';
+export {
+  contains,
+  hitTest,
+  intersects,
+  marqueeMode,
+  offsetRect,
+  rectFromPoints,
+  type Candidate,
+  type MarqueeMode,
+} from './geometry';
+export {
+  AUTOSCROLL_EDGE,
+  AUTOSCROLL_SPEED,
+  collectCandidates,
+  DRAG_THRESHOLD,
+  marqueeGesture,
+} from './marquee';

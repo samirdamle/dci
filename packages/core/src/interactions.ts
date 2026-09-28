@@ -4,6 +4,7 @@ import { createHoverState, type HoverState } from './hover';
 import { createInputManager, type InputManager } from './input';
 import type { ModifierKey } from './keys';
 import { clickGesture, hoverGesture } from './pointer';
+import { marqueeGesture } from './marquee';
 import { wheelGesture } from './wheel';
 import { createSelectionStore, type SelectionOptions, type SelectionStore } from './selection';
 import { createDciTree, type DciTree } from './tree';
@@ -39,6 +40,8 @@ export interface InteractionOptions extends SelectionOptions {
   clearOnEmptyClick?: boolean;
   /** Let DCI clicks reach the host app too. Default `false` (they are swallowed). */
   passthroughClicks?: boolean;
+  /** Window select picks the innermost (`'leaf'`, default) or outermost (`'top'`) matches. */
+  windowSelectLevel?: 'leaf' | 'top';
   /** Gesture modules to attach. Defaults to every built-in gesture. */
   gestures?: Gesture[];
 }
@@ -61,7 +64,12 @@ export interface Interactions extends GestureContext {
 }
 
 /** Built-in gestures, filled in as each M2 task lands. */
-export const DEFAULT_GESTURES: Gesture[] = [hoverGesture, clickGesture, wheelGesture];
+export const DEFAULT_GESTURES: Gesture[] = [
+  hoverGesture,
+  clickGesture,
+  wheelGesture,
+  marqueeGesture,
+];
 
 /**
  * Wire the input manager, DCI tree, selection store and gesture modules

@@ -36,6 +36,8 @@ export interface InputManager {
   onKeyDown(fn: (e: KeyboardEvent) => GestureResult): () => void;
   /** Called with `true` on arm and `false` on disarm. */
   onArmChange(fn: (armed: boolean) => void): () => void;
+  /** Swallow the click a browser fires right after a drag gesture. */
+  suppressNextClick(): void;
   /** Detach every listener. */
   destroy(): void;
 }
@@ -79,7 +81,17 @@ export function createInputManager(options: InputOptions = {}): InputManager {
     apply(e, result);
   }
 
+  let clickSuppressed = false;
+  const swallow = (e: Event) => {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  };
+
   const onArmedEvent = (e: Event) => {
+    if (e.type === 'click' && clickSuppressed) {
+      clickSuppressed = false;
+      return swallow(e);
+    }
     if (isFromDciUi(e)) return;
     // The modifier was released without a keyup reaching us (e.g. focus moved).
     if (!hasModifier(e as MouseEvent, modifier)) return disarm();
@@ -144,6 +156,15 @@ export function createInputManager(options: InputOptions = {}): InputManager {
     onArmChange(fn) {
       armListeners.add(fn);
       return () => armListeners.delete(fn);
+    },
+    suppressNextClick() {
+      clickSuppressed = true;
+      // Also covers a click that arrives after the modifier was released.
+      win.addEventListener('click', swallow, { capture: true, once: true });
+      setTimeout(() => {
+        clickSuppressed = false;
+        win.removeEventListener('click', swallow, true);
+      }, 0);
     },
     destroy() {
       disarm();
