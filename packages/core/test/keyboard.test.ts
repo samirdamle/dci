@@ -202,16 +202,19 @@ describe('announcements', () => {
     expect(describeNode(f.get('#y'), tree)).toBe('li');
   });
 
-  it('writes to a polite live region inside a DCI UI host', () => {
+  it('writes to a polite live region inside the DCI shadow root', () => {
     const { f, dci: local } = setup();
     local.selection.set([f.get('#a')]);
     fakeKey('ArrowRight');
-    const region = document.querySelector('[data-dci-ui] [aria-live="polite"]');
+    const host = document.querySelector('dci-root[data-dci-ui]');
+    const region = host?.shadowRoot?.querySelector(
+      '[data-layer="live-region"] [aria-live="polite"]',
+    );
     expect(region?.getAttribute('role')).toBe('status');
     expect(region?.textContent).toBe('Selected b, cell 2 of 2');
     local.destroy();
     dci = undefined;
-    expect(document.querySelector('[data-dci-ui]')).toBeNull();
+    expect(document.querySelector('dci-root')).toBeNull();
   });
 
   it('createAnnouncer can render into a given parent', () => {
