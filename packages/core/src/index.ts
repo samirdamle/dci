@@ -10,3 +10,21 @@ export {
   type ParsedDci,
 } from './parse';
 export type { Warn } from './env';
+export { createDciTree, type DciTree, type TreeOptions } from './tree';
+export {
+  cssPath,
+  toContextNode,
+  truncateText,
+  type ContextOptions,
+  type DciAncestor,
+  type DciContextNode,
+  type DciFallbackInfo,
+} from './context';
+export {
+  createSelectionStore,
+  type SelectionChange,
+  type SelectionEvents,
+  type SelectionLimit,
+  type SelectionOptions,
+  type SelectionStore,
+} from './selection';
