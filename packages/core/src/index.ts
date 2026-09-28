@@ -83,3 +83,9 @@ export {
   DRAG_THRESHOLD,
   marqueeGesture,
 } from './marquee';
+export {
+  sameTypeGesture,
+  sameTypeNodes,
+  selectSameType,
+  type SelectSameTypeOptions,
+} from './same-type';
