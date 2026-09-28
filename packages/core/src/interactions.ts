@@ -5,6 +5,7 @@ import { createInputManager, type InputManager } from './input';
 import type { ModifierKey } from './keys';
 import { clickGesture, hoverGesture } from './pointer';
 import { marqueeGesture } from './marquee';
+import { sameTypeGesture, selectSameType, type SelectSameTypeOptions } from './same-type';
 import { wheelGesture } from './wheel';
 import { createSelectionStore, type SelectionOptions, type SelectionStore } from './selection';
 import { createDciTree, type DciTree } from './tree';
@@ -60,6 +61,8 @@ export interface GestureContext {
 export type Gesture = (ctx: GestureContext) => () => void;
 
 export interface Interactions extends GestureContext {
+  /** Select all same-type siblings of `node` (default: the primary node). */
+  selectSameType(node?: Element | null, options?: SelectSameTypeOptions): Element[];
   destroy(): void;
 }
 
@@ -69,6 +72,7 @@ export const DEFAULT_GESTURES: Gesture[] = [
   clickGesture,
   wheelGesture,
   marqueeGesture,
+  sameTypeGesture,
 ];
 
 /**
@@ -93,6 +97,7 @@ export function createInteractions(options: InteractionOptions = {}): Interactio
 
   return {
     ...ctx,
+    selectSameType: (node, opts) => selectSameType(ctx, node ?? ctx.selection.primary(), opts),
     destroy() {
       for (const cleanup of cleanups) cleanup();
       offArm();
