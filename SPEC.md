@@ -197,16 +197,32 @@ const { selection, open, send } = useDci();
 ## 9. Tech stack **(default)**
 
 - A pnpm workspaces monorepo: `packages/protocol`, `packages/core`, `packages/react`, `packages/server`, `apps/demo`.
-- TypeScript (strict), tsup for library builds, Vite for the demo.
+- TypeScript (strict), tsup for library builds, Vite + React + shadcn/ui (Tailwind) for the demo.
 - Vitest for unit tests (the selection tree, parsing, protocol) and Playwright for interaction tests (Alt+Click, drag, keyboard).
 - The demo backend is Node/TS, calling Claude through the Anthropic SDK and streaming the §7 protocol. A mock backend mode lets the demo run without an API key.
 
-## 10. Demo app **(default)**
+## 10. Demo app
 
-A dashboard with KPI cards, an invoices table (table › row › cell hierarchy), and a chart whose points are annotated. It shows:
+A mock CRM for a **fictional Salesforce org**, "Summit Gear Co.", with two apps you switch between: **Sales Cloud** and **Marketing Cloud**. It is built with **React + shadcn/ui** (Tailwind CSS, with shadcn Charts on Recharts). All data is mock data from a deterministic seeded generator. It uses Salesforce-style objects and ID prefixes, but no Salesforce logos or trademarks, and it is clearly labelled as a fictional demo.
+
+**Sales Cloud**
+- **Home dashboard:** KPI cards (pipeline, closed won, win rate, average deal size) and a pipeline-by-stage chart
+- **Opportunities:** a list view (table › row › cell) and a Kanban board by stage
+- **Account record page:** account › contacts, opportunities, activities
+- **Leads:** list view
+
+**Marketing Cloud**
+- **Campaigns:** table with budget, spend, leads and ROI
+- **Email sends:** metrics for sends, opens, clicks and unsubscribes
+- **Journeys:** Journey Builder-style canvas made of nested step nodes
+- **Channel performance:** chart
+
+The demo shows:
 - selection, multi-select, window select, parent/child/sibling moves, and select-same-type
 - suggested actions per type
-- an agent with a tool that changes data, with a `client-action` updating the UI
+- an agent with tools that change CRM records, with a `client-action` updating the UI
+- `private` fields and the fallback for unannotated elements
+- headless mode: an optional chat UI built with shadcn on top of `useChat()`
 
 ## 11. Roadmap after v1
 
