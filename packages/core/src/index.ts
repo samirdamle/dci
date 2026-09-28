@@ -28,3 +28,38 @@ export {
   type SelectionOptions,
   type SelectionStore,
 } from './selection';
+export { createEmitter, type Emitter } from './emitter';
+export {
+  DCI_UI_ATTRIBUTE,
+  hasModifier,
+  isEditable,
+  isFromDciUi,
+  matchesCombo,
+  type ModifierKey,
+} from './keys';
+export {
+  DEFAULT_BINDINGS,
+  DEFAULT_KEYBOARD_BINDINGS,
+  resolveBindings,
+  type Bindings,
+  type BindingsConfig,
+  type KeyboardBindings,
+} from './bindings';
+export {
+  createInputManager,
+  type ArmedEventMap,
+  type ArmedEventType,
+  type GestureResult,
+  type InputManager,
+  type InputOptions,
+} from './input';
+export {
+  createInteractions,
+  DEFAULT_GESTURES,
+  type Gesture,
+  type GestureContext,
+  type InteractionEvents,
+  type InteractionOptions,
+  type Interactions,
+  type Rect,
+} from './interactions';
