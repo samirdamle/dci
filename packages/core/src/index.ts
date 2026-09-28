@@ -65,3 +65,4 @@ export {
 } from './interactions';
 export { createHoverState, type HoverState } from './hover';
 export { clickGesture, eventTarget, hoverGesture, resolveTarget } from './pointer';
+export { WHEEL_STEP, wheelGesture, wheelPixels } from './wheel';
