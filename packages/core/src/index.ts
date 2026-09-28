@@ -63,3 +63,5 @@ export {
   type Interactions,
   type Rect,
 } from './interactions';
+export { createHoverState, type HoverState } from './hover';
+export { clickGesture, eventTarget, hoverGesture, resolveTarget } from './pointer';
