@@ -4,6 +4,7 @@ import { createHoverState, type HoverState } from './hover';
 import { createInputManager, type InputManager } from './input';
 import type { ModifierKey } from './keys';
 import { clickGesture, hoverGesture } from './pointer';
+import { wheelGesture } from './wheel';
 import { createSelectionStore, type SelectionOptions, type SelectionStore } from './selection';
 import { createDciTree, type DciTree } from './tree';
 
@@ -60,7 +61,7 @@ export interface Interactions extends GestureContext {
 }
 
 /** Built-in gestures, filled in as each M2 task lands. */
-export const DEFAULT_GESTURES: Gesture[] = [hoverGesture, clickGesture];
+export const DEFAULT_GESTURES: Gesture[] = [hoverGesture, clickGesture, wheelGesture];
 
 /**
  * Wire the input manager, DCI tree, selection store and gesture modules
