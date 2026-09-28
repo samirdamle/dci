@@ -94,11 +94,31 @@ export function fakePointer(el: Element, options: FakePointerOptions = {}): Even
   };
 
   let event: Event;
-  if (type === 'wheel') event = new WheelEvent(type, { ...init, deltaY });
+  if (type === 'wheel') event = withMouseFields(new WheelEvent(type, { ...init, deltaY }), init);
   else if (type.startsWith('pointer')) event = new PointerEvent(type, { pointerId: 1, ...init });
   else event = new MouseEvent(type, init);
 
   el.dispatchEvent(event);
+  return event;
+}
+
+/**
+ * happy-dom's WheelEvent drops the MouseEvent init fields (modifiers,
+ * coordinates, button); browsers keep them. Define them on the instance.
+ */
+function withMouseFields(event: WheelEvent, init: MouseEventInit): WheelEvent {
+  const keys = [
+    'altKey',
+    'shiftKey',
+    'ctrlKey',
+    'metaKey',
+    'clientX',
+    'clientY',
+    'button',
+  ] as const;
+  for (const key of keys) {
+    if (event[key] !== init[key]) Object.defineProperty(event, key, { value: init[key] });
+  }
   return event;
 }
 

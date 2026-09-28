@@ -1,7 +1,14 @@
 import { resolveBindings, type Bindings, type BindingsConfig } from './bindings';
 import { createEmitter, type Emitter } from './emitter';
+import { announceGesture } from './announce';
+import { createHoverState, type HoverState } from './hover';
 import { createInputManager, type InputManager } from './input';
 import type { ModifierKey } from './keys';
+import { clickGesture, hoverGesture } from './pointer';
+import { keyboardGesture } from './keyboard';
+import { marqueeGesture } from './marquee';
+import { sameTypeGesture, selectSameType, type SelectSameTypeOptions } from './same-type';
+import { wheelGesture } from './wheel';
 import { createSelectionStore, type SelectionOptions, type SelectionStore } from './selection';
 import { createDciTree, type DciTree } from './tree';
 
@@ -32,6 +39,17 @@ export interface InteractionOptions extends SelectionOptions {
   /** Key that arms DCI. Default `'Alt'`. */
   modifier?: ModifierKey;
   bindings?: BindingsConfig;
+  /** Mod+Click on empty space clears the selection. Default `true`. */
+  clearOnEmptyClick?: boolean;
+  /** Let DCI clicks reach the host app too. Default `false` (they are swallowed). */
+  passthroughClicks?: boolean;
+  /**
+   * Called on Esc before the selection is cleared. Return `true` when it
+   * handled the key (e.g. closed the chat), so the selection is kept.
+   */
+  onEscape?: () => boolean;
+  /** Window select picks the innermost (`'leaf'`, default) or outermost (`'top'`) matches. */
+  windowSelectLevel?: 'leaf' | 'top';
   /** Gesture modules to attach. Defaults to every built-in gesture. */
   gestures?: Gesture[];
 }
@@ -43,17 +61,28 @@ export interface GestureContext {
   tree: DciTree;
   selection: SelectionStore;
   bus: Emitter<InteractionEvents>;
+  hover: HoverState;
 }
 
 /** A gesture wires itself to the context and returns its cleanup. */
 export type Gesture = (ctx: GestureContext) => () => void;
 
 export interface Interactions extends GestureContext {
+  /** Select all same-type siblings of `node` (default: the primary node). */
+  selectSameType(node?: Element | null, options?: SelectSameTypeOptions): Element[];
   destroy(): void;
 }
 
 /** Built-in gestures, filled in as each M2 task lands. */
-export const DEFAULT_GESTURES: Gesture[] = [];
+export const DEFAULT_GESTURES: Gesture[] = [
+  hoverGesture,
+  clickGesture,
+  wheelGesture,
+  marqueeGesture,
+  sameTypeGesture,
+  keyboardGesture,
+  announceGesture,
+];
 
 /**
  * Wire the input manager, DCI tree, selection store and gesture modules
@@ -62,19 +91,22 @@ export const DEFAULT_GESTURES: Gesture[] = [];
 export function createInteractions(options: InteractionOptions = {}): Interactions {
   const bus = createEmitter<InteractionEvents>();
   const input = createInputManager({ modifier: options.modifier ?? 'Alt' });
+  const tree = createDciTree(options);
   const ctx: GestureContext = {
     options,
     bindings: resolveBindings(options.bindings),
     input,
-    tree: createDciTree(options),
+    tree,
     selection: createSelectionStore(options),
     bus,
+    hover: createHoverState(tree, bus),
   };
   const offArm = input.onArmChange((armed) => bus.emit('arm', armed));
   const cleanups = (options.gestures ?? DEFAULT_GESTURES).map((gesture) => gesture(ctx));
 
   return {
     ...ctx,
+    selectSameType: (node, opts) => selectSameType(ctx, node ?? ctx.selection.primary(), opts),
     destroy() {
       for (const cleanup of cleanups) cleanup();
       offArm();

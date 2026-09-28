@@ -53,3 +53,16 @@ describe('test-utils', () => {
     expect(event.altKey).toBe(false);
   });
 });
+
+describe('fakePointer wheel events', () => {
+  it('carries modifiers and coordinates', () => {
+    const f = mountFixture(`<div id="el"></div>`);
+    const e = fakePointer(f.get('#el'), {
+      type: 'wheel',
+      altKey: true,
+      clientX: 7,
+      deltaY: -3,
+    }) as WheelEvent;
+    expect([e.altKey, e.shiftKey, e.clientX, e.deltaY]).toEqual([true, false, 7, -3]);
+  });
+});

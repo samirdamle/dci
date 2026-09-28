@@ -40,6 +40,8 @@ export interface SelectionStore {
   has(el: Element): boolean;
   /** Last-interacted node (breadcrumb, keyboard navigation), or `null`. */
   primary(): Element | null;
+  /** Make an already-selected element the primary node. */
+  setPrimary(el: Element): void;
   /** Listen for `selectionchange`; returns an unsubscribe function. */
   subscribe(fn: Listener<SelectionChange>): () => void;
   on<K extends keyof SelectionEvents>(type: K, fn: Listener<SelectionEvents[K]>): () => void;
@@ -158,6 +160,9 @@ export function createSelectionStore(options: SelectionOptions = {}): SelectionS
     },
     has: (el) => selected.includes(el),
     primary: () => primaryEl,
+    setPrimary(el) {
+      if (el !== primaryEl && selected.includes(el)) commit(selected, el);
+    },
     subscribe: (fn) => {
       listeners.selectionchange.add(fn);
       return () => listeners.selectionchange.delete(fn);

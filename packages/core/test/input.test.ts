@@ -196,6 +196,19 @@ describe('createInputManager', () => {
     expect(esc.defaultPrevented).toBe(true);
   });
 
+  it('stops at the first handler that consumes, in registration order', () => {
+    input = createInputManager();
+    const calls: string[] = [];
+    input.onKeyDown(() => void calls.push('first'));
+    input.onKeyDown(() => {
+      calls.push('second');
+      return 'consume';
+    });
+    input.onKeyDown(() => void calls.push('third'));
+    fakeKey('Escape');
+    expect(calls).toEqual(['first', 'second']);
+  });
+
   it('removes every listener on destroy', () => {
     const remove = vi.spyOn(window, 'removeEventListener');
     input = createInputManager();

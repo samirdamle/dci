@@ -32,10 +32,15 @@ export interface InputManager {
   isArmed(): boolean;
   /** Handle an event type that is only listened to while armed. */
   on<K extends ArmedEventType>(type: K, fn: (e: ArmedEventMap[K]) => GestureResult): () => void;
-  /** Handle every non-modifier `keydown` (armed or not). */
+  /**
+   * Handle every non-modifier `keydown` (armed or not). Like `on`, handlers
+   * run in registration order and the first `'consume'` stops the rest.
+   */
   onKeyDown(fn: (e: KeyboardEvent) => GestureResult): () => void;
   /** Called with `true` on arm and `false` on disarm. */
   onArmChange(fn: (armed: boolean) => void): () => void;
+  /** Swallow the click a browser fires right after a drag gesture. */
+  suppressNextClick(): void;
   /** Detach every listener. */
   destroy(): void;
 }
@@ -70,16 +75,31 @@ export function createInputManager(options: InputOptions = {}): InputManager {
     }
   }
 
+  /** Run handlers in registration order; the first `'consume'` ends the chain. */
   function run<E extends Event>(fns: Iterable<(e: E) => GestureResult>, e: E) {
     let result: GestureResult = undefined;
     for (const fn of [...fns]) {
       const r = fn(e);
-      if (r === 'consume' || (r === 'handled' && result !== 'consume')) result = r;
+      if (r === 'consume') {
+        result = r;
+        break;
+      }
+      if (r === 'handled') result = r;
     }
     apply(e, result);
   }
 
+  let clickSuppressed = false;
+  const swallow = (e: Event) => {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  };
+
   const onArmedEvent = (e: Event) => {
+    if (e.type === 'click' && clickSuppressed) {
+      clickSuppressed = false;
+      return swallow(e);
+    }
     if (isFromDciUi(e)) return;
     // The modifier was released without a keyup reaching us (e.g. focus moved).
     if (!hasModifier(e as MouseEvent, modifier)) return disarm();
@@ -144,6 +164,15 @@ export function createInputManager(options: InputOptions = {}): InputManager {
     onArmChange(fn) {
       armListeners.add(fn);
       return () => armListeners.delete(fn);
+    },
+    suppressNextClick() {
+      clickSuppressed = true;
+      // Also covers a click that arrives after the modifier was released.
+      win.addEventListener('click', swallow, { capture: true, once: true });
+      setTimeout(() => {
+        clickSuppressed = false;
+        win.removeEventListener('click', swallow, true);
+      }, 0);
     },
     destroy() {
       disarm();
