@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "types": [],
+    "customConditions": ["@dci/source"]
+  },
+  "include": ["src", "test", "*.config.ts"]
+}
