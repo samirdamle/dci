@@ -2,6 +2,8 @@
 
 Let users **Alt+Click** elements annotated with `data-dci` to select them as context for an AI chat.
 
+**Live demo:** https://samirdamle.github.io/dci/ (deployed from `main` by `.github/workflows/pages.yml`)
+
 ## Packages
 
 | Package                              | Purpose                                                          |
