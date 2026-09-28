@@ -13,6 +13,7 @@ AI chats make users *describe* what they want to talk about ("the third row in t
 
 | Package | Purpose |
 |---|---|
+| `@dci/protocol` | Shared wire-protocol types and the SSE encoder/decoder (§7). No dependencies; used by both client and server. |
 | `@dci/core` | Framework-agnostic TypeScript library: selection engine, overlay, chat UI, transport. No framework dependency. |
 | `@dci/react` | Thin React bindings (`<DciProvider>`, `useDci`, `useSelection`). |
 | `@dci/server` | Small Node helpers for the endpoint protocol (parse the request, stream events). |
@@ -195,10 +196,10 @@ const { selection, open, send } = useDci();
 
 ## 9. Tech stack **(default)**
 
-- A pnpm workspaces monorepo: `packages/core`, `packages/react`, `packages/server`, `apps/demo`.
+- A pnpm workspaces monorepo: `packages/protocol`, `packages/core`, `packages/react`, `packages/server`, `apps/demo`.
 - TypeScript (strict), tsup for library builds, Vite for the demo.
 - Vitest for unit tests (the selection tree, parsing, protocol) and Playwright for interaction tests (Alt+Click, drag, keyboard).
-- The demo backend is Node/TS, calling Claude through the Anthropic SDK and streaming the §7 protocol.
+- The demo backend is Node/TS, calling Claude through the Anthropic SDK and streaming the §7 protocol. A mock backend mode lets the demo run without an API key.
 
 ## 10. Demo app **(default)**
 
