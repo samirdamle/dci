@@ -20,3 +20,11 @@ export {
   type DciContextNode,
   type DciFallbackInfo,
 } from './context';
+export {
+  createSelectionStore,
+  type SelectionChange,
+  type SelectionEvents,
+  type SelectionLimit,
+  type SelectionOptions,
+  type SelectionStore,
+} from './selection';
