@@ -4,6 +4,8 @@ import react from '@vitejs/plugin-react';
 import { defaultClientConditions, defineConfig } from 'vite';
 
 export default defineConfig({
+  // Public path the app is served from; GitHub Pages serves it under /<repo>/.
+  base: process.env.DEMO_BASE ?? '/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
