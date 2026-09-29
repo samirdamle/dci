@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import type { DemoOptions } from './e2e/pages/fixtures';
 
 const PORT = 5173;
 const baseURL = `http://localhost:${PORT}`;
@@ -13,7 +14,7 @@ const allBrowsers = !!process.env.PW_ALL_BROWSERS;
 const perf = !!process.env.PW_PERF;
 const perfFiles = /.*\.perf\.ts/;
 
-export default defineConfig({
+export default defineConfig<DemoOptions>({
   testDir: './e2e',
   fullyParallel: true,
   forbidOnly: isCI,
@@ -36,6 +37,17 @@ export default defineConfig({
       ]
     : [
         { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+        // The selection gestures again with Control as the DCI modifier. Not on
+        // macOS, where Ctrl+Click opens the context menu instead of clicking.
+        ...(process.platform === 'darwin'
+          ? []
+          : [
+              {
+                name: 'chromium-ctrl',
+                testMatch: /selection\.spec\.ts/,
+                use: { ...devices['Desktop Chrome'], modifier: 'Control' as const },
+              },
+            ]),
         ...(allBrowsers
           ? [
               { name: 'firefox', use: { ...devices['Desktop Firefox'] } },

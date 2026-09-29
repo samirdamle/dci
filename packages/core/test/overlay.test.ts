@@ -38,6 +38,9 @@ describe('UI host', () => {
     expect(
       [...host.shadow.querySelectorAll('[data-layer]')].map((l) => l.getAttribute('data-layer')),
     ).toEqual(['overlay', 'chat', 'live-region']);
+    // The overlay is decorative; announcements go through the live region.
+    expect(host.layer('overlay').getAttribute('aria-hidden')).toBe('true');
+    expect(host.layer('chat').hasAttribute('aria-hidden')).toBe(false);
     release();
     expect(document.querySelector('dci-root')).toBeNull();
   });

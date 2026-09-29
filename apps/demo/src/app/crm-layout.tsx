@@ -25,7 +25,7 @@ export function CrmLayout() {
   return (
     <DciProvider config={config} root={main}>
       <CrmClientActions />
-      <div ref={main} className="min-w-0 flex-1 p-6">
+      <div ref={main} className="min-w-0 flex-1 p-6" data-testid="crm-content">
         <FirstRunHint />
         <Outlet />
       </div>

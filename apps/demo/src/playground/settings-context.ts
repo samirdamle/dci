@@ -27,6 +27,39 @@ export const DEFAULT_SETTINGS: DemoSettings = {
   confirmBeforeSend: false,
 };
 
+const CHOICES: { [K in keyof DemoSettings]?: readonly DemoSettings[K][] } = {
+  chatMode: ['popover', 'panel'],
+  chatUi: ['default', 'custom'],
+  modifier: ['Alt', 'Control', 'Meta', 'Shift'],
+  ancestorData: ['compact', 'full'],
+  overlayMode: ['boxes', 'outline'],
+};
+
+/**
+ * Starting settings from the page URL, e.g. `?modifier=Control&fallback=off`,
+ * so a playground setup can be shared as a link. Unknown keys and invalid
+ * values are ignored.
+ */
+export function settingsFromSearch(search: string): Partial<DemoSettings> {
+  const params = new URLSearchParams(search);
+  const out: Record<string, unknown> = {};
+  for (const [key, raw] of params) {
+    if (!Object.hasOwn(DEFAULT_SETTINGS, key)) continue;
+    const current = DEFAULT_SETTINGS[key as keyof DemoSettings];
+    const choices = CHOICES[key as keyof DemoSettings] as readonly string[] | undefined;
+    if (typeof current === 'boolean') {
+      if (['on', 'true', '1'].includes(raw)) out[key] = true;
+      else if (['off', 'false', '0'].includes(raw)) out[key] = false;
+    } else if (typeof current === 'number') {
+      const n = Number(raw);
+      if (Number.isInteger(n) && n > 0) out[key] = n;
+    } else if (choices?.includes(raw)) {
+      out[key] = raw;
+    }
+  }
+  return out as Partial<DemoSettings>;
+}
+
 /** The settings as `createDci` options (the chat UI switch is handled by `<DciChat>`). */
 export function settingsToConfig(s: DemoSettings): DciConfig {
   return {
