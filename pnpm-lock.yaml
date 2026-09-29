@@ -138,6 +138,10 @@ importers:
       '@dci/protocol':
         specifier: workspace:*
         version: link:../protocol
+    devDependencies:
+      '@dci/core':
+        specifier: workspace:*
+        version: link:../core
 
 packages:
 

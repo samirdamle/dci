@@ -6,11 +6,11 @@ exactly those things as context for an AI conversation, instead of describing th
 [![CI](https://github.com/samirdamle/dci/actions/workflows/ci.yml/badge.svg)](https://github.com/samirdamle/dci/actions/workflows/ci.yml)
 &nbsp;**Live demo:** https://samirdamle.github.io/dci/
 
-> **Status:** early development. Milestones M0–M3 are done: annotation parsing, the DCI tree,
-> context extraction, the selection store, every selection gesture and the highlight overlay. You
-> can try selecting in the [live demo](https://samirdamle.github.io/dci/). The chat UI, backend
-> protocol and public `createDci()` API are next; see [Roadmap](#roadmap). Packages are not on npm
-> yet.
+> **Status:** early development. Milestones M0–M4 are done: annotation parsing, the DCI tree,
+> context extraction, the selection store, every selection gesture, the highlight overlay, and the
+> backend protocol with its client transport and server helpers. You can try selecting in the
+> [live demo](https://samirdamle.github.io/dci/). The chat UI and the public `createDci()` API are
+> next; see [Roadmap](#roadmap). Packages are not on npm yet.
 
 ---
 
@@ -87,7 +87,7 @@ the endpoint can be a plain LLM call, an agent with tools and memory, or your ex
 AI stack. API keys never go to the browser.
 
 **Two-way.** The agent can act on the page through **client actions** (e.g. update a record,
-highlight a node), so answers turn into edits the user can see (planned, M4).
+highlight a node), so answers turn into edits the user can see.
 
 **Framework-agnostic, headless-first.** The core is plain TypeScript with no framework
 dependency. React bindings are thin, and every UI piece can be replaced (planned, M5–M6).
@@ -221,12 +221,13 @@ Each selected node becomes a `DciContextNode`. This is what your backend receive
   text, `aria-label`, `alt`, `title`, `href`, form values (**never password fields**) and a short
   CSS path. Unannotated content inside a private node is never described.
 
-### 4. The backend protocol (planned, M4)
+### 4. The backend protocol
 
 The client `POST`s one JSON request to your endpoint:
 
 ```json
 {
+  "v": 1,
   "sessionId": "…",
   "prompt": "Why is this overdue?",
   "action": "explain",
@@ -237,16 +238,21 @@ The client `POST`s one JSON request to your endpoint:
 
 and reads a Server-Sent Events stream back:
 
-| Event           | Payload                | Used for                       |
-| --------------- | ---------------------- | ------------------------------ |
-| `text-delta`    | `{ text }`             | Streaming the answer           |
-| `tool-start`    | `{ id, name, label? }` | "Updating invoice…" progress   |
-| `tool-end`      | `{ id, ok, label? }`   | Tool finished                  |
-| `client-action` | `{ name, args }`       | The agent asks the page to act |
-| `error`         | `{ message, code? }`   | Errors                         |
-| `done`          | `{}`                   | End of the response            |
+| Event           | Payload                | Used for                        |
+| --------------- | ---------------------- | ------------------------------- |
+| `text-delta`    | `{ text }`             | Streaming the answer            |
+| `tool-start`    | `{ id, name, label? }` | "Updating invoice…" progress    |
+| `tool-end`      | `{ id, ok, label? }`   | Tool finished                   |
+| `client-action` | `{ name, args }`       | The agent asks the page to act  |
+| `error`         | `{ message, code? }`   | Errors                          |
+| `done`          | `{}`                   | End of the response             |
+| `x-…`           | anything               | Your own events, passed through |
 
-`@dci/server` will provide helpers to parse the request and stream these events from Node.
+Each event is a standard SSE message (`event: text-delta` / `data: {"text":"…"}`). Clients ignore
+event types they don't know, so the protocol can grow within a version; `v` is the major version,
+and a server that doesn't speak it answers with an `error` event (code `unsupported_version`).
+`@dci/protocol` has the types, validation, and an encoder and streaming decoder with no
+dependencies, for browsers, Node, Deno, Bun and edge runtimes.
 
 ## Using DCI in your app
 
@@ -324,7 +330,40 @@ The lower-level building blocks are exported too: `readDci`, `createDciTree`, `t
 `marqueeGesture`, …), and `selectSameType`. Each gesture is a plain function
 `(ctx) => cleanup`, so you can drop, replace or add your own via the `gestures` option.
 
-### Step 3: the full API (planned, M4–M6)
+### Step 3: your backend (available now)
+
+`@dci/server` turns a function into an endpoint. It parses and validates the request, streams
+what you send, and always finishes the response, even if your code throws:
+
+```ts
+import { dciHandler, formatContextForPrompt } from '@dci/server';
+
+export const POST = dciHandler(async (req, stream, { signal }) => {
+  // An XML block of the selected items (labels, types, paths, data) for your prompt.
+  const context = formatContextForPrompt(req.context);
+
+  stream.toolStart('t1', 'lookup_invoice', 'Looking up the invoice…');
+  // …call your LLM or agent here (pass `signal` to stop when the user cancels)…
+  stream.toolEnd('t1', true);
+  stream.text('It is overdue because…'); // stream as many deltas as you like
+
+  stream.clientAction('highlight', { ids: ['inv_123'] }); // ask the page to act
+});
+```
+
+`dciHandler` returns a Web-standard `(Request) => Promise<Response>`, so it works as a Next.js route,
+in Hono, Bun, Deno or on the edge. For Node's `http` server and Express, wrap it with
+`toNodeHandler` from `@dci/server/node`. See
+[`packages/server/examples`](packages/server/examples). No LLM SDK is bundled: calling a model is your
+code.
+
+On the page, `createSSETransport({ endpoint, headers })` sends requests and yields the events;
+`headers` can be a function (called on every request, for token refresh). `createActionRegistry`
+runs `client-action`s: the built-ins `highlight`, `select` and `scrollTo`, plus your own with
+`on(name, handler)`. `createSession` manages the conversation id. The chat UI (M5) and `createDci()`
+(M6) will wire these together.
+
+### Step 4: the full API (planned, M5–M6)
 
 The target API bundles the overlay, chat UI and transport:
 
@@ -404,8 +443,8 @@ Animations respect `prefers-reduced-motion`.
 - **`private` nodes** are unselectable, never extracted, and reduced to `{ private: true }` when
   they are an ancestor.
 - **No password values**, ever, even with fallback on.
-- **No keys in the browser.** Authentication goes through your `headers` or a custom `fetch` (M4).
-- **`beforeSend`** gives you a last chance to redact or enrich (M4–M6).
+- **No keys in the browser.** Authentication goes through your `headers` or a custom `fetch`.
+- **`beforeSend`** gives you a last chance to redact or enrich (M6).
 - **Nothing leaves the page on its own.** Selecting is local; data is only sent when the user sends
   a message.
 
@@ -417,8 +456,8 @@ Animations respect `prefers-reduced-motion`.
 | M1        | `data-dci` parsing, DCI tree, context extraction, selection store   | Done    |
 | M2        | Modifier, Alt+Click, Alt+Wheel, window select, same-type, keyboard  | Done    |
 | M3        | Overlay: Shadow DOM highlight layer, labels, marquee                | Done    |
-| M4        | `@dci/protocol`, SSE transport, client actions, `@dci/server`       | Next    |
-| M5        | Chat UI: popover/panel, chips, breadcrumb, suggested actions        | Planned |
+| M4        | `@dci/protocol`, SSE transport, client actions, `@dci/server`       | Done    |
+| M5        | Chat UI: popover/panel, chips, breadcrumb, suggested actions        | Next    |
 | M6        | `createDci()` public API and React bindings                         | Planned |
 | M7        | Demo: a mock CRM with a Claude-powered agent and a no-key mock mode | Planned |
 | M8        | Cross-browser e2e, performance, docs, npm release                   | Planned |

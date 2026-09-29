@@ -112,3 +112,22 @@ export {
 } from './overlay';
 export { overlayGesture } from './overlay-gesture';
 export type { OverlayConfig } from './interactions';
+export { createSSETransport, type SSETransportOptions, type Transport } from './transport';
+export {
+  BUILTIN_ACTIONS,
+  createActionRegistry,
+  type ActionContext,
+  type ActionError,
+  type ActionHandler,
+  type ActionRegistry,
+  type ActionRegistryOptions,
+  type BuiltinAction,
+} from './actions';
+export {
+  createSession,
+  randomId,
+  type Session,
+  type SessionChange,
+  type SessionOptions,
+} from './session';
+export type { DciEvent, DciRequest } from '@dci/protocol';
