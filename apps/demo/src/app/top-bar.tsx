@@ -13,11 +13,13 @@ import {
 } from '@/components/ui/command';
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { useBackend } from '@/lib/backend';
 import { useTheme } from '@/lib/theme-context';
 import { APPS } from './nav';
 
 /** Global search (navigation only), org and mode badges, and the theme toggle. */
-export function TopBar({ mode }: { mode: 'mock' | 'claude' }) {
+export function TopBar() {
+  const backend = useBackend();
   const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -54,9 +56,20 @@ export function TopBar({ mode }: { mode: 'mock' | 'claude' }) {
         >
           Fictional demo org
         </Badge>
-        <Badge variant={mode === 'mock' ? 'secondary' : 'default'}>
-          {mode === 'mock' ? 'Mock mode' : 'Claude mode'}
-        </Badge>
+        {backend && (
+          <Badge
+            variant={backend.mode === 'claude' ? 'default' : 'secondary'}
+            title={
+              backend.mode === 'claude'
+                ? `Answers come from ${backend.model ?? 'Claude'} via the demo server.`
+                : backend.mode === 'mock'
+                  ? 'Scripted answers from the demo server (no API key set).'
+                  : 'Scripted answers computed in your browser (static demo).'
+            }
+          >
+            {backend.mode === 'claude' ? 'Claude mode' : 'Mock mode'}
+          </Badge>
+        )}
         <Button
           variant="ghost"
           size="icon"

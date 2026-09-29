@@ -30,7 +30,7 @@ export function App() {
           <SidebarProvider>
             <AppSidebar />
             <SidebarInset>
-              <TopBar mode="mock" />
+              <TopBar />
               <Routes>
                 <Route element={<CrmLayout />}>
                   <Route path="/sales" element={<SalesHome />} />

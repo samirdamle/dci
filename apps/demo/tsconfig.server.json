@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.server.tsbuildinfo",
+    "lib": ["ES2023"],
+    "target": "ES2022",
+    "types": ["node"],
+    "customConditions": ["@dci/source"],
+    "noEmit": true
+  },
+  "include": [
+    "server",
+    "src/agent/crm-tools.ts",
+    "src/agent/actions.ts",
+    "src/agent/mock-responder.ts",
+    "src/data"
+  ],
+  "exclude": ["src/**/*.test.ts"]
+}

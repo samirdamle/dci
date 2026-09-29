@@ -1,5 +1,5 @@
 import type { ActionsConfig, DciConfig } from '@dci/core';
-import { mockTransport } from '@/mock-backend';
+import { autoTransport } from '@/lib/backend';
 
 const several = (nodes: readonly unknown[]) => nodes.length > 1;
 
@@ -50,7 +50,8 @@ export const ACTIONS: ActionsConfig = {
 
 /** The DCI config for the CRM (a stable module constant, so re-renders do no work). */
 export const DCI_CONFIG: DciConfig = {
-  transport: mockTransport,
+  // The demo server (Claude or mock) when it runs, else the in-browser mock.
+  transport: autoTransport,
   actions: ACTIONS,
   // Dragging across table rows should pick the records, not every cell inside them.
   windowSelectLevel: 'top',
