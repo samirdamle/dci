@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 async function ready(page: Page) {
-  await page.goto('/');
+  await page.goto('/#/classic');
   await page.waitForSelector('dci-root', { state: 'attached' });
 }
 
