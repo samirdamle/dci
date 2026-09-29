@@ -644,8 +644,27 @@ it up).
 nvm use
 corepack enable
 pnpm install
-pnpm dev      # start the demo at http://localhost:5173
+pnpm dev      # the demo at http://localhost:5173, plus its backend on :8787
 ```
+
+### The demo
+
+The demo is a mock CRM for **Summit Gear Co.**, a fictional Salesforce-style org (Sales Cloud and
+Marketing Cloud), built with React, shadcn/ui, Recharts and TanStack Table. Alt+Click anything, ask,
+and the assistant can change records: its tool calls update the backend's copy of the org, and a
+`client-action` updates the page.
+
+| Mode        | When                                               | Answers                                                         |
+| ----------- | -------------------------------------------------- | --------------------------------------------------------------- |
+| **Claude**  | `ANTHROPIC_API_KEY` is set when you run `pnpm dev` | Claude via the Anthropic SDK, with CRM tools and session memory |
+| **Mock**    | No key (or `DCI_DEMO_MOCK=1`)                      | A deterministic, context-aware responder; same tools and events |
+| **Browser** | No backend at all (the static GitHub Pages build)  | The same mock responder, running in the page                    |
+
+```sh
+ANTHROPIC_API_KEY=sk-ant-… pnpm dev   # Claude mode; DCI_DEMO_MODEL overrides the model
+```
+
+The key stays on the demo server (`apps/demo/server`); the browser only talks to `/api/dci`.
 
 Inside the workspace, `@dci/*` packages resolve to their TypeScript sources through the
 `@dci/source` export condition, so the demo, tests and typechecking never need a prior build.
@@ -655,7 +674,7 @@ Inside the workspace, `@dci/*` packages resolve to their TypeScript sources thro
 | Script                              | What it does                                                 |
 | ----------------------------------- | ------------------------------------------------------------ |
 | `pnpm build`                        | Build every package (tsup: ESM + CJS + `.d.ts`) and the demo |
-| `pnpm dev`                          | Run the demo dev server                                      |
+| `pnpm dev`                          | Run the demo and its backend                                 |
 | `pnpm lint`                         | ESLint (flat config, typescript-eslint)                      |
 | `pnpm typecheck`                    | `tsc` across the root and every package                      |
 | `pnpm format` / `pnpm format:check` | Prettier                                                     |

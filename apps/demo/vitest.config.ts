@@ -11,6 +11,6 @@ export default defineProject({
   test: {
     name: 'demo',
     environment: 'happy-dom',
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'server/**/*.test.ts'],
   },
 });

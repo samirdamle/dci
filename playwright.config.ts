@@ -34,5 +34,7 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !isCI,
     timeout: 120_000,
+    // The demo backend in deterministic mock mode, with no artificial streaming delay.
+    env: { DCI_DEMO_MOCK: '1', DCI_DEMO_MOCK_DELAY: '0' },
   },
 });
