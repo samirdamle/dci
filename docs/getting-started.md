@@ -25,7 +25,9 @@ the JSON form adds a `type`, a `label` and any data the model should see.
 
 ```html
 <table data-dci='{"id":"invoices","type":"table","label":"Invoices"}'>
-  <tr data-dci='{"id":"inv_123","type":"invoice","label":"Invoice #123","amount":420,"status":"overdue"}'>
+  <tr
+    data-dci='{"id":"inv_123","type":"invoice","label":"Invoice #123","amount":420,"status":"overdue"}'
+  >
     <td>#123</td>
     <td>Acme Corp</td>
     <td>$420</td>
@@ -85,7 +87,12 @@ function InvoiceTable() {
         {invoices.map((inv) => (
           <tr
             key={inv.id}
-            {...dci({ id: inv.id, type: 'invoice', label: `Invoice ${inv.number}`, status: inv.status })}
+            {...dci({
+              id: inv.id,
+              type: 'invoice',
+              label: `Invoice ${inv.number}`,
+              status: inv.status,
+            })}
           >
             <td>{inv.number}</td>
             <td>{inv.customer}</td>

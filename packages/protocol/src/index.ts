@@ -1,4 +1,12 @@
-/** Placeholder package version; replaced by real exports in later milestones. */
+/**
+ * The DCI wire protocol: request and event types, validation, and the SSE encoder and
+ * streaming decoder. No dependencies.
+ *
+ * @packageDocumentation
+ * @module @dci/protocol
+ */
+
+/** Package version. */
 export const VERSION = '0.0.0';
 
 export {

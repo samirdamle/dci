@@ -40,26 +40,26 @@ The client sends `POST {endpoint}` with `Content-Type: application/json` and
 }
 ```
 
-| Field       | Type                | Meaning                                                                          |
-| ----------- | ------------------- | -------------------------------------------------------------------------------- |
-| `v`         | number              | Protocol major version (`1`)                                                     |
-| `sessionId` | string              | Conversation id. Keep memory per session on the backend                          |
-| `prompt`    | string              | What the user typed, or the suggested action's prompt                            |
-| `action`    | string, optional    | The suggested action's `id`, when the user clicked one                           |
-| `context`   | `DciContextNode[]`  | The selected nodes; only the ones added since the last message by default        |
-| `page`      | `{ url, title }`    | Where the user is                                                                |
+| Field       | Type               | Meaning                                                                   |
+| ----------- | ------------------ | ------------------------------------------------------------------------- |
+| `v`         | number             | Protocol major version (`1`)                                              |
+| `sessionId` | string             | Conversation id. Keep memory per session on the backend                   |
+| `prompt`    | string             | What the user typed, or the suggested action's prompt                     |
+| `action`    | string, optional   | The suggested action's `id`, when the user clicked one                    |
+| `context`   | `DciContextNode[]` | The selected nodes; only the ones added since the last message by default |
+| `page`      | `{ url, title }`   | Where the user is                                                         |
 
 Each context node:
 
-| Field       | Type                          | Meaning                                                              |
-| ----------- | ----------------------------- | -------------------------------------------------------------------- |
-| `id`        | string, optional              | From the annotation                                                  |
-| `type`      | string, optional              | From the annotation                                                  |
-| `label`     | string, optional              | From the annotation                                                  |
-| `data`      | object                        | The annotation minus `id`, `type`, `label`, `private` (`{}` for fallback nodes) |
+| Field       | Type                          | Meaning                                                                                  |
+| ----------- | ----------------------------- | ---------------------------------------------------------------------------------------- |
+| `id`        | string, optional              | From the annotation                                                                      |
+| `type`      | string, optional              | From the annotation                                                                      |
+| `label`     | string, optional              | From the annotation                                                                      |
+| `data`      | object                        | The annotation minus `id`, `type`, `label`, `private` (`{}` for fallback nodes)          |
 | `ancestors` | array, optional               | Annotated ancestors, root first: `{ id?, type?, label?, data? }`, or `{ private: true }` |
-| `source`    | `"annotated"` \| `"fallback"` | Whether the element had an annotation                                |
-| `fallback`  | object, only for fallback     | `{ tagName, text?, ariaLabel?, alt?, title?, href?, value?, path }`  |
+| `source`    | `"annotated"` \| `"fallback"` | Whether the element had an annotation                                                    |
+| `fallback`  | object, only for fallback     | `{ tagName, text?, ariaLabel?, alt?, title?, href?, value?, path }`                      |
 
 See the [annotation guide](annotations.md#what-gets-sent) for how these are built. Servers should
 accept unknown extra fields: they may be added within a version.
@@ -69,15 +69,15 @@ accept unknown extra fields: they may be added within a version.
 Answer with `200 OK`, `Content-Type: text/event-stream` and a stream of events, ending with
 `done`:
 
-| Event           | Data                                  | Meaning                                                   |
-| --------------- | ------------------------------------- | --------------------------------------------------------- |
-| `text-delta`    | `{ "text": string }`                  | The next piece of the answer (Markdown)                   |
-| `tool-start`    | `{ "id", "name", "label"? }`          | A tool call started; `label` is shown ("Updating deal…")  |
-| `tool-end`      | `{ "id", "ok": boolean, "label"? }`   | That tool call finished                                   |
-| `client-action` | `{ "name", "args": object }`          | Ask the page to act ([below](#client-actions))            |
-| `error`         | `{ "message", "code"? }`              | Something went wrong; shown with a Retry button           |
-| `done`          | `{}`                                  | The response is complete. Always send it last             |
-| `x-…`           | any object                            | [Your own events](#custom-events)                         |
+| Event           | Data                                | Meaning                                                  |
+| --------------- | ----------------------------------- | -------------------------------------------------------- |
+| `text-delta`    | `{ "text": string }`                | The next piece of the answer (Markdown)                  |
+| `tool-start`    | `{ "id", "name", "label"? }`        | A tool call started; `label` is shown ("Updating deal…") |
+| `tool-end`      | `{ "id", "ok": boolean, "label"? }` | That tool call finished                                  |
+| `client-action` | `{ "name", "args": object }`        | Ask the page to act ([below](#client-actions))           |
+| `error`         | `{ "message", "code"? }`            | Something went wrong; shown with a Retry button          |
+| `done`          | `{}`                                | The response is complete. Always send it last            |
+| `x-…`           | any object                          | [Your own events](#custom-events)                        |
 
 A typical stream:
 
@@ -138,11 +138,11 @@ data: {"name":"updateOpportunity","args":{"id":"006Hs00000A1","patch":{"StageNam
 The page registers handlers by name with `dci.onAction(name, handler)` (or `useDciAction` in
 React). Built-ins, on by default:
 
-| Name        | Args                | Effect                                |
-| ----------- | ------------------- | ------------------------------------- |
-| `highlight` | `{ "ids": [...] }`  | Flash the elements with those ids     |
-| `select`    | `{ "ids": [...] }`  | Replace the selection with them       |
-| `scrollTo`  | `{ "id": "…" }`     | Scroll that element into view         |
+| Name        | Args               | Effect                            |
+| ----------- | ------------------ | --------------------------------- |
+| `highlight` | `{ "ids": [...] }` | Flash the elements with those ids |
+| `select`    | `{ "ids": [...] }` | Replace the selection with them   |
+| `scrollTo`  | `{ "id": "…" }`    | Scroll that element into view     |
 
 Unknown actions and failing handlers raise an `actionerror` event on the page; the stream carries
 on. Client actions are requests, not commands: the page decides what to do, and your backend should

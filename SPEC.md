@@ -1,6 +1,6 @@
 # DCI — Direct Contextual Intelligence: Specification (v1)
 
-> **Status:** Draft v1, agreed in a requirements interview. Items marked **(default)** were not discussed in detail; they use the recommended default and can be changed.
+> **Status:** v1, implemented. Agreed in a requirements interview; items marked **(default)** were not discussed in detail and use the recommended default. Where the implementation refined the original draft, this document has been updated to match (see the notes marked **Implementation:**). The user-facing guides are in [`docs/`](docs/README.md).
 
 ## 1. Vision
 
@@ -15,7 +15,7 @@ AI chats make users *describe* what they want to talk about ("the third row in t
 |---|---|
 | `@dci/protocol` | Shared wire-protocol types and the SSE encoder/decoder (§7). No dependencies; used by both client and server. |
 | `@dci/core` | Framework-agnostic TypeScript library: selection engine, overlay, chat UI, transport. No framework dependency. |
-| `@dci/react` | Thin React bindings (`<DciProvider>`, `useDci`, `useSelection`). |
+| `@dci/react` | Thin React bindings (`<DciProvider>`, `useDci`, `useSelection`, `useChat`, `useDciAction`, `<DciChat>`, and the `dci()` annotation helper). |
 | `@dci/server` | Small Node helpers for the endpoint protocol (parse the request, stream events). |
 | `apps/demo` | Demo app with a Node/TS backend that uses Claude. |
 
@@ -61,8 +61,10 @@ Alt+Click selects the **nearest ancestor-or-self carrying `data-dci`**. The DCI 
 | **Alt+Click** | Select that node, replacing the selection. |
 | **Alt+Shift+Click** | Toggle that node in or out of the selection. |
 | **Alt+Wheel** (while hovering) | Move the hover target up or down the DCI tree before clicking. |
-| **Alt+Drag** | Window select. Left→right: fully contained nodes only. Right→left: nodes the box touches. Shift adds, Ctrl/Cmd subtracts. |
+| **Alt+Drag** | Window select. Left→right: fully contained nodes only. Right→left: nodes the box touches. Shift adds, Ctrl/Cmd subtracts (whichever of the two isn't the modifier). Esc cancels. |
 | **Alt+Double-click** | Select all siblings with the same `type`. |
+
+**Implementation:** window select picks the innermost matches by default, or the outermost with `windowSelectLevel: 'top'` (whole rows rather than their cells). In touch mode, a node that encloses the whole box counts only when nothing inside it is hit, so dragging inside a table selects rows, not the table. Mod+Click on empty space inside the root clears the selection (`clearOnEmptyClick`).
 
 ### 4.3 Keyboard (while a selection is active)
 
@@ -72,7 +74,7 @@ Alt+Click selects the **nearest ancestor-or-self carrying `data-dci`**. The DCI 
 | **↓** | First child |
 | **← / →** | Previous / next sibling |
 | **Shift + arrow** | Extend the selection instead of moving it |
-| **Esc** | Clear the selection |
+| **Esc** | Clear the selection (if the chat is open, the first Esc closes it) |
 
 These keys are captured only while DCI selection is active, never globally. Alt+arrows are avoided because Alt+← is the browser Back shortcut.
 
@@ -96,25 +98,26 @@ interface DciContextNode {
   type?: string;
   label?: string;
   data: Record<string, unknown>;      // the parsed data-dci payload (reserved keys removed)
-  ancestors?: Array<{ id?: string; type?: string; label?: string; data?: Record<string, unknown> }>;
+  ancestors?: Array<{ id?: string; type?: string; label?: string; data?: Record<string, unknown>; private?: true }>;
   source: 'annotated' | 'fallback';
+  fallback?: DciFallbackInfo;          // only for fallback nodes (§5.2)
 }
 ```
-`ancestors` holds the compact `data-dci` chain from the root down. It's on by default (`includeAncestors: true`), so a selected cell still carries its row and table.
+`ancestors` holds the `data-dci` chain from the root down. It's on by default (`includeAncestors: true`), so a selected cell still carries its row and table. Ancestors are compact (`id`, `type`, `label`) unless `ancestorData: 'full'`; a private ancestor appears only as `{ private: true }`.
 
 ### 5.2 Fallback node
-For unannotated elements: `tagName`, truncated `innerText`, `aria-label`, `alt`/`title`, a short CSS path, and ancestors as above.
+For unannotated elements: `tagName`, truncated `innerText`, `aria-label`, `alt`/`title`, `href`, form values (never from password inputs), a short CSS path, and ancestors as above. Unannotated content inside a private node is never described.
 
 ### 5.3 Limits and hooks
 - `maxSelection`: maximum number of nodes. Selection is capped with a visible notice.
 - `maxTextLength`: truncation length for fallback text.
-- `beforeSend(context) => context`: a hook for redaction or enrichment **(default)**.
+- `beforeSend(request) => request | false`: a hook for redaction or enrichment; returning `false` cancels the send **(default)**. **Implementation:** it receives the whole request (prompt and context), may be async, and a `private` node that still reaches a request throws in development and is stripped in production.
 - `confirmBeforeSend`: optional "Sending N items" confirmation, off by default **(default)**.
 
 ## 6. Chat UI
 
 - **Modes:** `popover` (anchored to the selection; **default**) or `panel` (docked). Set in config.
-- Selected nodes appear as **removable chips**. Alt+Clicking during a conversation adds context to the next message.
+- Selected nodes appear as **removable chips**; removing a chip deselects the element. Alt+Clicking during a conversation adds context to the next message. **Implementation:** by default each message carries only the context added since the previous one (`contextMode: 'turn'`); `'cumulative'` resends everything selected so far.
 - **Suggested actions** are defined in config per `type`:
   ```ts
   actions: {
@@ -134,6 +137,7 @@ DCI doesn't care what's behind the endpoint: a plain LLM chat, or an agent with 
 `POST {endpoint}`
 ```json
 {
+  "v": 1,
   "sessionId": "string",
   "prompt": "string",
   "action": "string | undefined",
@@ -151,6 +155,9 @@ DCI doesn't care what's behind the endpoint: a plain LLM chat, or an agent with 
 | `client-action` | `{ name, args }`: the agent asks the page to do something. |
 | `error` | `{ message, code? }` |
 | `done` | `{}` |
+| `x-…` | Custom events, passed to the page untouched |
+
+**Implementation:** `v` is the protocol's major version. Additive changes (optional fields, new event types) happen within a version: servers accept unknown request fields and clients ignore unknown events. A server that doesn't speak the requested `v` answers with an `error` event (code `unsupported_version`) and `done`. The full wire format, including SSE framing and a Python backend, is in [`docs/protocol.md`](docs/protocol.md).
 
 ### 7.3 Client actions (write-back)
 Developers register handlers. DCI includes a few built-ins (`highlight`, `select`, `scrollTo`); everything else, such as updating app state, is up to the developer.
@@ -178,21 +185,29 @@ const dci = createDci({
   includeAncestors: true,
   fallback: true,
   actions: { /* per type */ },
-  beforeSend: (ctx) => ctx,
+  beforeSend: (request) => request,    // or false to cancel
 });
 
 dci.selection.get();                   // DciContextNode[]
-dci.selection.set([...]); dci.selection.clear();
-dci.on('selectionchange', (nodes) => {});
+dci.selection.set(['inv_123']); dci.selection.clear();
+dci.on('selectionchange', ({ nodes }) => {});
+dci.chat.send('Why is this overdue?');
 dci.onAction('name', handler);
+dci.update({ chat: { mode: 'panel' } });
 dci.destroy();
 ```
 
 React:
 ```tsx
 <DciProvider config={config}><App /></DciProvider>
-const { selection, open, send } = useDci();
+const dci = useDci();                          // the instance, or null before mount
+const { nodes, clear } = useSelection();
+const { messages, status, send } = useChat();  // everything for a custom chat
+useDciAction('markPaid', handler);
+<tr {...dci({ id, type: 'invoice', label })}>
 ```
+
+The complete reference is [`docs/configuration.md`](docs/configuration.md).
 
 ## 9. Tech stack **(default)**
 
@@ -224,6 +239,8 @@ The demo shows:
 - `private` fields and the fallback for unannotated elements
 - headless mode: an optional chat UI built with shadcn on top of `useChat()`
 
+**Implementation:** the demo runs in three modes: Claude (with `ANTHROPIC_API_KEY` on the demo server), a deterministic mock backend (no key), and the same mock running in the browser for the static GitHub Pages build. A Playground drawer changes DCI options live and shows the exact request and the raw response events.
+
 ## 11. Roadmap after v1
 
 1. Browser extension, built on `@dci/core` with fallback mode.
@@ -237,7 +254,8 @@ The demo shows:
 ## 12. Non-functional requirements
 
 - **Isolation:** all DCI UI renders in Shadow DOM and must not leak or inherit host styles.
-- **Performance:** no work happens until the modifier is pressed. Overlay updates are batched with `requestAnimationFrame`.
+- **Performance:** no work happens until the modifier is pressed. Overlay updates are batched with `requestAnimationFrame`. Bundle-size and runtime budgets are enforced in CI; see [`docs/compatibility.md`](docs/compatibility.md).
+- **Compatibility:** the latest two versions of Chrome, Edge, Firefox and Safari on macOS, Windows and Linux; pages with a strict CSP; annotated nodes inside open shadow roots.
 - **Accessibility:** keyboard navigation (§4.3), ARIA roles on the chat UI, visible focus.
 - **Privacy:** only `data-dci` payloads (plus fallback info when enabled) are sent; `private` nodes are excluded; `beforeSend` hook.
 - **License:** MIT. Published to npm as a polished open-source package with docs **(default)**.

@@ -136,7 +136,14 @@ declare function createSSEDecoder(): SSEDecoder;
 /** Decode a byte stream (e.g. `response.body`) into DCI events. */
 declare function decodeSSEStream(stream: ReadableStream<Uint8Array>): AsyncGenerator<DciEvent, void, undefined>;
 
-/** Placeholder package version; replaced by real exports in later milestones. */
+/**
+ * The DCI wire protocol: request and event types, validation, and the SSE encoder and
+ * streaming decoder. No dependencies.
+ *
+ * @packageDocumentation
+ * @module @dci/protocol
+ */
+/** Package version. */
 declare const VERSION = "0.0.0";
 
 export { type ClientActionEvent, type CustomEvent, type DciAncestor, type DciContextNode, type DciEvent, type DciEventType, type DciFallbackInfo, type DciRequest, type DoneEvent, ERROR_CODES, type ErrorEvent, PROTOCOL_VERSION, type SSEDecoder, type TextDeltaEvent, type ToolEndEvent, type ToolStartEvent, VERSION, type ValidationResult, createSSEDecoder, decodeSSEStream, encodeComment, encodeEvent, isDciRequest, isSupportedVersion, toEvent, validateRequest };

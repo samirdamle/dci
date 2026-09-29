@@ -27,6 +27,8 @@ jobs:
         env:
           # e.g. "/dci/" for a project site, "/" for a custom domain.
           DEMO_BASE: ${{ steps.pages.outputs.base_path }}/
+      - name: Build the API reference into the site (/api/)
+        run: pnpm docs:api && cp -r docs/api apps/demo/dist/api
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apps/demo/dist

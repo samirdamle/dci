@@ -52,6 +52,8 @@ jobs:
         run: pnpm api:check
       - name: Bundle size budgets (min+gzip, see .size-limit.json)
         run: pnpm size
+      - name: API reference builds without warnings (TypeDoc)
+        run: pnpm docs:api --treatWarningsAsErrors
 
   e2e:
     runs-on: ubuntu-latest

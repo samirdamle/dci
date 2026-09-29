@@ -1222,6 +1222,13 @@ interface DciInstance {
  */
 declare function createDci(input: DciConfig): DciInstance;
 
+/**
+ * The DCI engine: annotations, the DCI tree, selection gestures, the highlight overlay,
+ * the chat UI and controller, transports and `createDci()`.
+ *
+ * @packageDocumentation
+ * @module @dci/core
+ */
 /** Package version. */
 declare const VERSION = "0.0.0";
 

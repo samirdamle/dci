@@ -43,7 +43,9 @@ import { createDci, type Transport } from '@dci/core';
 import type { DciContextNode } from '@dci/protocol';
 
 const describe = (nodes: DciContextNode[]) =>
-  nodes.map((n) => `- ${n.type ?? 'item'} ${n.label ?? n.id ?? ''}: ${JSON.stringify(n.data)}`).join('\n');
+  nodes
+    .map((n) => `- ${n.type ?? 'item'} ${n.label ?? n.id ?? ''}: ${JSON.stringify(n.data)}`)
+    .join('\n');
 
 const aiSdkTransport: Transport = {
   async *send(request, { signal }) {
@@ -76,7 +78,11 @@ import { streamText } from 'ai';
 
 export async function POST(req: Request) {
   const { prompt } = (await req.json()) as { prompt: string };
-  const result = streamText({ model: anthropic('claude-sonnet-5-5'), prompt, abortSignal: req.signal });
+  const result = streamText({
+    model: anthropic('claude-sonnet-5-5'),
+    prompt,
+    abortSignal: req.signal,
+  });
   return result.toTextStreamResponse();
 }
 ```
@@ -190,14 +196,14 @@ that decides per request.
 DCI doesn't care what answers the request. Whatever framework you use (the Anthropic SDK's tool
 use, the Claude Agent SDK, LangGraph, Mastra, your own loop), the mapping is the same:
 
-| Your agent                     | DCI stream                                   |
-| ------------------------------ | -------------------------------------------- |
-| Text tokens                    | `stream.text(delta)`                         |
-| A tool call starts / finishes  | `stream.toolStart(id, name, label)` / `stream.toolEnd(id, ok)` |
-| A change the page should show  | `stream.clientAction(name, args)`            |
-| A failure                      | `stream.error(message, code)` (or just throw) |
-| Conversation memory            | Keyed by `req.sessionId`                     |
-| The selection                  | `formatContextForPrompt(req.context)`, or the raw `req.context` |
+| Your agent                    | DCI stream                                                      |
+| ----------------------------- | --------------------------------------------------------------- |
+| Text tokens                   | `stream.text(delta)`                                            |
+| A tool call starts / finishes | `stream.toolStart(id, name, label)` / `stream.toolEnd(id, ok)`  |
+| A change the page should show | `stream.clientAction(name, args)`                               |
+| A failure                     | `stream.error(message, code)` (or just throw)                   |
+| Conversation memory           | Keyed by `req.sessionId`                                        |
+| The selection                 | `formatContextForPrompt(req.context)`, or the raw `req.context` |
 
 Most agent frameworks emit a stream of events. A small adapter turns them into DCI events:
 

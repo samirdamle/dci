@@ -19,7 +19,8 @@ const out = join(docs, '_samples');
 
 function markdownFiles(dir) {
   return readdirSync(dir).flatMap((name) => {
-    if (name.startsWith('.') || name.startsWith('_') || ['node_modules', 'api'].includes(name)) return [];
+    if (name.startsWith('.') || name.startsWith('_') || ['node_modules', 'api'].includes(name))
+      return [];
     const path = join(dir, name);
     if (statSync(path).isDirectory()) return markdownFiles(path);
     return name.endsWith('.md') ? [path] : [];

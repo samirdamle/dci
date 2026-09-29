@@ -6,18 +6,18 @@ lists every gesture and key and shows how to remap or turn each one off.
 
 ## Mouse
 
-| Gesture                               | What it does                                                                    |
-| ------------------------------------- | ------------------------------------------------------------------------------- |
-| Hold **Alt**                          | Hover preview: the DCI node under the pointer is outlined (dashed)              |
-| **Alt+Click**                         | Select that node, replacing the selection                                       |
-| **Alt+Shift+Click**                   | Toggle that node in or out of the selection                                     |
-| **Alt+Click** on empty space          | Clear the selection (inside DCI's `root` only)                                  |
-| **Alt+Wheel**                         | Move the hover target up (toward the root) or down the tree, then click         |
-| **Alt+Drag** left → right             | Window select: nodes fully inside the box                                       |
-| **Alt+Drag** right → left             | Window select: nodes the box touches                                            |
-| …with **Shift** / **Ctrl** or **Cmd** | Add to / subtract from the selection                                            |
-| **Esc** during a drag                 | Cancel it; the selection stays as it was                                        |
-| **Alt+Double-click**                  | Select every sibling with the same `type` (e.g. every invoice row); Shift adds  |
+| Gesture                               | What it does                                                                   |
+| ------------------------------------- | ------------------------------------------------------------------------------ |
+| Hold **Alt**                          | Hover preview: the DCI node under the pointer is outlined (dashed)             |
+| **Alt+Click**                         | Select that node, replacing the selection                                      |
+| **Alt+Shift+Click**                   | Toggle that node in or out of the selection                                    |
+| **Alt+Click** on empty space          | Clear the selection (inside DCI's `root` only)                                 |
+| **Alt+Wheel**                         | Move the hover target up (toward the root) or down the tree, then click        |
+| **Alt+Drag** left → right             | Window select: nodes fully inside the box                                      |
+| **Alt+Drag** right → left             | Window select: nodes the box touches                                           |
+| …with **Shift** / **Ctrl** or **Cmd** | Add to / subtract from the selection                                           |
+| **Esc** during a drag                 | Cancel it; the selection stays as it was                                       |
+| **Alt+Double-click**                  | Select every sibling with the same `type` (e.g. every invoice row); Shift adds |
 
 Notes:
 
@@ -35,14 +35,14 @@ Notes:
 
 These keys work **while something is selected** and focus isn't in a text field or a dialog:
 
-| Key               | What it does                                           |
-| ----------------- | ------------------------------------------------------ |
-| **↑**             | Select the parent node                                 |
-| **↓**             | Select the first child                                 |
-| **← / →**         | Previous / next sibling                                |
-| **Shift + arrow** | Extend the selection instead of moving it              |
+| Key               | What it does                                            |
+| ----------------- | ------------------------------------------------------- |
+| **↑**             | Select the parent node                                  |
+| **↓**             | Select the first child                                  |
+| **← / →**         | Previous / next sibling                                 |
+| **Shift + arrow** | Extend the selection instead of moving it               |
 | **Esc**           | Close the chat first; the next Esc clears the selection |
-| **Alt+Enter**     | Select the focused element's node (no mouse needed)    |
+| **Alt+Enter**     | Select the focused element's node (no mouse needed)     |
 
 - **Alt+arrows are left alone** because Alt+← is the browser's Back shortcut.
 - At the edge of the tree (no parent, no next sibling), the primary box gives a small shake instead
@@ -85,21 +85,21 @@ createDci({
 });
 ```
 
-| Binding                  | Default       | Controls                                             |
-| ------------------------ | ------------- | ---------------------------------------------------- |
-| `select`                 | `true`        | Mod+Click selects                                    |
-| `toggle`                 | `'Shift'`     | The extra key for Mod+<key>+Click toggle             |
-| `wheelTraverse`          | `true`        | Mod+Wheel moves up and down the tree                 |
-| `windowSelect`           | `true`        | Mod+Drag window select                               |
-| `selectSameType`         | `true`        | Mod+Double-click selects same-type siblings          |
-| `keyboard`               | see below     | `false` turns off all selection keys                 |
-| `keyboard.parent`        | `'ArrowUp'`   | Parent                                               |
-| `keyboard.child`         | `'ArrowDown'` | First child                                          |
-| `keyboard.prevSibling`   | `'ArrowLeft'` | Previous sibling                                     |
-| `keyboard.nextSibling`   | `'ArrowRight'`| Next sibling                                         |
-| `keyboard.extendModifier`| `'Shift'`     | Held with an arrow to extend                         |
-| `keyboard.clear`         | `'Escape'`    | Clear                                                |
-| `keyboard.selectFocused` | `'Alt+Enter'` | Select the focused element's node                    |
+| Binding                   | Default        | Controls                                    |
+| ------------------------- | -------------- | ------------------------------------------- |
+| `select`                  | `true`         | Mod+Click selects                           |
+| `toggle`                  | `'Shift'`      | The extra key for Mod+<key>+Click toggle    |
+| `wheelTraverse`           | `true`         | Mod+Wheel moves up and down the tree        |
+| `windowSelect`            | `true`         | Mod+Drag window select                      |
+| `selectSameType`          | `true`         | Mod+Double-click selects same-type siblings |
+| `keyboard`                | see below      | `false` turns off all selection keys        |
+| `keyboard.parent`         | `'ArrowUp'`    | Parent                                      |
+| `keyboard.child`          | `'ArrowDown'`  | First child                                 |
+| `keyboard.prevSibling`    | `'ArrowLeft'`  | Previous sibling                            |
+| `keyboard.nextSibling`    | `'ArrowRight'` | Next sibling                                |
+| `keyboard.extendModifier` | `'Shift'`      | Held with an arrow to extend                |
+| `keyboard.clear`          | `'Escape'`     | Clear                                       |
+| `keyboard.selectFocused`  | `'Alt+Enter'`  | Select the focused element's node           |
 
 Key combos are written like `'Alt+Enter'` or `'Shift+ArrowUp'`, using `KeyboardEvent.key` names.
 Bindings can be changed at runtime with `dci.update({ bindings })`; the selection is kept.

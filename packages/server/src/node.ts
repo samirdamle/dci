@@ -1,3 +1,10 @@
+/**
+ * Adapters for Node's `http` module, Express and Connect.
+ *
+ * @packageDocumentation
+ * @module @dci/server/node
+ */
+
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { Readable } from 'node:stream';
 import type { WebHandler } from './handler';

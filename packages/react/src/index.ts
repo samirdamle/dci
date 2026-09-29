@@ -1,3 +1,10 @@
+/**
+ * React bindings for DCI: `DciProvider`, hooks and the `dci()` annotation helper.
+ *
+ * @packageDocumentation
+ * @module @dci/react
+ */
+
 import { dciAttr, type DciAttrValue } from '@dci/core';
 
 /** Package version. */

@@ -9,24 +9,28 @@ how to design your annotations, and exactly what gets sent.
 **Short form:** the value is the node's `id`.
 
 ```html
-<tr data-dci="inv_123">…</tr>
+<tr data-dci="inv_123">
+  …
+</tr>
 ```
 
 **JSON form:** an object with reserved keys and any data you like.
 
 ```html
-<tr data-dci='{"id":"inv_123","type":"invoice","label":"Invoice #123","amount":420,"status":"overdue"}'>
+<tr
+  data-dci='{"id":"inv_123","type":"invoice","label":"Invoice #123","amount":420,"status":"overdue"}'
+>
   …
 </tr>
 ```
 
-| Key       | Meaning                                                                                  |
-| --------- | ---------------------------------------------------------------------------------------- |
-| `id`      | A stable identifier your backend can look up. Numbers are turned into strings.           |
-| `type`    | The kind of node. Powers "select all of this type" and per-type suggested actions.       |
-| `label`   | The human-readable name shown on chips and breadcrumbs, and read out by screen readers.  |
-| `private` | `true` means the node can't be selected and its data is never sent (see below).          |
-| _other_   | Free-form data. It's sent to your backend as `data`, untouched.                          |
+| Key       | Meaning                                                                                 |
+| --------- | --------------------------------------------------------------------------------------- |
+| `id`      | A stable identifier your backend can look up. Numbers are turned into strings.          |
+| `type`    | The kind of node. Powers "select all of this type" and per-type suggested actions.      |
+| `label`   | The human-readable name shown on chips and breadcrumbs, and read out by screen readers. |
+| `private` | `true` means the node can't be selected and its data is never sent (see below).         |
+| _other_   | Free-form data. It's sent to your backend as `data`, untouched.                         |
 
 **Parse rules:**
 
@@ -161,7 +165,7 @@ Each selected node becomes a `DciContextNode`:
   (`includeAncestors: true`). Ancestors are compact (`id`, `type`, `label`); set
   `ancestorData: 'full'` to include their data too.
 - Only the context added since the last message is sent with each turn (`chat.contextMode:
-  'turn'`, the default). Use `'cumulative'` to resend everything selected so far.
+'turn'`, the default). Use `'cumulative'` to resend everything selected so far.
 
 The full request (prompt, session, page URL and title) is described in the
 [protocol spec](protocol.md). To see exactly what your app would send, call
