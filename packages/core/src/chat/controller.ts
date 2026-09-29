@@ -95,7 +95,8 @@ export function createChatController(options: ChatControllerOptions): ChatContro
   const session = options.session ?? createSession();
   const contextOptions = options.contextOptions ?? {};
   const attribute = contextOptions.attribute ?? DEFAULT_ATTRIBUTE;
-  const mode = options.contextMode ?? 'turn';
+  // Read per send, so a live config (e.g. `createDci().update()`) applies.
+  const mode = () => options.contextMode ?? 'turn';
 
   let state: ChatState = INITIAL;
   const listeners = new Set<(s: ChatState) => void>();
@@ -171,7 +172,7 @@ export function createChatController(options: ChatControllerOptions): ChatContro
 
   function nextContext(): DciContextNode[] {
     const fresh = toNodes(pendingEls).map((p) => p.node);
-    if (mode === 'turn') return fresh;
+    if (mode() === 'turn') return fresh;
     const byKey = new Map(sentContext.map((n) => [nodeKey(n), n]));
     for (const n of fresh) byKey.set(nodeKey(n), n);
     return [...byKey.values()];
@@ -327,7 +328,7 @@ export function createChatController(options: ChatControllerOptions): ChatContro
       ...(sendOptions.action !== undefined ? { action: sendOptions.action } : {}),
       tools: [],
     };
-    sentContext = mode === 'cumulative' ? request.context : sentContext;
+    sentContext = mode() === 'cumulative' ? request.context : sentContext;
     pendingEls = [];
     set({
       messages: [...state.messages, user],

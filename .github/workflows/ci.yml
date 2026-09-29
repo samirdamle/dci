@@ -48,6 +48,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
       - run: pnpm build
+      - name: Public API report is up to date
+        run: pnpm api:check
       - name: Bundle size check (placeholder)
         # Filled in by the M8 release task (e.g. size-limit against packages/*/dist).
         run: echo "Bundle-size check not configured yet"

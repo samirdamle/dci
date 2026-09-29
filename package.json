@@ -8,6 +8,8 @@
   },
   "scripts": {
     "build": "pnpm -r --filter \"./packages/**\" --filter \"./apps/**\" build",
+    "api:report": "node scripts/api-report.mjs",
+    "api:check": "node scripts/api-report.mjs --check",
     "dev": "pnpm --filter @dci/demo dev",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json && pnpm -r typecheck",

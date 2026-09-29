@@ -10,8 +10,8 @@ exactly those things as context for an AI conversation, instead of describing th
 > context extraction, the selection store, every selection gesture, the highlight overlay, the
 > backend protocol with its client transport and server helpers, and the chat UI. Try the whole loop
 > (select, ask, watch the streamed answer) in the [live demo](https://samirdamle.github.io/dci/),
-> which uses a mock backend. The one-call `createDci()` API and React bindings are next; see
-> [Roadmap](#roadmap). Packages are not on npm yet.
+> which uses a mock backend. The one-call `createDci()` setup is available; React bindings are
+> next (see [Roadmap](#roadmap)). Packages are not on npm yet.
 
 ---
 
@@ -287,7 +287,10 @@ anything sensitive `private`.
 
 ### Step 2: turn on interactions (available now)
 
-`@dci/core` exposes the pieces built so far. `createInteractions` wires the modifier, gestures,
+> **Most apps only need [`createDci()`](#step-5-all-of-it-in-one-call-available-now)**, which wires
+> everything below in one call. Steps 2–4 show the building blocks, for custom setups.
+
+`@dci/core` exposes each piece on its own. `createInteractions` wires the modifier, gestures,
 DCI tree, selection store and highlight overlay together:
 
 ```ts
@@ -431,9 +434,10 @@ The chat is accessible: a non-modal `dialog` (popover) or `complementary` landma
 keys move between actions), visible focus, focus returned on close, and reduced motion respected.
 The demo is checked with axe-core in both modes.
 
-### Step 5: one call (planned, M6)
+### Step 5: all of it in one call (available now)
 
-`createDci()` will bundle all of the above into one call:
+`createDci()` wires the selection, gestures, overlay, chat, transport, session and client actions
+together. Only `endpoint` (or your own `transport`) is required:
 
 ```ts
 import { createDci } from '@dci/core';
@@ -441,31 +445,60 @@ import { createDci } from '@dci/core';
 const dci = createDci({
   endpoint: '/api/dci',
   headers: () => ({ Authorization: `Bearer ${token}` }),
-  chat: { mode: 'popover' }, // or 'panel'
+  chat: { mode: 'popover' }, // or 'panel'; `ui: false` for headless
   actions: {
     invoice: [{ id: 'remind', label: 'Draft reminder', prompt: 'Draft a payment reminder' }],
     '*': [{ id: 'summarize', label: 'Summarize' }],
   },
-  beforeSend: (ctx) => ctx, // redact or enrich
+  beforeSend: (request) => request, // redact or enrich; return false to cancel
 });
 
-dci.onAction('updateInvoice', ({ id, patch }) => store.update(id, patch));
+dci.onAction('updateInvoice', ({ id, patch }) => store.update(id, patch)); // backend write-back
+dci.on('selectionchange', ({ nodes }) => console.log(nodes));
 ```
 
-```tsx
-import { DciProvider, useDci } from '@dci/react';
+| Instance API                  | What it does                                                                                                     |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `dci.selection`               | `get()` (payloads), `elements()`, `set/add/remove/toggle(elOrId)`, `clear()`, `selectSameType()`                 |
+| `dci.chat`                    | `open()`, `close()`, `send(prompt?, { action })`, `stop()`, `retry()`, `state()`, `subscribe()`                  |
+| `dci.session`                 | `id`, `reset()` (start a new conversation)                                                                       |
+| `dci.onAction(name, fn)`      | Handle a `client-action` from the backend; returns an unsubscribe function                                       |
+| `dci.on(event, fn)`           | `selectionchange`, `selectionlimit`, `hover`, `chatopen`, `chatclose`, `message`, `actionerror`, `sessionchange` |
+| `dci.update(patch)`           | Change options at runtime (mode, modifier, theme, endpoint, …)                                                   |
+| `dci.disable()` / `enable()`  | Detach and reattach gestures and the chat (state is kept)                                                        |
+| `dci.previewRequest(prompt?)` | The exact request the next send would make                                                                       |
+| `dci.destroy()`               | Remove every listener and all DCI UI                                                                             |
 
-<DciProvider config={config}>
-  <App />
-</DciProvider>;
+Good to know:
 
-const { selection, open, send } = useDci();
-```
+- **Defaults** live in one exported `DEFAULTS` object. Options merge deeply for plain objects (so
+  `update({ chat: { mode: 'panel' } })` keeps the other chat options); arrays and functions replace.
+- **`update()` is surgical.** A mode switch happens in place. Modifier, bindings, overlay and theme
+  rebuild the gestures only, and the selection is kept. Endpoint, headers, `beforeSend` and the
+  chat's `contextMode`/`concurrency` apply to the next request with nothing rebuilt. Changing
+  `root`, `attribute` or selection limits rebuilds the rest too; the selection carries over, but
+  the on-screen chat history starts fresh (the backend session is kept).
+- **Helpful errors in development:** invalid values throw with a fix-it message (e.g. "`modifier`
+  must be one of …") and typos warn ("Unknown option `modifer`. Did you mean `modifier`?").
+  Validation is skipped in production builds.
+- **SSR-safe:** importing has no side effects; call `createDci()` on the client (e.g. in
+  `useEffect`).
+- **Several instances** can share a page, each with its own `root`.
+- **`dciAttr({ id, type, label, ...data })`** builds the `data-dci` attribute with sorted keys, so
+  you never hand-write JSON.
 
-### Configuration available today
+React bindings (`<DciProvider>`, `useDci()`, `useSelection()`, `useChat()`, `useDciAction()`) are
+next, in M6.
+
+### Configuration
+
+Options for `createDci()` (and, where they apply, for `createInteractions()`):
 
 | Option              | Default         | Description                                                    |
 | ------------------- | --------------- | -------------------------------------------------------------- |
+| `endpoint`          | —               | Backend URL (or pass your own `transport`)                     |
+| `headers`           | —               | Request headers, or a function called on every request         |
+| `transport`         | SSE over fetch  | Custom transport (WebSocket, AI SDK adapter, mock)             |
 | `attribute`         | `data-dci`      | Attribute that marks DCI nodes                                 |
 | `root`              | `document.body` | Only nodes inside this element count                           |
 | `modifier`          | `'Alt'`         | Key that arms DCI                                              |
@@ -478,8 +511,15 @@ const { selection, open, send } = useDci();
 | `windowSelectLevel` | `'leaf'`        | Drag selects innermost (`'leaf'`) or outermost (`'top'`) nodes |
 | `clearOnEmptyClick` | `true`          | Alt+Click on empty space clears the selection                  |
 | `passthroughClicks` | `false`         | Let DCI clicks also reach your app's handlers                  |
-| `onEscape`          | —               | Runs before Esc clears (e.g. close your chat first)            |
+| `onEscape`          | —               | `createInteractions` only: runs before Esc clears              |
 | `overlay`           | `{}`            | Highlight overlay options (below), or `false` to turn it off   |
+| `theme`             | `'auto'`        | `'light'`, `'dark'` or `'auto'` (follows the OS)               |
+| `container`         | `document.body` | Where the `<dci-root>` UI host is appended                     |
+| `chat`              | see Step 4      | Chat UI and controller options; `ui: false` for headless       |
+| `actions`           | —               | Suggested actions per `type`                                   |
+| `builtinActions`    | `true`          | Built-in client actions: `true`, `false` or a list             |
+| `beforeSend`        | —               | Redact or enrich each request; return `false` to cancel        |
+| `session`           | per page load   | Conversation id handling (`scope`, `id`)                       |
 
 **Overlay options:** `mode: 'boxes' | 'outline'` (default `'boxes'`; `'outline'` is a lightweight
 mode that styles targets inline, can be clipped by `overflow: hidden` and has no labels),
@@ -524,17 +564,17 @@ Animations respect `prefers-reduced-motion`.
 
 ## Roadmap
 
-| Milestone | Scope                                                               | Status  |
-| --------- | ------------------------------------------------------------------- | ------- |
-| M0        | Monorepo, tooling, CI, test harness                                 | Done    |
-| M1        | `data-dci` parsing, DCI tree, context extraction, selection store   | Done    |
-| M2        | Modifier, Alt+Click, Alt+Wheel, window select, same-type, keyboard  | Done    |
-| M3        | Overlay: Shadow DOM highlight layer, labels, marquee                | Done    |
-| M4        | `@dci/protocol`, SSE transport, client actions, `@dci/server`       | Done    |
-| M5        | Chat UI: popover/panel, chips, breadcrumb, suggested actions        | Done    |
-| M6        | `createDci()` public API and React bindings                         | Next    |
-| M7        | Demo: a mock CRM with a Claude-powered agent and a no-key mock mode | Planned |
-| M8        | Cross-browser e2e, performance, docs, npm release                   | Planned |
+| Milestone | Scope                                                               | Status      |
+| --------- | ------------------------------------------------------------------- | ----------- |
+| M0        | Monorepo, tooling, CI, test harness                                 | Done        |
+| M1        | `data-dci` parsing, DCI tree, context extraction, selection store   | Done        |
+| M2        | Modifier, Alt+Click, Alt+Wheel, window select, same-type, keyboard  | Done        |
+| M3        | Overlay: Shadow DOM highlight layer, labels, marquee                | Done        |
+| M4        | `@dci/protocol`, SSE transport, client actions, `@dci/server`       | Done        |
+| M5        | Chat UI: popover/panel, chips, breadcrumb, suggested actions        | Done        |
+| M6        | `createDci()` public API and React bindings                         | In progress |
+| M7        | Demo: a mock CRM with a Claude-powered agent and a no-key mock mode | Planned     |
+| M8        | Cross-browser e2e, performance, docs, npm release                   | Planned     |
 
 After v1: a browser extension that brings DCI to any website, Vue/Svelte bindings, touch support,
 and selecting by query ("all overdue invoices"). The full specification is in [SPEC.md](SPEC.md).

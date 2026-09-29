@@ -16,6 +16,9 @@ function withinRoot(el: Element, root: Element): boolean {
   return false;
 }
 
+const inRoot = (ctx: GestureContext, el: Element | null) =>
+  !!el && withinRoot(el, ctx.options.root ?? document.body);
+
 /**
  * The DCI node for a pointer target: the nearest annotated node, or with
  * `fallback` on, the raw element itself (when inside the root).
@@ -79,7 +82,9 @@ export const clickGesture: Gesture = (ctx) =>
     }
     if (!bindings.select) return;
     if (node) selection.set([node]);
-    else if (options.clearOnEmptyClick ?? true) selection.clear();
+    // Only empty space inside our root clears: outside it belongs to the page
+    // (or to another DCI instance with its own root).
+    else if ((options.clearOnEmptyClick ?? true) && inRoot(ctx, eventTarget(e))) selection.clear();
     else return;
     return result;
   });
