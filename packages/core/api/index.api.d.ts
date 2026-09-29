@@ -560,7 +560,8 @@ declare const announceGesture: Gesture;
  * Keyboard navigation while a selection exists (and focus is not in an
  * editable field): arrows move the primary node through the DCI tree,
  * Shift+arrow extends, Esc clears. `Alt+Enter` selects the focused
- * element's node without a pointer. Keys are only consumed when handled.
+ * element's node without a pointer. Keys are only consumed when handled,
+ * and never while focus is inside a dialog (the host app's Esc must work).
  */
 declare const keyboardGesture: Gesture;
 

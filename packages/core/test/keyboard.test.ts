@@ -95,6 +95,21 @@ describe('keyboard navigation', () => {
     expect(ids(dci.selection.get())).toEqual(['a']);
   });
 
+  it('leaves keys to a host dialog that has focus', () => {
+    const { f, dci } = setup();
+    dci.selection.set([f.get('#a')]);
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    dialog.innerHTML = '<button id="dialog-btn">OK</button>';
+    document.body.appendChild(dialog);
+    const button = dialog.querySelector<HTMLButtonElement>('button')!;
+    button.focus();
+    expect(fakeKey('Escape', { target: button }).defaultPrevented).toBe(false);
+    expect(fakeKey('ArrowRight', { target: button }).defaultPrevented).toBe(false);
+    expect(ids(dci.selection.get())).toEqual(['a']);
+    dialog.remove();
+  });
+
   it('scrolls the new primary node into view', () => {
     const { f, dci } = setup();
     const scroll = vi.fn();

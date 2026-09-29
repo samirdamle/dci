@@ -1,4 +1,4 @@
-import { Moon, Search, Sun } from 'lucide-react';
+import { CircleHelp, Moon, Search, SlidersHorizontal, Sun } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Badge } from '@/components/ui/badge';
@@ -15,11 +15,13 @@ import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useBackend } from '@/lib/backend';
 import { useTheme } from '@/lib/theme-context';
+import { usePlayground } from '@/playground/settings-context';
 import { APPS } from './nav';
 
 /** Global search (navigation only), org and mode badges, and the theme toggle. */
 export function TopBar() {
   const backend = useBackend();
+  const playground = usePlayground();
   const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -70,6 +72,23 @@ export function TopBar() {
             {backend.mode === 'claude' ? 'Claude mode' : 'Mock mode'}
           </Badge>
         )}
+        <Button
+          variant={playground.drawerOpen ? 'secondary' : 'outline'}
+          size="sm"
+          aria-pressed={playground.drawerOpen}
+          onClick={() => playground.setDrawerOpen(!playground.drawerOpen)}
+        >
+          <SlidersHorizontal className="size-4" />
+          Playground
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Gestures and keys"
+          onClick={() => playground.setCheatSheetOpen(true)}
+        >
+          <CircleHelp className="size-4" />
+        </Button>
         <Button
           variant="ghost"
           size="icon"
