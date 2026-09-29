@@ -1,11 +1,11 @@
-import type { DciEvent, DciRequest } from '@dci/protocol';
+import type { DciRequest } from '@dci/protocol';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createActionRegistry } from '../src/actions';
 import { createChatController, type ChatControllerOptions } from '../src/chat/controller';
 import { resolveActions, type ActionsConfig } from '../src/chat/suggested-actions';
 import { createSelectionStore } from '../src/selection';
 import { createSession } from '../src/session';
-import type { Transport } from '../src/transport';
+import { fakeTransport, reply, tick } from './chat-utils';
 import { mountFixture } from './test-utils';
 
 const FIXTURE = `
@@ -16,32 +16,6 @@ const FIXTURE = `
       <div id="inner" data-dci='{"id":"note","type":"note"}'></div>
     </div>
   </section>`;
-
-/** A transport that replays scripted events; `gate` pauses before the rest. */
-function fakeTransport(script: (req: DciRequest) => DciEvent[], gate?: Promise<void>) {
-  const requests: DciRequest[] = [];
-  const transport: Transport = {
-    async *send(req, { signal }) {
-      requests.push(req);
-      const events = script(req);
-      for (const [i, e] of events.entries()) {
-        if (i === 1 && gate)
-          await Promise.race([gate, new Promise((r) => signal.addEventListener('abort', r))]);
-        if (signal.aborted) return;
-        yield e;
-      }
-    },
-  };
-  return { transport, requests };
-}
-
-const reply = (text: string): DciEvent[] => [
-  { type: 'text-delta', text: text.slice(0, 2) },
-  { type: 'text-delta', text: text.slice(2) },
-  { type: 'done' },
-];
-
-const tick = () => new Promise((r) => setTimeout(r, 0));
 
 let destroy: (() => void) | undefined;
 afterEach(() => {

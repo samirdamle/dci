@@ -115,6 +115,9 @@
     @apply border-border outline-ring/50;
   }
   body {
+    /* Room for the docked DCI chat panel (set by `pushContent`). */
+    padding-right: var(--dci-chat-inset, 0);
+    transition: padding-right 0.15s;
     @apply bg-background text-foreground;
   }
 }

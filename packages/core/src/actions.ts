@@ -5,7 +5,7 @@ import type { SelectionStore } from './selection';
 
 export interface ActionContext {
   selection: SelectionStore;
-  overlay: Overlay | null;
+  overlay: Pick<Overlay, 'flash'> | null;
   /** Elements whose `data-dci` id is `id` (short or JSON form), under the root. */
   resolve(id: string): Element[];
 }
@@ -23,7 +23,8 @@ export interface ActionError {
 
 export interface ActionRegistryOptions {
   selection: SelectionStore;
-  overlay?: Overlay | null;
+  /** Anything that can pulse an element, e.g. the overlay. */
+  overlay?: Pick<Overlay, 'flash'> | null;
   /** Where ids are looked up. Default `document.body`. */
   root?: Element;
   attribute?: string;

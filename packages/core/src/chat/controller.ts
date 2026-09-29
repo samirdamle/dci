@@ -60,6 +60,8 @@ export interface ChatController {
   retry(): Promise<boolean>;
   /** Drop one context item (and deselect its element). */
   removeContext(node: DciContextNode): void;
+  /** The page element behind a pending context item, or `null`. */
+  elementFor(node: DciContextNode): Element | null;
   /** Answer a pending `confirmBeforeSend` prompt. */
   confirm(accept: boolean, options?: { dontAskAgain?: boolean }): void;
   /** The exact request `send` would make next, after `beforeSend` (or `false`). */
@@ -375,6 +377,8 @@ export function createChatController(options: ChatControllerOptions): ChatContro
       selection.remove(match.el);
       refreshPending();
     },
+    elementFor: (node) =>
+      toNodes(pendingEls).find((p) => nodeKey(p.node) === nodeKey(node))?.el ?? null,
     confirm(accept, { dontAskAgain = false } = {}) {
       if (accept && dontAskAgain) skipConfirm = true;
       resolveConfirm?.(accept);

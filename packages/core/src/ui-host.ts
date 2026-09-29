@@ -46,6 +46,10 @@ export const BASE_CSS = `
   --dci-border: #e2e8f0;
   --dci-radius: 6px;
   --dci-shadow: 0 4px 16px rgb(15 23 42 / 0.12);
+  --dci-on-accent: #ffffff;
+  --dci-surface: #f1f5f9;
+  --dci-danger: #b91c1c;
+  --dci-success: #15803d;
 }
 :host([data-theme='dark']) {
   --dci-accent: #60a5fa;
@@ -57,6 +61,10 @@ export const BASE_CSS = `
   --dci-muted: #94a3b8;
   --dci-border: #334155;
   --dci-shadow: 0 4px 16px rgb(0 0 0 / 0.5);
+  --dci-on-accent: #0f172a;
+  --dci-surface: #1e293b;
+  --dci-danger: #fca5a5;
+  --dci-success: #86efac;
 }
 @media (prefers-color-scheme: dark) {
   :host([data-theme='auto']) {
@@ -69,6 +77,10 @@ export const BASE_CSS = `
     --dci-muted: #94a3b8;
     --dci-border: #334155;
     --dci-shadow: 0 4px 16px rgb(0 0 0 / 0.5);
+  --dci-on-accent: #0f172a;
+  --dci-surface: #1e293b;
+  --dci-danger: #fca5a5;
+  --dci-success: #86efac;
   }
 }
 *, *::before, *::after { box-sizing: border-box; }
