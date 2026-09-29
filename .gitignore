@@ -146,3 +146,5 @@ vite.config.ts.timestamp-*
 playwright-report/
 test-results/
 blob-report/
+docs/_samples
+docs/api
