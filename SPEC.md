@@ -19,6 +19,8 @@ AI chats make users *describe* what they want to talk about ("the third row in t
 | `@dci/server` | Small Node helpers for the endpoint protocol (parse the request, stream events). |
 | `apps/demo` | Demo app with a Node/TS backend that uses Claude. |
 
+**npm scope:** the packages are published as `@dci/*`. As of this writing the `@dci` scope exists on npm with no public packages; if it isn't owned by this project's maintainer, the fallback is `@dci-ai/*` (available). The decision is recorded here once made.
+
 **Out of scope for v1 (default):** browser extension, Vue/Svelte bindings, MCP exposure, voice input, touch support, benchmark suite. See §11.
 
 ## 3. Annotating elements: `data-dci`

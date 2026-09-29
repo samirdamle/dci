@@ -1,0 +1,46 @@
+name: Release
+
+# On main: open (or update) a "Version packages" PR from pending changesets;
+# merging it publishes to npm with provenance and creates GitHub releases.
+# On next: the same, as prereleases under the `next` dist-tag (the branch is
+# in changesets pre mode: `pnpm changeset pre enter next`).
+on:
+  push:
+    branches: [main, next]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write # version commits, tags and GitHub releases
+  pull-requests: write # the "Version packages" PR
+  id-token: write # npm provenance (and trusted publishing)
+
+jobs:
+  release:
+    if: github.repository == 'samirdamle/dci'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      # Provenance and trusted publishing need a recent npm.
+      - run: npm install -g npm@latest
+      - run: pnpm build
+      - name: Check the packages (publint, attw)
+        run: pnpm check:packages
+      - uses: changesets/action@v1
+        with:
+          version: pnpm version-packages
+          publish: pnpm release
+          title: Version packages
+          commit: Version packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Either set this secret, or configure npm trusted publishing for this
+          # workflow on npmjs.com and leave it unset.
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'

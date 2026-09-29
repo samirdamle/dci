@@ -70,6 +70,10 @@ single-page playground.
 | `pnpm size`                         | Bundle-size budgets (`.size-limit.json`, after `pnpm build`) |
 | `pnpm api:report` / `api:check`     | Write / verify the public API reports (`packages/*/api`)     |
 | `pnpm docs:api`                     | Generate the API reference with TypeDoc (`docs/api/`)        |
+| `pnpm docs:gif`                     | Re-record the README's demo GIF (`docs/assets/demo.gif`)     |
+| `pnpm changeset`                    | Describe a change to a published package (see below)         |
+| `pnpm check:packages`               | Pack every package and check it with publint and attw        |
+| `pnpm smoke`                        | Install the packed tarballs in Node, Vite and Next.js apps   |
 
 ## Testing
 
@@ -93,8 +97,8 @@ single-page playground.
 - **Public API changes are reviewed.** `pnpm api:check` fails when an export or its doc comment
   changes; run `pnpm build && pnpm api:report` and commit the updated report with your change.
 - **Every exported symbol has a TSDoc comment.** The API reference is generated from them.
-- **Docs samples compile.** Every ` ```ts ` / ` ```tsx ` block in `README.md`, `CONTRIBUTING.md` and
-  `docs/` is extracted and type-checked by `pnpm typecheck`. Mark a deliberate fragment
+- **Docs samples compile.** Every ` ```ts ` / ` ```tsx ` block in `README.md`, `CONTRIBUTING.md`, the
+  package READMEs and `docs/` is extracted and type-checked by `pnpm typecheck`. Mark a deliberate fragment
   ` ```ts nocheck `. Placeholders like `token` and `invoices` are declared in
   `docs/samples-env.d.ts`.
 - **Size budgets** in `.size-limit.json` are enforced in CI. If a change needs more room, raise
@@ -108,11 +112,35 @@ single-page playground.
 1. Branch from `main`, keep the change focused, and add tests.
 2. Run `pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm api:check && pnpm size`
    and `pnpm e2e` before pushing.
-3. Describe what changed and why; link the issue (`Closes #123`).
+3. If a published package changed, add a changeset: `pnpm changeset`, pick the bump, and write
+   the entry for users.
+4. Describe what changed and why; link the issue (`Closes #123`).
 
-CI runs lint, format, typecheck (with doc samples), unit tests, build, API report, size budgets
-and e2e on every PR. A nightly workflow runs the performance budgets and the full e2e suite in
+CI runs lint, format, typecheck (with doc samples), unit tests, build, API report, size budgets,
+package checks (publint, attw and an install smoke test) and e2e on every PR. A nightly workflow runs the performance budgets and the full e2e suite in
 Chromium, Firefox and WebKit on Linux, macOS and Windows.
+
+## Releasing
+
+Releases are automated with [Changesets](https://github.com/changesets/changesets). The four
+public packages share one version (a `fixed` group).
+
+1. PRs that change a package include a changeset (`.changeset/*.md`).
+2. On `main`, the **Release** workflow keeps a "Version packages" PR open. It bumps the versions,
+   writes the changelogs and syncs each package's `VERSION` constant
+   (`scripts/sync-versions.mjs`).
+3. Merging that PR publishes to npm with provenance, tags the release and creates GitHub
+   releases.
+
+Prereleases come from the `next` branch in pre mode (`pnpm changeset pre enter next`), published
+under the `next` dist-tag. Before a release, `pnpm build && pnpm check:packages && pnpm smoke`
+checks exactly what will be published. `pnpm -r --filter "./packages/**" publish --dry-run
+--no-git-checks` shows the publish without doing it.
+
+**One-time setup (maintainers):** add an `NPM_TOKEN` repository secret (an npm automation token
+with publish rights to the scope), or configure npm trusted publishing for
+`.github/workflows/release.yml`. Also allow GitHub Actions to create pull requests (Settings →
+Actions → General → Workflow permissions).
 
 ## Reporting security issues
 

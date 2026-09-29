@@ -55,6 +55,24 @@ jobs:
       - name: API reference builds without warnings (TypeDoc)
         run: pnpm docs:api --treatWarningsAsErrors
 
+  packages:
+    name: packages (publint, attw, install smoke test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # `changeset status` compares with main
+      - uses: ./.github/actions/setup
+      - run: pnpm build
+      - name: Pack and check with publint and attw
+        run: pnpm check:packages
+      - name: Install the tarballs in Node ESM/CJS, React SSR, Vite and Next.js projects
+        run: pnpm smoke
+      - name: VERSION constants match package.json
+        run: node scripts/sync-versions.mjs --check
+      - name: Pending changesets are valid
+        run: pnpm exec changeset status
+
   e2e:
     runs-on: ubuntu-latest
     steps:
