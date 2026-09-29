@@ -162,6 +162,8 @@ export function createDci(input: DciConfig): DciInstance {
   const offHover = bus.on('hover', (e) => events.emit('hover', e));
   const session = createSession(config.session);
   const offSession = session.onChange((c) => events.emit('sessionchange', c));
+  /** Chat subscribers live here, so they survive a controller rebuild. */
+  const chatListeners = new Set<(state: ChatState) => void>();
   const handlers: Array<{ name: string; handler: ActionHandler; off?: () => void }> = [];
 
   let enabled = true;
@@ -285,6 +287,7 @@ export function createDci(input: DciConfig): DciInstance {
     let wasOpen = controller.getState().open;
     cleanups.controller = [
       controller.subscribe((state) => {
+        for (const fn of [...chatListeners]) fn(state);
         if (state.open !== wasOpen) {
           wasOpen = state.open;
           events.emit(state.open ? 'chatopen' : 'chatclose', undefined);
@@ -388,6 +391,8 @@ export function createDci(input: DciConfig): DciInstance {
       buildRegistry();
       buildController();
       buildInteractions();
+      const fresh = controller.getState();
+      for (const fn of [...chatListeners]) fn(fresh);
       return;
     }
     if (changed(['builtinActions'])) buildRegistry();
@@ -442,7 +447,10 @@ export function createDci(input: DciConfig): DciInstance {
     stop: () => controller.stop(),
     retry: () => controller.retry(),
     state: () => controller.getState(),
-    subscribe: (fn) => controller.subscribe(fn),
+    subscribe(fn) {
+      chatListeners.add(fn);
+      return () => chatListeners.delete(fn);
+    },
     get controller() {
       return controller;
     },
@@ -492,6 +500,7 @@ export function createDci(input: DciConfig): DciInstance {
       offSession();
       bus.clear();
       events.clear();
+      chatListeners.clear();
     },
   };
 }

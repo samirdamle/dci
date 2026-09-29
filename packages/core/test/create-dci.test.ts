@@ -217,6 +217,17 @@ describe('update', () => {
     dci.update({ maxSelection: 1 });
     expect(dci.selection.get().map((n) => n.id)).toEqual(['inv_1']);
   });
+
+  it('keeps chat subscribers across a rebuild', async () => {
+    const { dci } = setup();
+    const seen: number[] = [];
+    dci.chat.subscribe((s) => seen.push(s.messages.length));
+    await dci.chat.send('one');
+    dci.update({ maxSelection: 3 });
+    expect(seen[seen.length - 1]).toBe(0);
+    await dci.chat.send('two');
+    expect(seen[seen.length - 1]).toBe(2);
+  });
 });
 
 describe('lifecycle', () => {
