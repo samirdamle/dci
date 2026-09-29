@@ -64,7 +64,14 @@ export function AppSidebar() {
           <SidebarMenu>
             {app.items.map((item) => (
               <SidebarMenuItem key={item.to}>
-                <SidebarMenuButton asChild isActive={pathname === item.to} tooltip={item.label}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={
+                    pathname === item.to ||
+                    (item.to.split('/').length > 2 && pathname.startsWith(`${item.to}/`))
+                  }
+                  tooltip={item.label}
+                >
                   <NavLink to={item.to}>
                     <item.icon />
                     <span>{item.label}</span>

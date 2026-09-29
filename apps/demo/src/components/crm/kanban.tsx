@@ -29,7 +29,14 @@ export function KanbanBoard<T extends { Id: string }>({
   renderCard,
 }: KanbanBoardProps<T>) {
   return (
-    <div className="flex gap-3 overflow-x-auto pb-2" {...dci({ id, type: 'board', label })}>
+    <div
+      className="flex gap-3 overflow-x-auto pb-2"
+      // Scrollable, so keyboard users need to be able to focus it.
+      tabIndex={0}
+      role="region"
+      aria-label={label}
+      {...dci({ id, type: 'board', label })}
+    >
       {columns.map((col) => (
         <KanbanColumn
           key={col.id}

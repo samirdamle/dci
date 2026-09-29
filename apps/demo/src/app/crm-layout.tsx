@@ -2,6 +2,7 @@ import { DciProvider } from '@dci/react';
 import { useMemo, useRef } from 'react';
 import { Outlet } from 'react-router';
 import { useTheme } from '@/lib/theme-context';
+import { CrmClientActions } from './client-actions';
 import { DCI_CONFIG } from './dci-config';
 
 /**
@@ -14,7 +15,8 @@ export function CrmLayout() {
   const config = useMemo(() => ({ ...DCI_CONFIG, theme }), [theme]);
   return (
     <DciProvider config={config} root={main}>
-      <div ref={main} className="flex-1 p-6">
+      <CrmClientActions />
+      <div ref={main} className="min-w-0 flex-1 p-6">
         <Outlet />
       </div>
     </DciProvider>
