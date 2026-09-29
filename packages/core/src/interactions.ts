@@ -7,10 +7,13 @@ import type { ModifierKey } from './keys';
 import { clickGesture, hoverGesture } from './pointer';
 import { keyboardGesture } from './keyboard';
 import { marqueeGesture } from './marquee';
+import type { LabelMode, OverlayMode } from './overlay';
+import { overlayGesture } from './overlay-gesture';
 import { sameTypeGesture, selectSameType, type SelectSameTypeOptions } from './same-type';
 import { wheelGesture } from './wheel';
 import { createSelectionStore, type SelectionOptions, type SelectionStore } from './selection';
 import { createDciTree, type DciTree } from './tree';
+import type { Theme } from './ui-host';
 
 export interface Rect {
   left: number;
@@ -35,7 +38,20 @@ export interface InteractionEvents {
   announce: string;
 }
 
+export interface OverlayConfig {
+  /** `'boxes'` (default) or the lightweight `'outline'` mode. */
+  mode?: OverlayMode;
+  /** Which boxes get a name tag. Default `'hover'` (hover and primary). */
+  labels?: LabelMode;
+  /** Default `'auto'` (follows `prefers-color-scheme`). */
+  theme?: Theme;
+  /** Where the `<dci-root>` UI host is appended. Default `document.body`. */
+  container?: Element;
+}
+
 export interface InteractionOptions extends SelectionOptions {
+  /** Built-in highlight overlay; `false` to render your own from the bus events. */
+  overlay?: OverlayConfig | false;
   /** Key that arms DCI. Default `'Alt'`. */
   modifier?: ModifierKey;
   bindings?: BindingsConfig;
@@ -73,7 +89,7 @@ export interface Interactions extends GestureContext {
   destroy(): void;
 }
 
-/** Built-in gestures, filled in as each M2 task lands. */
+/** Built-in gestures and the overlay that draws their state. */
 export const DEFAULT_GESTURES: Gesture[] = [
   hoverGesture,
   clickGesture,
@@ -82,6 +98,7 @@ export const DEFAULT_GESTURES: Gesture[] = [
   sameTypeGesture,
   keyboardGesture,
   announceGesture,
+  overlayGesture,
 ];
 
 /**

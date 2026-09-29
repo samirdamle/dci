@@ -91,3 +91,24 @@ export {
 } from './same-type';
 export { announceGesture, createAnnouncer, describeNode, nodeName } from './announce';
 export { keyboardGesture } from './keyboard';
+export {
+  acquireUiHost,
+  BASE_CSS,
+  HOST_TAG,
+  type LayerName,
+  type Theme,
+  type UiHost,
+  type UiHostOptions,
+} from './ui-host';
+export {
+  createOutlineOverlay,
+  createOverlay,
+  labelFor,
+  OVERLAY_CSS,
+  type LabelMode,
+  type Overlay,
+  type OverlayMode,
+  type OverlayOptions,
+} from './overlay';
+export { overlayGesture } from './overlay-gesture';
+export type { OverlayConfig } from './interactions';

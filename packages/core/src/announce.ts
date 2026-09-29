@@ -1,4 +1,5 @@
 import { DCI_UI_ATTRIBUTE } from './keys';
+import { acquireUiHost } from './ui-host';
 import type { Gesture } from './interactions';
 import { readDci } from './parse';
 import type { DciTree } from './tree';
@@ -26,8 +27,8 @@ const VISUALLY_HIDDEN =
   'clip:rect(0 0 0 0);white-space:nowrap;border:0';
 
 /**
- * A polite `aria-live` region. Pass the DCI shadow root as `parent` once the
- * UI host exists (M3); until then it lives in a hidden `[data-dci-ui]` host.
+ * A polite `aria-live` region, rendered into `parent` (normally the UI
+ * host's `live-region` layer) or, without one, a hidden `[data-dci-ui]` host.
  */
 export function createAnnouncer(parent?: Element | ShadowRoot) {
   let region: HTMLElement | null = null;
@@ -64,12 +65,15 @@ export function createAnnouncer(parent?: Element | ShadowRoot) {
   };
 }
 
-/** Speak `announce` bus events through a live region. */
+/** Speak `announce` bus events through a live region in the DCI UI host. */
 export const announceGesture: Gesture = (ctx) => {
-  const announcer = createAnnouncer();
+  const ui = ctx.options.overlay === false ? {} : (ctx.options.overlay ?? {});
+  const { host, release } = acquireUiHost(ui);
+  const announcer = createAnnouncer(host.layer('live-region'));
   const off = ctx.bus.on('announce', (text) => announcer.announce(text));
   return () => {
     off();
     announcer.destroy();
+    release();
   };
 };
