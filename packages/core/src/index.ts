@@ -1,4 +1,4 @@
-/** Placeholder package version; replaced by real exports in later milestones. */
+/** Package version. */
 export const VERSION = '0.0.0';
 
 export {
@@ -132,3 +132,4 @@ export {
 } from './session';
 export type { DciEvent, DciRequest } from '@dci/protocol';
 export * from './chat/index';
+export * from './dci/index';

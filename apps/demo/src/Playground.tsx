@@ -1,12 +1,9 @@
 import {
-  createActionRegistry,
-  createChatController,
-  createChatUi,
-  createInteractions,
+  createDci,
   type ActionsConfig,
   type ChatMode,
-  type ChatUi,
   type DciContextNode,
+  type DciInstance,
 } from '@dci/core';
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,49 +36,36 @@ const ACTIONS: ActionsConfig = {
 
 const MODES: ChatMode[] = ['popover', 'panel'];
 
-/** Annotated sample content wired to `createInteractions` from `@dci/core`. */
+/** Annotated sample content wired to `createDci` from `@dci/core`. */
 export function Playground() {
   const rootRef = useRef<HTMLDivElement>(null);
-  const chatRef = useRef<ChatUi | null>(null);
+  const dciRef = useRef<DciInstance | null>(null);
   const [context, setContext] = useState<DciContextNode[]>([]);
   const [mode, setMode] = useState<ChatMode>('popover');
 
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
-    const interactions = createInteractions({
+    // One call wires selection, overlay, chat, transport and client actions.
+    const dci = createDci({
+      transport: mockTransport, // a real app passes `endpoint: '/api/dci'`
       root,
-      // The first Esc closes the chat; the next one clears the selection.
-      onEscape: () => chatRef.current?.escape() ?? false,
+      actions: ACTIONS,
+      chat: { pushContent: true },
     });
-    const controller = createChatController({
-      transport: mockTransport,
-      selection: interactions.selection,
-      contextOptions: { root },
-      actions: createActionRegistry({
-        selection: interactions.selection,
-        root,
-        overlay: { flash: (el) => interactions.bus.emit('flash', el) },
-      }),
-    });
-    const chat = createChatUi({ controller, interactions, actions: ACTIONS, pushContent: true });
-    chatRef.current = chat;
-    const off = interactions.selection.subscribe(() =>
-      setContext(interactions.selection.toContext()),
-    );
+    dciRef.current = dci;
+    const off = dci.on('selectionchange', (e) => setContext(e.nodes));
     return () => {
       off();
-      chat.destroy();
-      chatRef.current = null;
-      controller.destroy();
-      interactions.destroy();
+      dci.destroy();
+      dciRef.current = null;
     };
   }, []);
 
   const switchMode = (next: ChatMode) => {
     setMode(next);
-    chatRef.current?.setMode(next);
-    chatRef.current?.controller.open();
+    dciRef.current?.update({ chat: { mode: next } });
+    dciRef.current?.chat.open();
   };
 
   return (

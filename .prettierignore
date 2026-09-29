@@ -5,3 +5,5 @@ test-results
 pnpm-lock.yaml
 # Authored spec; Prettier would rewrite its HTML examples
 SPEC.md
+# Generated API reports (scripts/api-report.mjs), compared byte for byte
+packages/*/api

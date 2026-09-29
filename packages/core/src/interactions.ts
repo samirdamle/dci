@@ -70,6 +70,13 @@ export interface InteractionOptions extends SelectionOptions {
   windowSelectLevel?: 'leaf' | 'top';
   /** Gesture modules to attach. Defaults to every built-in gesture. */
   gestures?: Gesture[];
+  /**
+   * Share an existing selection store, e.g. to keep the selection across a
+   * rebuild. A shared store is not destroyed with the interactions.
+   */
+  selection?: SelectionStore;
+  /** Share an existing event bus. A shared bus is not cleared on destroy. */
+  bus?: Emitter<InteractionEvents>;
 }
 
 export interface GestureContext {
@@ -108,7 +115,7 @@ export const DEFAULT_GESTURES: Gesture[] = [
  * together. Every piece is exposed so hosts can listen, extend or replace it.
  */
 export function createInteractions(options: InteractionOptions = {}): Interactions {
-  const bus = createEmitter<InteractionEvents>();
+  const bus = options.bus ?? createEmitter<InteractionEvents>();
   const input = createInputManager({ modifier: options.modifier ?? 'Alt' });
   const tree = createDciTree(options);
   const ctx: GestureContext = {
@@ -116,7 +123,7 @@ export function createInteractions(options: InteractionOptions = {}): Interactio
     bindings: resolveBindings(options.bindings),
     input,
     tree,
-    selection: createSelectionStore(options),
+    selection: options.selection ?? createSelectionStore(options),
     bus,
     hover: createHoverState(tree, bus),
   };
@@ -130,8 +137,8 @@ export function createInteractions(options: InteractionOptions = {}): Interactio
       for (const cleanup of cleanups) cleanup();
       offArm();
       input.destroy();
-      ctx.selection.destroy();
-      bus.clear();
+      if (!options.selection) ctx.selection.destroy();
+      if (!options.bus) bus.clear();
     },
   };
 }
