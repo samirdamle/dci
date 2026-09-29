@@ -583,6 +583,7 @@ dci-root {
   --dci-radius: 4px;
   --dci-bg: #fff; /* chat surface; also --dci-fg, --dci-muted, --dci-border, --dci-surface */
   --dci-on-accent: #fff; /* text on accent (send button, your messages) */
+  --dci-chat-border: #0f172a; /* 2px popover border; defaults to --dci-fg (inverse of --dci-bg) */
   --dci-font: 'Inter', sans-serif;
   --dci-z: 1000;
 }
