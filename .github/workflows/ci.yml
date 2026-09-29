@@ -61,7 +61,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # `changeset status` compares with main
+          fetch-depth: 0 # `changeset status` compares with origin/main
       - uses: ./.github/actions/setup
       - run: pnpm build
       - name: Pack and check with publint and attw
@@ -71,7 +71,7 @@ jobs:
       - name: VERSION constants match package.json
         run: node scripts/sync-versions.mjs --check
       - name: Pending changesets are valid
-        run: pnpm exec changeset status
+        run: pnpm exec changeset status --since=origin/main
 
   e2e:
     runs-on: ubuntu-latest
