@@ -6,12 +6,12 @@ exactly those things as context for an AI conversation, instead of describing th
 [![CI](https://github.com/samirdamle/dci/actions/workflows/ci.yml/badge.svg)](https://github.com/samirdamle/dci/actions/workflows/ci.yml)
 &nbsp;**Live demo:** https://samirdamle.github.io/dci/
 
-> **Status:** early development. Milestones M0–M5 are done: annotation parsing, the DCI tree,
+> **Status:** early development. Milestones M0–M6 are done: annotation parsing, the DCI tree,
 > context extraction, the selection store, every selection gesture, the highlight overlay, the
 > backend protocol with its client transport and server helpers, and the chat UI. Try the whole loop
 > (select, ask, watch the streamed answer) in the [live demo](https://samirdamle.github.io/dci/),
-> which uses a mock backend. The one-call `createDci()` setup is available; React bindings are
-> next (see [Roadmap](#roadmap)). Packages are not on npm yet.
+> which uses a mock backend. The one-call `createDci()` setup and the React bindings are available;
+> the full CRM demo is next (see [Roadmap](#roadmap)). Packages are not on npm yet.
 
 ---
 
@@ -487,8 +487,50 @@ Good to know:
 - **`dciAttr({ id, type, label, ...data })`** builds the `data-dci` attribute with sorted keys, so
   you never hand-write JSON.
 
-React bindings (`<DciProvider>`, `useDci()`, `useSelection()`, `useChat()`, `useDciAction()`) are
-next, in M6.
+### React
+
+`@dci/react` wraps `createDci()` in a provider and exposes the state as hooks (built on
+`useSyncExternalStore`, so there is no tearing):
+
+```tsx
+import { dci, DciProvider, useChat, useDciAction, useSelection } from '@dci/react';
+
+const config = { endpoint: '/api/dci', chat: { mode: 'popover' } }; // keep it stable
+
+export function App() {
+  return (
+    <DciProvider config={config}>
+      <Invoices />
+    </DciProvider>
+  );
+}
+
+function Invoices() {
+  const { nodes } = useSelection(); // live selection (payloads, elements, primary) + set/clear/…
+  useDciAction('markPaid', ({ id }) => markPaid(String(id))); // backend write-back, removed on unmount
+  return (
+    <table>
+      {invoices.map((inv) => (
+        <tr key={inv.id} {...dci({ id: inv.id, type: 'invoice', label: `Invoice ${inv.number}` })}>
+          …
+        </tr>
+      ))}
+    </table>
+  );
+}
+```
+
+- **`<DciProvider config root?>`** creates the instance in an effect, so it is SSR safe (Next.js
+  App Router included: the package is marked `"use client"`) and StrictMode safe. Config changes
+  are applied with `dci.update()`; only a new `endpoint` or `transport` recreates the instance.
+  Pass `root={ref}` to scope DCI to an element rendered inside it.
+- **`useDci()`** returns the instance (`null` until mounted). **`useSelection()`** and
+  **`useChat()`** return live state plus methods: `useChat()` has everything needed for a fully
+  custom chat (`messages`, `status`, `pendingContext`, `send`, `stop`, `retry`, `setOpen`, …).
+- **`<DciChat render={(chat) => …} />`** swaps the built-in chat for your own React UI while it is
+  mounted.
+- **`dci({ id, type, label, ...data })`** returns `{ 'data-dci': '…' }` with sorted keys, ready to
+  spread.
 
 ### Configuration
 
@@ -564,17 +606,17 @@ Animations respect `prefers-reduced-motion`.
 
 ## Roadmap
 
-| Milestone | Scope                                                               | Status      |
-| --------- | ------------------------------------------------------------------- | ----------- |
-| M0        | Monorepo, tooling, CI, test harness                                 | Done        |
-| M1        | `data-dci` parsing, DCI tree, context extraction, selection store   | Done        |
-| M2        | Modifier, Alt+Click, Alt+Wheel, window select, same-type, keyboard  | Done        |
-| M3        | Overlay: Shadow DOM highlight layer, labels, marquee                | Done        |
-| M4        | `@dci/protocol`, SSE transport, client actions, `@dci/server`       | Done        |
-| M5        | Chat UI: popover/panel, chips, breadcrumb, suggested actions        | Done        |
-| M6        | `createDci()` public API and React bindings                         | In progress |
-| M7        | Demo: a mock CRM with a Claude-powered agent and a no-key mock mode | Planned     |
-| M8        | Cross-browser e2e, performance, docs, npm release                   | Planned     |
+| Milestone | Scope                                                               | Status  |
+| --------- | ------------------------------------------------------------------- | ------- |
+| M0        | Monorepo, tooling, CI, test harness                                 | Done    |
+| M1        | `data-dci` parsing, DCI tree, context extraction, selection store   | Done    |
+| M2        | Modifier, Alt+Click, Alt+Wheel, window select, same-type, keyboard  | Done    |
+| M3        | Overlay: Shadow DOM highlight layer, labels, marquee                | Done    |
+| M4        | `@dci/protocol`, SSE transport, client actions, `@dci/server`       | Done    |
+| M5        | Chat UI: popover/panel, chips, breadcrumb, suggested actions        | Done    |
+| M6        | `createDci()` public API and React bindings                         | Done    |
+| M7        | Demo: a mock CRM with a Claude-powered agent and a no-key mock mode | Next    |
+| M8        | Cross-browser e2e, performance, docs, npm release                   | Planned |
 
 After v1: a browser extension that brings DCI to any website, Vue/Svelte bindings, touch support,
 and selecting by query ("all overdue invoices"). The full specification is in [SPEC.md](SPEC.md).
