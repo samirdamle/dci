@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('demo renders every package version in a card', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/#/classic');
 
   await expect(page.getByText('DCI Demo')).toBeVisible();
   const rows = page.getByTestId('package-version');

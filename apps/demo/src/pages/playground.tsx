@@ -2,8 +2,8 @@ import type { ActionsConfig, ChatMode, DciConfig } from '@dci/core';
 import { dci, DciProvider, useChat, useSelection } from '@dci/react';
 import { useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { INVOICES, OPPORTUNITIES } from './data';
-import { mockTransport } from './mock-backend';
+import { INVOICES, OPPORTUNITIES } from '../classic-data';
+import { mockTransport } from '../mock-backend';
 
 const money = (n: number) => `$${n.toLocaleString('en-US')}`;
 

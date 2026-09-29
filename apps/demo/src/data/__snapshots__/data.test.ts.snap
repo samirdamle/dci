@@ -1,0 +1,21 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`generateOrg > is deterministic for a seed and date 1`] = `
+{
+  "counts": {
+    "Account": 25,
+    "Campaign": 12,
+    "ChannelMetric": 60,
+    "Contact": 80,
+    "EmailSend": 30,
+    "Journey": 4,
+    "Lead": 40,
+    "Opportunity": 60,
+    "OpportunityLineItem": 150,
+    "Segment": 8,
+    "Task": 120,
+    "User": 6,
+  },
+  "digest": "41527234",
+}
+`;

@@ -33,9 +33,14 @@ export default tseslint.config(
     },
   },
   {
-    // shadcn/ui components export variants alongside components by design.
-    files: ['apps/demo/src/components/ui/**'],
-    rules: { 'react-refresh/only-export-components': 'off' },
+    // Vendored shadcn/ui sources (kept as upstream ships them): they export
+    // variants alongside components and predate some React Compiler rules.
+    files: ['apps/demo/src/components/ui/**', 'apps/demo/src/hooks/use-mobile.ts'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+      'react-hooks/purity': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+    },
   },
   prettier,
 );
