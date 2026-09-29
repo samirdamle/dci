@@ -131,3 +131,4 @@ export {
   type SessionOptions,
 } from './session';
 export type { DciEvent, DciRequest } from '@dci/protocol';
+export * from './chat/index';
