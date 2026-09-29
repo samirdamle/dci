@@ -1,0 +1,40 @@
+[
+  {
+    "name": "@dci/protocol",
+    "path": "packages/protocol/dist/index.js",
+    "import": "*",
+    "limit": "2 KB",
+    "gzip": true
+  },
+  {
+    "name": "@dci/core (headless: gestures, selection, controller, transport)",
+    "path": "packages/core/dist/index.js",
+    "import": "{ createInteractions, createChatController, createSSETransport, createActionRegistry }",
+    "ignore": ["@floating-ui/dom"],
+    "limit": "15 KB",
+    "gzip": true
+  },
+  {
+    "name": "@dci/core (full: createDci with overlay and chat UI)",
+    "path": "packages/core/dist/index.js",
+    "import": "{ createDci }",
+    "limit": "40 KB",
+    "gzip": true
+  },
+  {
+    "name": "@dci/react (on top of core)",
+    "path": "packages/react/dist/index.js",
+    "import": "*",
+    "ignore": ["@dci/core", "react"],
+    "limit": "2 KB",
+    "gzip": true
+  },
+  {
+    "name": "@dci/server",
+    "path": "packages/server/dist/index.js",
+    "import": "*",
+    "ignore": ["@dci/protocol"],
+    "limit": "4 KB",
+    "gzip": true
+  }
+]
