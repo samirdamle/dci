@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- A strict CSP: no inline scripts or styles, no eval. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' ws:; img-src 'self' data:"
+    />
+    <title>DCI compatibility fixture</title>
+  </head>
+  <body>
+    <main id="root">
+      <section id="light" data-dci='{"id":"light","type":"section","label":"Light DOM section"}'>
+        <p id="plain">Plain text</p>
+      </section>
+      <shadow-card
+        id="card"
+        data-dci='{"id":"host","type":"widget","label":"Card component"}'
+      ></shadow-card>
+    </main>
+    <script type="module" src="/src/fixtures/compat.ts"></script>
+  </body>
+</html>

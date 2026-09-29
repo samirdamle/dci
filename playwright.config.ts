@@ -9,6 +9,9 @@ const isCI = !!process.env.CI;
  * so local runs work with only the pre-installed Chromium.
  */
 const allBrowsers = !!process.env.PW_ALL_BROWSERS;
+/** Runtime perf budgets (`e2e/perf/*.perf.ts`) run only with `PW_PERF=1`. */
+const perf = !!process.env.PW_PERF;
+const perfFiles = /.*\.perf\.ts/;
 
 export default defineConfig({
   testDir: './e2e',
@@ -20,15 +23,26 @@ export default defineConfig({
     baseURL,
     trace: 'retain-on-failure',
   },
-  projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    ...(allBrowsers
-      ? [
-          { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
-          { name: 'webkit', use: { ...devices['Desktop Safari'] } },
-        ]
-      : []),
-  ],
+  projects: perf
+    ? [
+        {
+          name: 'perf',
+          testMatch: perfFiles,
+          fullyParallel: false,
+          retries: 0,
+          // Tracing snapshots every action and would skew frame timings.
+          use: { ...devices['Desktop Chrome'], trace: 'off' },
+        },
+      ]
+    : [
+        { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+        ...(allBrowsers
+          ? [
+              { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+              { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+            ]
+          : []),
+      ],
   webServer: {
     command: `pnpm --filter @dci/demo dev --port ${PORT} --strictPort`,
     url: baseURL,
