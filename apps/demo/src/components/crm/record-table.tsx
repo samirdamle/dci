@@ -31,6 +31,8 @@ export interface RecordColumn<T> {
   align?: 'left' | 'right';
   /** Sort by a different value than the displayed one. */
   sortValue?: (row: T) => string | number;
+  /** Let long text wrap (cells don't wrap by default). */
+  wrap?: boolean;
 }
 
 export interface RecordTableProps<T extends { Id: string }> {
@@ -141,7 +143,10 @@ export function RecordTable<T extends { Id: string }>({
                   {columns.map((c) => (
                     <TableCell
                       key={c.field}
-                      className={cn(c.align === 'right' && 'text-right tabular-nums')}
+                      className={cn(
+                        c.align === 'right' && 'text-right tabular-nums',
+                        c.wrap && 'min-w-40 whitespace-normal',
+                      )}
                       {...dci(
                         c.private
                           ? { id: `${record.Id}.${c.field}`, private: true }
