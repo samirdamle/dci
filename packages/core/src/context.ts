@@ -1,45 +1,9 @@
+import type { DciAncestor, DciContextNode, DciFallbackInfo } from '@dci/protocol';
 import { DEFAULT_ATTRIBUTE, readDci } from './parse';
 import { createDciTree, type TreeOptions } from './tree';
 
-// TODO(M4): move these wire types into @dci/protocol.
-
-/** Compact reference to an ancestor, root first. */
-export interface DciAncestor {
-  id?: string;
-  type?: string;
-  label?: string;
-  data?: Record<string, unknown>;
-  /** Set (alone) when the ancestor is private: nothing else about it is sent. */
-  private?: true;
-}
-
-/** What DCI captures about an element that has no `data-dci`. */
-export interface DciFallbackInfo {
-  tagName: string;
-  /** Whitespace-collapsed, truncated `innerText`. */
-  text?: string;
-  ariaLabel?: string;
-  alt?: string;
-  title?: string;
-  href?: string;
-  /** Form field value. Never read from password inputs. */
-  value?: string;
-  /** Short CSS path, e.g. `main > table.invoices > tbody > tr:nth-child(3)`. */
-  path: string;
-}
-
-/** A selected node as sent to the backend. */
-export interface DciContextNode {
-  id?: string;
-  type?: string;
-  label?: string;
-  /** Parsed `data-dci` payload with reserved keys removed (empty for fallback nodes). */
-  data: Record<string, unknown>;
-  ancestors?: DciAncestor[];
-  source: 'annotated' | 'fallback';
-  /** Present only when `source` is `'fallback'`. */
-  fallback?: DciFallbackInfo;
-}
+// The wire types live in @dci/protocol; re-exported for convenience.
+export type { DciAncestor, DciContextNode, DciFallbackInfo };
 
 export interface ContextOptions extends TreeOptions {
   /** Include the ancestor chain. Default `true`. */
