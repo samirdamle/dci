@@ -32,6 +32,10 @@ function deepActiveElement(): Element | null {
   return el;
 }
 
+/** Focus is inside a host-app dialog, whose own keys (Esc, arrows) must keep working. */
+const inDialog = (el: Element | null) =>
+  !!el?.closest('[role="dialog"], [role="alertdialog"], dialog[open]');
+
 function reveal(el: Element) {
   if (typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'nearest' });
 }
@@ -40,12 +44,14 @@ function reveal(el: Element) {
  * Keyboard navigation while a selection exists (and focus is not in an
  * editable field): arrows move the primary node through the DCI tree,
  * Shift+arrow extends, Esc clears. `Alt+Enter` selects the focused
- * element's node without a pointer. Keys are only consumed when handled.
+ * element's node without a pointer. Keys are only consumed when handled,
+ * and never while focus is inside a dialog (the host app's Esc must work).
  */
 export const keyboardGesture: Gesture = (ctx) =>
   ctx.input.onKeyDown((e) => {
     const kb = ctx.bindings.keyboard;
     if (!kb) return;
+    if (inDialog(deepActiveElement())) return;
     const { selection, tree, bus } = ctx;
     const attribute = ctx.options.attribute;
     const say = (el: Element, prefix: string) =>

@@ -6,12 +6,13 @@ exactly those things as context for an AI conversation, instead of describing th
 [![CI](https://github.com/samirdamle/dci/actions/workflows/ci.yml/badge.svg)](https://github.com/samirdamle/dci/actions/workflows/ci.yml)
 &nbsp;**Live demo:** https://samirdamle.github.io/dci/
 
-> **Status:** early development. Milestones M0–M6 are done: annotation parsing, the DCI tree,
+> **Status:** early development. Milestones M0–M7 are done: annotation parsing, the DCI tree,
 > context extraction, the selection store, every selection gesture, the highlight overlay, the
 > backend protocol with its client transport and server helpers, and the chat UI. Try the whole loop
 > (select, ask, watch the streamed answer) in the [live demo](https://samirdamle.github.io/dci/),
-> which uses a mock backend. The one-call `createDci()` setup and the React bindings are available;
-> the full CRM demo is next (see [Roadmap](#roadmap)). Packages are not on npm yet.
+> which runs a mock backend in your browser. The one-call `createDci()` setup, the React bindings
+> and the full CRM demo are available; quality, docs and the npm release are next (see
+> [Roadmap](#roadmap)). Packages are not on npm yet.
 
 ---
 
@@ -606,17 +607,17 @@ Animations respect `prefers-reduced-motion`.
 
 ## Roadmap
 
-| Milestone | Scope                                                               | Status  |
-| --------- | ------------------------------------------------------------------- | ------- |
-| M0        | Monorepo, tooling, CI, test harness                                 | Done    |
-| M1        | `data-dci` parsing, DCI tree, context extraction, selection store   | Done    |
-| M2        | Modifier, Alt+Click, Alt+Wheel, window select, same-type, keyboard  | Done    |
-| M3        | Overlay: Shadow DOM highlight layer, labels, marquee                | Done    |
-| M4        | `@dci/protocol`, SSE transport, client actions, `@dci/server`       | Done    |
-| M5        | Chat UI: popover/panel, chips, breadcrumb, suggested actions        | Done    |
-| M6        | `createDci()` public API and React bindings                         | Done    |
-| M7        | Demo: a mock CRM with a Claude-powered agent and a no-key mock mode | Next    |
-| M8        | Cross-browser e2e, performance, docs, npm release                   | Planned |
+| Milestone | Scope                                                               | Status |
+| --------- | ------------------------------------------------------------------- | ------ |
+| M0        | Monorepo, tooling, CI, test harness                                 | Done   |
+| M1        | `data-dci` parsing, DCI tree, context extraction, selection store   | Done   |
+| M2        | Modifier, Alt+Click, Alt+Wheel, window select, same-type, keyboard  | Done   |
+| M3        | Overlay: Shadow DOM highlight layer, labels, marquee                | Done   |
+| M4        | `@dci/protocol`, SSE transport, client actions, `@dci/server`       | Done   |
+| M5        | Chat UI: popover/panel, chips, breadcrumb, suggested actions        | Done   |
+| M6        | `createDci()` public API and React bindings                         | Done   |
+| M7        | Demo: a mock CRM with a Claude-powered agent and a no-key mock mode | Done   |
+| M8        | Cross-browser e2e, performance, docs, npm release                   | Next   |
 
 After v1: a browser extension that brings DCI to any website, Vue/Svelte bindings, touch support,
 and selecting by query ("all overdue invoices"). The full specification is in [SPEC.md](SPEC.md).
@@ -665,6 +666,11 @@ ANTHROPIC_API_KEY=sk-ant-… pnpm dev   # Claude mode; DCI_DEMO_MODEL overrides 
 ```
 
 The key stays on the demo server (`apps/demo/server`); the browser only talks to `/api/dci`.
+
+Also in the demo: a **Playground** drawer that changes DCI options live (`dci.update()`), a
+**request inspector** (the exact next request and the raw events of the last response), a **custom
+shadcn chat** built only on the headless hooks (`useChat`, `useSelection`), and a **`?` cheat
+sheet** generated from the active bindings. `/#/classic` keeps the original single-page playground.
 
 Inside the workspace, `@dci/*` packages resolve to their TypeScript sources through the
 `@dci/source` export condition, so the demo, tests and typechecking never need a prior build.
