@@ -57,6 +57,3 @@ export const OPPORTUNITIES: Opportunity[] = [
   { id: 'opp_5', name: 'Kayak fleet', stage: 'Prospecting', value: 61000 },
   { id: 'opp_6', name: 'Trail running sponsorship', stage: 'Negotiation', value: 15000 },
 ];
-
-/** Serialize a `data-dci` payload. */
-export const dci = (payload: Record<string, unknown>) => JSON.stringify(payload);
