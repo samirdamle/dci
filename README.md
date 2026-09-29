@@ -6,11 +6,12 @@ exactly those things as context for an AI conversation, instead of describing th
 [![CI](https://github.com/samirdamle/dci/actions/workflows/ci.yml/badge.svg)](https://github.com/samirdamle/dci/actions/workflows/ci.yml)
 &nbsp;**Live demo:** https://samirdamle.github.io/dci/
 
-> **Status:** early development. Milestones M0–M4 are done: annotation parsing, the DCI tree,
-> context extraction, the selection store, every selection gesture, the highlight overlay, and the
-> backend protocol with its client transport and server helpers. You can try selecting in the
-> [live demo](https://samirdamle.github.io/dci/). The chat UI and the public `createDci()` API are
-> next; see [Roadmap](#roadmap). Packages are not on npm yet.
+> **Status:** early development. Milestones M0–M5 are done: annotation parsing, the DCI tree,
+> context extraction, the selection store, every selection gesture, the highlight overlay, the
+> backend protocol with its client transport and server helpers, and the chat UI. Try the whole loop
+> (select, ask, watch the streamed answer) in the [live demo](https://samirdamle.github.io/dci/),
+> which uses a mock backend. The one-call `createDci()` API and React bindings are next; see
+> [Roadmap](#roadmap). Packages are not on npm yet.
 
 ---
 
@@ -79,7 +80,7 @@ is. A selected cell still knows its row and table.
 dumps and clarifying questions.
 
 **Developer-controlled exposure.** Only elements you annotate carry data. `private` nodes can
-never be selected or sent, and a `beforeSend` hook can redact or enrich payloads (planned). Unannotated
+never be selected or sent, and a `beforeSend` hook can redact or enrich payloads. Unannotated
 elements are optional: with `fallback: true`, DCI describes them from visible information only.
 
 **Backend-agnostic.** DCI sends a small, documented request and reads a streamed response. Behind
@@ -360,12 +361,79 @@ code.
 On the page, `createSSETransport({ endpoint, headers })` sends requests and yields the events;
 `headers` can be a function (called on every request, for token refresh). `createActionRegistry`
 runs `client-action`s: the built-ins `highlight`, `select` and `scrollTo`, plus your own with
-`on(name, handler)`. `createSession` manages the conversation id. The chat UI (M5) and `createDci()`
-(M6) will wire these together.
+`on(name, handler)`. `createSession` manages the conversation id.
 
-### Step 4: the full API (planned, M5–M6)
+### Step 4: the chat (available now)
 
-The target API bundles the overlay, chat UI and transport:
+The chat is split in two, so you can keep the logic and replace the look:
+
+- **`createChatController`** is headless. It snapshots the selection into each message, streams the
+  reply, tracks tool progress, runs client actions and exposes plain immutable state (easy to use
+  with React's `useSyncExternalStore`).
+- **`createChatUi`** is the default shell, rendered in DCI's Shadow DOM: a popover anchored to the
+  selection (it flips, shifts and follows scroll, and you can drag it by the header) or a docked,
+  resizable panel. It has context chips, a clickable breadcrumb, suggested actions, streaming
+  markdown, tool rows, Stop and Retry.
+
+```ts
+import {
+  createActionRegistry,
+  createChatController,
+  createChatUi,
+  createInteractions,
+  createSSETransport,
+} from '@dci/core';
+
+let chat;
+const interactions = createInteractions({ onEscape: () => chat?.escape() ?? false });
+const controller = createChatController({
+  transport: createSSETransport({ endpoint: '/api/dci' }),
+  selection: interactions.selection,
+  actions: createActionRegistry({ selection: interactions.selection }),
+  beforeSend: (request) => request, // redact or enrich; return false to cancel
+});
+chat = createChatUi({
+  controller,
+  interactions,
+  mode: 'popover', // or 'panel'; switch any time with chat.setMode()
+  actions: {
+    invoice: [{ id: 'remind', label: 'Draft reminder', prompt: 'Draft a payment reminder' }],
+    '*': [{ id: 'summarize', label: 'Summarize' }],
+  },
+});
+```
+
+| Chat UI option   | Default      | Description                                                                       |
+| ---------------- | ------------ | --------------------------------------------------------------------------------- |
+| `mode`           | `'popover'`  | `'popover'` (anchored) or `'panel'` (docked)                                      |
+| `side`           | `'right'`    | Panel side                                                                        |
+| `anchor`         | `'primary'`  | Popover anchor: the primary node or the whole selection's bounding box            |
+| `autoOpen`       | `'onSelect'` | Open after a selection, when a message is sent (`'onAction'`), or never           |
+| `pushContent`    | `false`      | Panel sets `--dci-chat-inset` on `<html>` so your layout can make room            |
+| `actions`        | —            | Suggested actions per `type` (`'*'` for all), or `(nodes) => actions`             |
+| `maxChips`       | `6`          | Chips shown before "+N more"                                                      |
+| `maxActions`     | `4`          | Actions shown before the overflow menu                                            |
+| `strings`        | English      | Override any UI text (i18n)                                                       |
+| `render`         | —            | Replace a section: `header`, `breadcrumb`, `chips`, `actions`, `input`, `message` |
+| `renderMarkdown` | built-in     | Plug in your own renderer (model output is untrusted: sanitize it)                |
+| `highlightCode`  | —            | Syntax-highlighting hook for code blocks                                          |
+
+Suggested actions resolve like this: one selected type offers its own actions and then `'*'`; mixed
+types offer only the actions they share, and then `'*'`. Clicking one sends its `prompt` (or label)
+together with its `action` id, so your backend can special-case it or just read the text.
+
+Controller options include `contextMode: 'turn' | 'cumulative'` (send only new context each turn,
+the default, or everything so far), `concurrency: 'block' | 'queue'` and `confirmBeforeSend`. Don't
+want the default UI at all? Skip `createChatUi` and render from `controller.subscribe()`.
+
+The chat is accessible: a non-modal `dialog` (popover) or `complementary` landmark (panel), a
+`log` that announces finished replies only, keyboard-reachable chips, breadcrumb and actions (arrow
+keys move between actions), visible focus, focus returned on close, and reduced motion respected.
+The demo is checked with axe-core in both modes.
+
+### Step 5: one call (planned, M6)
+
+`createDci()` will bundle all of the above into one call:
 
 ```ts
 import { createDci } from '@dci/core';
@@ -430,6 +498,8 @@ dci-root {
   --dci-selected: #0ea5e9; /* selected boxes */
   --dci-preview: #a855f7; /* window-select preview */
   --dci-radius: 4px;
+  --dci-bg: #fff; /* chat surface; also --dci-fg, --dci-muted, --dci-border, --dci-surface */
+  --dci-on-accent: #fff; /* text on accent (send button, your messages) */
   --dci-font: 'Inter', sans-serif;
   --dci-z: 1000;
 }
@@ -444,7 +514,11 @@ Animations respect `prefers-reduced-motion`.
   they are an ancestor.
 - **No password values**, ever, even with fallback on.
 - **No keys in the browser.** Authentication goes through your `headers` or a custom `fetch`.
-- **`beforeSend`** gives you a last chance to redact or enrich (M6).
+- **`beforeSend`** gives you a last chance to redact or enrich. As a final guard, a `private` node
+  that still reaches an outgoing request throws in development and is stripped in production.
+- **Model output is untrusted.** The built-in markdown renderer builds DOM nodes (never
+  `innerHTML`), shows raw HTML as text, and only links to `http(s)`/`mailto` with
+  `rel="noopener noreferrer"`.
 - **Nothing leaves the page on its own.** Selecting is local; data is only sent when the user sends
   a message.
 
@@ -457,8 +531,8 @@ Animations respect `prefers-reduced-motion`.
 | M2        | Modifier, Alt+Click, Alt+Wheel, window select, same-type, keyboard  | Done    |
 | M3        | Overlay: Shadow DOM highlight layer, labels, marquee                | Done    |
 | M4        | `@dci/protocol`, SSE transport, client actions, `@dci/server`       | Done    |
-| M5        | Chat UI: popover/panel, chips, breadcrumb, suggested actions        | Next    |
-| M6        | `createDci()` public API and React bindings                         | Planned |
+| M5        | Chat UI: popover/panel, chips, breadcrumb, suggested actions        | Done    |
+| M6        | `createDci()` public API and React bindings                         | Next    |
 | M7        | Demo: a mock CRM with a Claude-powered agent and a no-key mock mode | Planned |
 | M8        | Cross-browser e2e, performance, docs, npm release                   | Planned |
 

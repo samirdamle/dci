@@ -1,7 +1,17 @@
-import { createInteractions, type DciContextNode } from '@dci/core';
+import {
+  createActionRegistry,
+  createChatController,
+  createChatUi,
+  createInteractions,
+  type ActionsConfig,
+  type ChatMode,
+  type ChatUi,
+  type DciContextNode,
+} from '@dci/core';
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { dci, INVOICES, OPPORTUNITIES } from './data';
+import { mockTransport } from './mock-backend';
 
 const money = (n: number) => `$${n.toLocaleString('en-US')}`;
 
@@ -13,25 +23,66 @@ const GESTURES: Array<[string, string]> = [
   ['Alt+Drag', 'Window select (→ contained, ← touched)'],
   ['Alt+Double-click', 'Select all of the same type'],
   ['Arrows / Shift+arrows', 'Move / extend the selection'],
-  ['Esc', 'Clear the selection'],
+  ['Esc', 'Close the chat, then clear the selection'],
 ];
+
+/** Suggested actions per `type` (`'*'` applies to everything). */
+const ACTIONS: ActionsConfig = {
+  invoice: [
+    { id: 'explain', label: 'Explain' },
+    { id: 'remind', label: 'Draft reminder', prompt: 'Draft a payment reminder' },
+    { id: 'total', label: 'Total', prompt: 'What is the total?' },
+  ],
+  opportunity: [{ id: 'next', label: 'Next steps', prompt: 'Suggest next steps for this deal' }],
+  '*': [{ id: 'summarize', label: 'Summarize' }],
+};
+
+const MODES: ChatMode[] = ['popover', 'panel'];
 
 /** Annotated sample content wired to `createInteractions` from `@dci/core`. */
 export function Playground() {
   const rootRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<ChatUi | null>(null);
   const [context, setContext] = useState<DciContextNode[]>([]);
+  const [mode, setMode] = useState<ChatMode>('popover');
 
   useEffect(() => {
-    if (!rootRef.current) return;
-    const interactions = createInteractions({ root: rootRef.current });
+    const root = rootRef.current;
+    if (!root) return;
+    const interactions = createInteractions({
+      root,
+      // The first Esc closes the chat; the next one clears the selection.
+      onEscape: () => chatRef.current?.escape() ?? false,
+    });
+    const controller = createChatController({
+      transport: mockTransport,
+      selection: interactions.selection,
+      contextOptions: { root },
+      actions: createActionRegistry({
+        selection: interactions.selection,
+        root,
+        overlay: { flash: (el) => interactions.bus.emit('flash', el) },
+      }),
+    });
+    const chat = createChatUi({ controller, interactions, actions: ACTIONS, pushContent: true });
+    chatRef.current = chat;
     const off = interactions.selection.subscribe(() =>
       setContext(interactions.selection.toContext()),
     );
     return () => {
       off();
+      chat.destroy();
+      chatRef.current = null;
+      controller.destroy();
       interactions.destroy();
     };
   }, []);
+
+  const switchMode = (next: ChatMode) => {
+    setMode(next);
+    chatRef.current?.setMode(next);
+    chatRef.current?.controller.open();
+  };
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
@@ -157,6 +208,24 @@ export function Playground() {
                 </div>
               ))}
             </dl>
+            <div
+              className="mt-4 flex items-center gap-2 text-sm"
+              role="group"
+              aria-label="Chat mode"
+            >
+              <span className="font-medium">Chat</span>
+              {MODES.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  aria-pressed={mode === m}
+                  onClick={() => switchMode(m)}
+                  className="rounded-md border px-2 py-0.5 capitalize aria-pressed:bg-primary aria-pressed:text-primary-foreground"
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
           </CardContent>
         </Card>
         <Card>

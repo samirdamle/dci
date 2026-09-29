@@ -21,6 +21,7 @@ export const overlayGesture: Gesture = (ctx) => {
     ctx.bus.on('marquee', (m) => overlay.setMarquee(m)),
     ctx.bus.on('marqueePreview', (els) => overlay.setPreview(els)),
     ctx.bus.on('navboundary', () => overlay.boundary()),
+    ctx.bus.on('flash', (el) => overlay.flash(el)),
     ctx.selection.subscribe(({ elements, primary }) => overlay.setSelected(elements, primary)),
   ];
   return () => {

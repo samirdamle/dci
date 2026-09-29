@@ -36,6 +36,8 @@ export interface InteractionEvents {
   navboundary: { direction: 'parent' | 'child' | 'prev' | 'next' };
   /** Text for the polite live region. */
   announce: string;
+  /** Pulse an element in the overlay (e.g. hovering a context chip). */
+  flash: Element;
 }
 
 export interface OverlayConfig {
