@@ -1,5 +1,12 @@
 # @samirdamle/dci-protocol
 
+## 1.1.0
+
+### Patch Changes
+
+- [#84](https://github.com/samirdamle/dci/pull/84) [`111922f`](https://github.com/samirdamle/dci/commit/111922fdafa60520df12a3b18aa3bb0497693879) Thanks [@samirdamle](https://github.com/samirdamle)! - `VERSION` is typed as `string` instead of a literal type, so it no longer changes the type
+  declarations on every release.
+
 ## 1.0.0
 
 ### Major Changes

@@ -1,5 +1,16 @@
 # @samirdamle/dci-server
 
+## 1.1.0
+
+### Patch Changes
+
+- [#86](https://github.com/samirdamle/dci/pull/86) [`4d1052d`](https://github.com/samirdamle/dci/commit/4d1052de977e9bc64543662aa7ed2a3c8af089fb) Thanks [@samirdamle](https://github.com/samirdamle)! - The README example marks where to call your model, with a placeholder `callModel()` that streams a canned reply until you wire one up.
+
+- [#84](https://github.com/samirdamle/dci/pull/84) [`111922f`](https://github.com/samirdamle/dci/commit/111922fdafa60520df12a3b18aa3bb0497693879) Thanks [@samirdamle](https://github.com/samirdamle)! - `VERSION` is typed as `string` instead of a literal type, so it no longer changes the type
+  declarations on every release.
+- Updated dependencies [[`111922f`](https://github.com/samirdamle/dci/commit/111922fdafa60520df12a3b18aa3bb0497693879)]:
+  - @samirdamle/dci-protocol@1.1.0
+
 ## 1.0.0
 
 ### Major Changes

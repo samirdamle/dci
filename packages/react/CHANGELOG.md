@@ -1,5 +1,14 @@
 # @samirdamle/dci-react
 
+## 1.1.0
+
+### Patch Changes
+
+- [#84](https://github.com/samirdamle/dci/pull/84) [`111922f`](https://github.com/samirdamle/dci/commit/111922fdafa60520df12a3b18aa3bb0497693879) Thanks [@samirdamle](https://github.com/samirdamle)! - `VERSION` is typed as `string` instead of a literal type, so it no longer changes the type
+  declarations on every release.
+- Updated dependencies [[`cd6bea9`](https://github.com/samirdamle/dci/commit/cd6bea93cdb3160fe23311df7917f3c1e3da49fc), [`851c47c`](https://github.com/samirdamle/dci/commit/851c47c167d2ff97d6bfceb413e8ad1361f642da), [`650a24e`](https://github.com/samirdamle/dci/commit/650a24e0f4e3a8714f98748805106824a0451450), [`111922f`](https://github.com/samirdamle/dci/commit/111922fdafa60520df12a3b18aa3bb0497693879)]:
+  - @samirdamle/dci-core@1.1.0
+
 ## 1.0.0
 
 ### Major Changes
