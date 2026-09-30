@@ -1,4 +1,4 @@
-import type { DciContextNode } from '@dci/protocol';
+import type { DciContextNode } from '@samirdamle/dci-protocol';
 import { nodeName } from '../../announce';
 import type { Emitter } from '../../emitter';
 import type { InteractionEvents } from '../../interactions';

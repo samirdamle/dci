@@ -52,7 +52,7 @@ These keys work **while something is selected** and focus isn't in a text field 
 ## Choosing the modifier
 
 ```ts
-import { createDci } from '@dci/core';
+import { createDci } from '@samirdamle/dci-core';
 
 createDci({ endpoint: '/api/dci', modifier: 'Control' }); // 'Alt' | 'Control' | 'Meta' | 'Shift'
 ```
@@ -67,7 +67,7 @@ is a secondary click there and opens the context menu. See
 Every binding can be changed or set to `false`:
 
 ```ts
-import { createDci } from '@dci/core';
+import { createDci } from '@samirdamle/dci-core';
 
 createDci({
   endpoint: '/api/dci',
@@ -113,7 +113,7 @@ Gestures are plain functions: `(ctx) => cleanup`. Pass `gestures` to replace the
 (`DEFAULT_GESTURES`), for example to drop one or add your own:
 
 ```ts
-import { createDci, DEFAULT_GESTURES, selectSameType, type Gesture } from '@dci/core';
+import { createDci, DEFAULT_GESTURES, selectSameType, type Gesture } from '@samirdamle/dci-core';
 
 /** Mod+A selects every node of the primary node's type. */
 const selectAllOfType: Gesture = (ctx) =>

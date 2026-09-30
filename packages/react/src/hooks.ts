@@ -6,7 +6,7 @@ import type {
   DciSelectionApi,
   DciTarget,
   SendOptions,
-} from '@dci/core';
+} from '@samirdamle/dci-core';
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { useDci } from './provider';
 

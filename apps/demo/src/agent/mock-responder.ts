@@ -1,4 +1,4 @@
-import type { DciContextNode, DciEvent, DciRequest } from '@dci/protocol';
+import type { DciContextNode, DciEvent, DciRequest } from '@samirdamle/dci-protocol';
 import { dayOffset } from '../data/random';
 import type { OrgStore } from '../data/store';
 import {

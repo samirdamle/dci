@@ -1,4 +1,9 @@
-import { decodeSSEStream, ERROR_CODES, type DciEvent, type DciRequest } from '@dci/protocol';
+import {
+  decodeSSEStream,
+  ERROR_CODES,
+  type DciEvent,
+  type DciRequest,
+} from '@samirdamle/dci-protocol';
 import { devWarn, type Warn } from './env';
 
 /**

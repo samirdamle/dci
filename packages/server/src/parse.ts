@@ -4,7 +4,7 @@ import {
   PROTOCOL_VERSION,
   validateRequest,
   type DciRequest,
-} from '@dci/protocol';
+} from '@samirdamle/dci-protocol';
 import { DciRequestError } from './errors';
 
 /**

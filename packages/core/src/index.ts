@@ -3,7 +3,7 @@
  * the chat UI and controller, transports and `createDci()`.
  *
  * @packageDocumentation
- * @module @dci/core
+ * @module @samirdamle/dci-core
  */
 
 /** Package version. */
@@ -138,6 +138,6 @@ export {
   type SessionChange,
   type SessionOptions,
 } from './session';
-export type { DciEvent, DciRequest } from '@dci/protocol';
+export type { DciEvent, DciRequest } from '@samirdamle/dci-protocol';
 export * from './chat/index';
 export * from './dci/index';

@@ -19,7 +19,7 @@ Only `endpoint` (or your own `transport`) is required. Defaults live in the expo
 object.
 
 ```ts
-import { createDci } from '@dci/core';
+import { createDci } from '@samirdamle/dci-core';
 
 const dci = createDci({
   endpoint: '/api/dci',
@@ -115,7 +115,7 @@ breadcrumb and actions, and focus returned on close.
 ## Suggested actions
 
 ```ts
-import type { ActionsConfig } from '@dci/core';
+import type { ActionsConfig } from '@samirdamle/dci-core';
 
 export const actions: ActionsConfig = {
   invoice: [
@@ -153,7 +153,7 @@ function of the selected nodes.
 | `dci.destroy()`               | Remove every listener and all DCI UI                                                                             |
 
 ```ts
-import { createDci } from '@dci/core';
+import { createDci } from '@samirdamle/dci-core';
 
 const dci = createDci({ endpoint: '/api/dci' });
 
@@ -169,7 +169,7 @@ The backend can ask the page to act by streaming a `client-action` event. Regist
 name:
 
 ```ts
-import { createDci } from '@dci/core';
+import { createDci } from '@samirdamle/dci-core';
 
 const dci = createDci({ endpoint: '/api/dci' });
 
@@ -192,12 +192,12 @@ A failing or unknown action fires `actionerror` instead of breaking the stream.
 
 ## React
 
-`@dci/react` wraps `createDci()` in a provider and exposes live state as hooks (built on
+`@samirdamle/dci-react` wraps `createDci()` in a provider and exposes live state as hooks (built on
 `useSyncExternalStore`, so there's no tearing):
 
 ```tsx
-import type { DciConfig } from '@dci/core';
-import { dci, DciProvider, useChat, useDciAction, useSelection } from '@dci/react';
+import type { DciConfig } from '@samirdamle/dci-core';
+import { dci, DciProvider, useChat, useDciAction, useSelection } from '@samirdamle/dci-react';
 
 const config: DciConfig = { endpoint: '/api/dci', chat: { mode: 'panel' } }; // keep it stable
 
@@ -272,7 +272,7 @@ dci-root {
 
 ## Building blocks
 
-`createDci()` is assembled from smaller pieces, all exported from `@dci/core` for custom setups:
+`createDci()` is assembled from smaller pieces, all exported from `@samirdamle/dci-core` for custom setups:
 
 | Piece                                                               | What it does                                                                         |
 | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
@@ -292,7 +292,7 @@ import {
   createInteractions,
   createSSETransport,
   type ChatUi,
-} from '@dci/core';
+} from '@samirdamle/dci-core';
 
 let chat: ChatUi | undefined;
 const interactions = createInteractions({ onEscape: () => chat?.escape() ?? false });

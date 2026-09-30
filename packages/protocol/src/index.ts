@@ -3,7 +3,7 @@
  * streaming decoder. No dependencies.
  *
  * @packageDocumentation
- * @module @dci/protocol
+ * @module @samirdamle/dci-protocol
  */
 
 /** Package version. */

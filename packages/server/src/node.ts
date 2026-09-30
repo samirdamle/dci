@@ -2,7 +2,7 @@
  * Adapters for Node's `http` module, Express and Connect.
  *
  * @packageDocumentation
- * @module @dci/server/node
+ * @module @samirdamle/dci-server/node
  */
 
 import type { IncomingMessage, ServerResponse } from 'node:http';

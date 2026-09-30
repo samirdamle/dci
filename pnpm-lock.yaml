@@ -95,16 +95,16 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.129.0
         version: 0.129.0(zod@4.6.5)
-      '@dci/core':
+      '@samirdamle/dci-core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@dci/protocol':
+      '@samirdamle/dci-protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
-      '@dci/react':
+      '@samirdamle/dci-react':
         specifier: workspace:*
         version: link:../../packages/react
-      '@dci/server':
+      '@samirdamle/dci-server':
         specifier: workspace:*
         version: link:../../packages/server
       '@tanstack/react-table':
@@ -180,16 +180,16 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.129.0
         version: 0.129.0(zod@4.6.5)
-      '@dci/core':
+      '@samirdamle/dci-core':
         specifier: workspace:*
         version: link:../packages/core
-      '@dci/protocol':
+      '@samirdamle/dci-protocol':
         specifier: workspace:*
         version: link:../packages/protocol
-      '@dci/react':
+      '@samirdamle/dci-react':
         specifier: workspace:*
         version: link:../packages/react
-      '@dci/server':
+      '@samirdamle/dci-server':
         specifier: workspace:*
         version: link:../packages/server
       '@types/node':
@@ -207,18 +207,18 @@ importers:
 
   packages/core:
     dependencies:
-      '@dci/protocol':
-        specifier: workspace:*
-        version: link:../protocol
       '@floating-ui/dom':
         specifier: ^1.8.0
         version: 1.8.0
+      '@samirdamle/dci-protocol':
+        specifier: workspace:*
+        version: link:../protocol
 
   packages/protocol: {}
 
   packages/react:
     dependencies:
-      '@dci/core':
+      '@samirdamle/dci-core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -240,11 +240,11 @@ importers:
 
   packages/server:
     dependencies:
-      '@dci/protocol':
+      '@samirdamle/dci-protocol':
         specifier: workspace:*
         version: link:../protocol
     devDependencies:
-      '@dci/core':
+      '@samirdamle/dci-core':
         specifier: workspace:*
         version: link:../core
 

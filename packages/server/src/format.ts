@@ -1,4 +1,4 @@
-import type { DciAncestor, DciContextNode } from '@dci/protocol';
+import type { DciAncestor, DciContextNode } from '@samirdamle/dci-protocol';
 
 export type ContextStyle = 'xml' | 'json' | 'markdown';
 

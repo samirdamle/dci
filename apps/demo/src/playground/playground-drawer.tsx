@@ -1,4 +1,4 @@
-import type { ModifierKey } from '@dci/core';
+import type { ModifierKey } from '@samirdamle/dci-core';
 import type { ReactNode } from 'react';
 import { Label } from '@/components/ui/label';
 import {

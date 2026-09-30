@@ -1,4 +1,4 @@
-import { encodeComment, encodeEvent, type DciEvent } from '@dci/protocol';
+import { encodeComment, encodeEvent, type DciEvent } from '@samirdamle/dci-protocol';
 
 export const SSE_HEADERS: Record<string, string> = {
   'Content-Type': 'text/event-stream; charset=utf-8',

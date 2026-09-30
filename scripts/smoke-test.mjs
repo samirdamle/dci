@@ -6,7 +6,7 @@
  * - node-esm / node-cjs: import/require every entry point, run a dciHandler
  *   round-trip and check SSR safety (importing core without a DOM)
  * - react-ssr: render <DciProvider> with react-dom/server
- * - vite: a production build of a React app using @dci/react
+ * - vite: a production build of a React app using @samirdamle/dci-react
  * - next: `next build` of an App Router app with a client page and a route
  *   handler (skipped with --skip-next)
  *
@@ -27,7 +27,8 @@ const tarballs = Object.fromEntries(
   readdirSync(packDir)
     .filter((f) => f.endsWith('.tgz'))
     .map((f) => [
-      `@dci/${f.replace(/^dci-/, '').replace(/-\d.*\.tgz$/, '')}`,
+      // pnpm names scoped tarballs `<scope>-<name>-<version>.tgz`.
+      `@samirdamle/${f.replace(/^samirdamle-/, '').replace(/-\d.*\.tgz$/, '')}`,
       `file:${join(packDir, f)}`,
     ]),
 );
@@ -108,11 +109,11 @@ checks.push(() => {
     files: {
       'check.mjs': serverCheck(`
 import assert from 'node:assert/strict';
-import * as core from '@dci/core';
-import * as protocol from '@dci/protocol';
-import * as react from '@dci/react';
-import * as server from '@dci/server';
-import * as node from '@dci/server/node';`),
+import * as core from '@samirdamle/dci-core';
+import * as protocol from '@samirdamle/dci-protocol';
+import * as react from '@samirdamle/dci-react';
+import * as server from '@samirdamle/dci-server';
+import * as node from '@samirdamle/dci-server/node';`),
     },
     deps: { react: '^19.0.0' },
   });
@@ -126,11 +127,11 @@ checks.push(() => {
     files: {
       'check.cjs': `(async () => {${serverCheck(`
 const assert = require('node:assert/strict');
-const core = require('@dci/core');
-const protocol = require('@dci/protocol');
-const react = require('@dci/react');
-const server = require('@dci/server');
-const node = require('@dci/server/node');`)}})().catch((e) => { console.error(e); process.exit(1); });`,
+const core = require('@samirdamle/dci-core');
+const protocol = require('@samirdamle/dci-protocol');
+const react = require('@samirdamle/dci-react');
+const server = require('@samirdamle/dci-server');
+const node = require('@samirdamle/dci-server/node');`)}})().catch((e) => { console.error(e); process.exit(1); });`,
     },
     deps: { react: '^19.0.0' },
   });
@@ -146,7 +147,7 @@ checks.push(() => {
 import assert from 'node:assert/strict';
 import { createElement as h } from 'react';
 import { renderToString } from 'react-dom/server';
-import { dci, DciProvider } from '@dci/react';
+import { dci, DciProvider } from '@samirdamle/dci-react';
 const html = renderToString(
   h(DciProvider, { config: { endpoint: '/api/dci' } },
     h('article', dci({ id: 'inv_1', type: 'invoice', label: 'Invoice #1' }), 'Invoice #1')),
@@ -174,8 +175,8 @@ checks.push(() => {
       'vite.config.js': `import react from '@vitejs/plugin-react';\nexport default { plugins: [react()] };`,
       'main.jsx': `
 import { createRoot } from 'react-dom/client';
-import { dci, DciProvider, useSelection } from '@dci/react';
-import { createDci } from '@dci/core';
+import { dci, DciProvider, useSelection } from '@samirdamle/dci-react';
+import { createDci } from '@samirdamle/dci-core';
 const config = { endpoint: '/api/dci' };
 function App() {
   const { nodes } = useSelection();
@@ -198,13 +199,13 @@ if (!args.has('--skip-next')) {
         'app/layout.jsx': `export default function Layout({ children }) { return <html lang="en"><body>{children}</body></html>; }`,
         'app/page.jsx': `
 'use client';
-import { dci, DciProvider } from '@dci/react';
+import { dci, DciProvider } from '@samirdamle/dci-react';
 const config = { endpoint: '/api/dci' };
 export default function Page() {
   return <DciProvider config={config}><article {...dci({ id: 'inv_1', type: 'invoice' })}>Invoice</article></DciProvider>;
 }`,
         'app/api/dci/route.js': `
-import { dciHandler } from '@dci/server';
+import { dciHandler } from '@samirdamle/dci-server';
 export const dynamic = 'force-dynamic';
 export const POST = dciHandler(async (req, stream) => stream.text('Hi ' + req.prompt));`,
       },

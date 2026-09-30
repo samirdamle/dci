@@ -1,6 +1,6 @@
-import { DciRequest, DciContextNode } from '@dci/protocol';
-export { DciContextNode, DciEvent, DciRequest } from '@dci/protocol';
-export { D as DciHandlerFn, a as DciHandlerOptions, b as DciStream, c as DciStreamOptions, S as SSE_HEADERS, W as WebHandler, d as createDciStream, e as dciHandler } from './handler-abNagw90.js';
+import { DciRequest, DciContextNode } from '@samirdamle/dci-protocol';
+export { DciContextNode, DciEvent, DciRequest } from '@samirdamle/dci-protocol';
+export { D as DciHandlerFn, a as DciHandlerOptions, b as DciStream, c as DciStreamOptions, S as SSE_HEADERS, W as WebHandler, d as createDciStream, e as dciHandler } from './handler-5_jcYwh9.js';
 
 /** A request DCI can't handle; `status` is the HTTP status to answer with. */
 declare class DciRequestError extends Error {
@@ -33,7 +33,7 @@ declare function formatContextForPrompt(context: DciContextNode[], { style }?: F
  * Web-standard, so they run on Node, Bun, Deno and edge runtimes.
  *
  * @packageDocumentation
- * @module @dci/server
+ * @module @samirdamle/dci-server
  */
 /** Package version. */
 declare const VERSION = "0.0.0";

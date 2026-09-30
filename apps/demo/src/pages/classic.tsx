@@ -1,15 +1,15 @@
-import { VERSION as CORE_VERSION } from '@dci/core';
-import { VERSION as PROTOCOL_VERSION } from '@dci/protocol';
-import { VERSION as REACT_VERSION } from '@dci/react';
-import { VERSION as SERVER_VERSION } from '@dci/server';
+import { VERSION as CORE_VERSION } from '@samirdamle/dci-core';
+import { VERSION as PROTOCOL_VERSION } from '@samirdamle/dci-protocol';
+import { VERSION as REACT_VERSION } from '@samirdamle/dci-react';
+import { VERSION as SERVER_VERSION } from '@samirdamle/dci-server';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Playground } from './playground';
 
 const packages = [
-  { name: '@dci/protocol', version: PROTOCOL_VERSION },
-  { name: '@dci/core', version: CORE_VERSION },
-  { name: '@dci/react', version: REACT_VERSION },
-  { name: '@dci/server', version: SERVER_VERSION },
+  { name: '@samirdamle/dci-protocol', version: PROTOCOL_VERSION },
+  { name: '@samirdamle/dci-core', version: CORE_VERSION },
+  { name: '@samirdamle/dci-react', version: REACT_VERSION },
+  { name: '@samirdamle/dci-server', version: SERVER_VERSION },
 ];
 
 /** The original single-page playground, kept for the M2–M5 e2e suites. */

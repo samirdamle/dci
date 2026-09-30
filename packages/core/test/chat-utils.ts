@@ -1,4 +1,4 @@
-import type { DciEvent, DciRequest } from '@dci/protocol';
+import type { DciEvent, DciRequest } from '@samirdamle/dci-protocol';
 import type { Transport } from '../src/transport';
 
 /** A transport that replays scripted events; `gate` pauses before the rest. */

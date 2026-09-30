@@ -1,5 +1,5 @@
 /**
- * Shared DOM test helpers for `@dci/core` (and anything built on it).
+ * Shared DOM test helpers for `@samirdamle/dci-core` (and anything built on it).
  * happy-dom has no layout engine, so these helpers cover events and structure
  * only; geometry-dependent behaviour belongs in the Playwright suite.
  */

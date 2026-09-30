@@ -1,12 +1,12 @@
 import { IncomingMessage, ServerResponse } from 'node:http';
-import { W as WebHandler } from './handler-abNagw90.js';
-import '@dci/protocol';
+import { W as WebHandler } from './handler-5_jcYwh9.js';
+import '@samirdamle/dci-protocol';
 
 /**
  * Adapters for Node's `http` module, Express and Connect.
  *
  * @packageDocumentation
- * @module @dci/server/node
+ * @module @samirdamle/dci-server/node
  */
 
 /**

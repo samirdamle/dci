@@ -1,4 +1,4 @@
-import { encodeEvent, type DciEvent, type DciRequest } from '@dci/protocol';
+import { encodeEvent, type DciEvent, type DciRequest } from '@samirdamle/dci-protocol';
 import { describe, expect, it, vi } from 'vitest';
 import { createSSETransport } from '../src/transport';
 

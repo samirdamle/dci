@@ -13,13 +13,13 @@ AI chats make users *describe* what they want to talk about ("the third row in t
 
 | Package | Purpose |
 |---|---|
-| `@dci/protocol` | Shared wire-protocol types and the SSE encoder/decoder (§7). No dependencies; used by both client and server. |
-| `@dci/core` | Framework-agnostic TypeScript library: selection engine, overlay, chat UI, transport. No framework dependency. |
-| `@dci/react` | Thin React bindings (`<DciProvider>`, `useDci`, `useSelection`, `useChat`, `useDciAction`, `<DciChat>`, and the `dci()` annotation helper). |
-| `@dci/server` | Small Node helpers for the endpoint protocol (parse the request, stream events). |
+| `@samirdamle/dci-protocol` | Shared wire-protocol types and the SSE encoder/decoder (§7). No dependencies; used by both client and server. |
+| `@samirdamle/dci-core` | Framework-agnostic TypeScript library: selection engine, overlay, chat UI, transport. No framework dependency. |
+| `@samirdamle/dci-react` | Thin React bindings (`<DciProvider>`, `useDci`, `useSelection`, `useChat`, `useDciAction`, `<DciChat>`, and the `dci()` annotation helper). |
+| `@samirdamle/dci-server` | Small Node helpers for the endpoint protocol (parse the request, stream events). |
 | `apps/demo` | Demo app with a Node/TS backend that uses Claude. |
 
-**npm scope:** the packages are published as `@dci/*`. As of this writing the `@dci` scope exists on npm with no public packages; if it isn't owned by this project's maintainer, the fallback is `@dci-ai/*` (available). The decision is recorded here once made.
+**npm scope:** the packages are published under the maintainer's scope as `@samirdamle/dci-core`, `@samirdamle/dci-react`, `@samirdamle/dci-server` and `@samirdamle/dci-protocol` (the `@dci` scope on npm belongs to someone else).
 
 **Out of scope for v1 (default):** browser extension, Vue/Svelte bindings, MCP exposure, voice input, touch support, benchmark suite. See §11.
 
@@ -175,7 +175,7 @@ dci.onAction('updateInvoice', ({ id, patch }) => store.update(id, patch));
 ## 8. Public API sketch
 
 ```ts
-import { createDci } from '@dci/core';
+import { createDci } from '@samirdamle/dci-core';
 
 const dci = createDci({
   endpoint: '/api/dci',
@@ -245,7 +245,7 @@ The demo shows:
 
 ## 11. Roadmap after v1
 
-1. Browser extension, built on `@dci/core` with fallback mode.
+1. Browser extension, built on `@samirdamle/dci-core` with fallback mode.
 2. A query or command palette to select by metadata ("all overdue invoices"), with voice as a speech-to-text front end for it.
 3. Touch support (long-press or a toggle mode).
 4. Vue and Svelte bindings.

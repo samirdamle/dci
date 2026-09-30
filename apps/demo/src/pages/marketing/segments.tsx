@@ -1,4 +1,4 @@
-import { dci } from '@dci/react';
+import { dci } from '@samirdamle/dci-react';
 import { Users } from 'lucide-react';
 import { PageHeader } from '@/components/crm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

@@ -2,10 +2,10 @@
  * React bindings for DCI: `DciProvider`, hooks and the `dci()` annotation helper.
  *
  * @packageDocumentation
- * @module @dci/react
+ * @module @samirdamle/dci-react
  */
 
-import { dciAttr, type DciAttrValue } from '@dci/core';
+import { dciAttr, type DciAttrValue } from '@samirdamle/dci-core';
 
 /** Package version. */
 export const VERSION = '0.0.0';
@@ -28,4 +28,4 @@ export { DciChat, type DciChatProps } from './dci-chat';
  */
 export const dci = (value: DciAttrValue): { 'data-dci': string } => dciAttr(value);
 
-export type { DciAttrValue, DciConfig, DciInstance } from '@dci/core';
+export type { DciAttrValue, DciConfig, DciInstance } from '@samirdamle/dci-core';

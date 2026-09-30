@@ -1,4 +1,4 @@
-import type { DciRequest } from '@dci/protocol';
+import type { DciRequest } from '@samirdamle/dci-protocol';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createActionRegistry } from '../src/actions';
 import { createChatController, type ChatControllerOptions } from '../src/chat/controller';

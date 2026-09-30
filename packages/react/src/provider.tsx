@@ -1,4 +1,4 @@
-import { createDci, type DciConfig, type DciInstance } from '@dci/core';
+import { createDci, type DciConfig, type DciInstance } from '@samirdamle/dci-core';
 import {
   createContext,
   useContext,

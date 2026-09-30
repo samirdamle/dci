@@ -1,5 +1,5 @@
 {
-  "name": "@dci/server",
+  "name": "@samirdamle/dci-server",
   "version": "0.0.0",
   "description": "Node helpers for the DCI endpoint protocol.",
   "keywords": [
@@ -72,14 +72,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@dci/protocol": "workspace:*"
+    "@samirdamle/dci-protocol": "workspace:*"
   },
   "devDependencies": {
-    "@dci/core": "workspace:*"
+    "@samirdamle/dci-core": "workspace:*"
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
     "exports": {
       ".": {
         "import": {

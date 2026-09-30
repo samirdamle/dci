@@ -1,4 +1,4 @@
-import { createDci, type DciEvent, type Transport } from '@dci/core';
+import { createDci, type DciEvent, type Transport } from '@samirdamle/dci-core';
 
 /**
  * Visual-snapshot fixture (`/visual.html`): fixed-size, text-free boxes, so

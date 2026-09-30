@@ -1,4 +1,4 @@
-import { dci } from '@dci/react';
+import { dci } from '@samirdamle/dci-react';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';

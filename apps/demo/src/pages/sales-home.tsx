@@ -1,4 +1,4 @@
-import { dci } from '@dci/react';
+import { dci } from '@samirdamle/dci-react';
 import { CalendarClock } from 'lucide-react';
 import { useMemo } from 'react';
 import { ChartCard, KpiCard, OwnerAvatar, RecordTable, StatusBadge } from '@/components/crm';

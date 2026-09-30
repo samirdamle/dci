@@ -1,4 +1,4 @@
-import type { ActionsConfig, DciConfig } from '@dci/core';
+import type { ActionsConfig, DciConfig } from '@samirdamle/dci-core';
 import { autoTransport } from '@/lib/backend';
 import { withEventLog } from '@/playground/event-log';
 

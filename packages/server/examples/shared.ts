@@ -1,4 +1,4 @@
-import { dciHandler, formatContextForPrompt } from '@dci/server';
+import { dciHandler, formatContextForPrompt } from '@samirdamle/dci-server';
 
 /** Stand-in for your LLM call: yields a reply word by word. */
 async function* answer(prompt: string, context: string, signal: AbortSignal) {

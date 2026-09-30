@@ -1,4 +1,4 @@
-# `@dci/server` examples
+# `@samirdamle/dci-server` examples
 
 Each example serves a DCI endpoint at `/api/dci`. They answer with a canned reply so they run
 without an API key; replace `answer()` with your LLM or agent call (the demo app in M7 shows Claude).
@@ -13,7 +13,7 @@ without an API key; replace `answer()` with your LLM or agent call (the demo app
 The handler shape is the same everywhere:
 
 ```ts
-import { dciHandler, formatContextForPrompt } from '@dci/server';
+import { dciHandler, formatContextForPrompt } from '@samirdamle/dci-server';
 
 export const handler = dciHandler(async (req, stream, { signal }) => {
   const context = formatContextForPrompt(req.context); // XML block for the prompt
@@ -26,4 +26,4 @@ export const handler = dciHandler(async (req, stream, { signal }) => {
 ```
 
 These files are documentation: they are not type-checked in CI, because their frameworks aren't
-dependencies of `@dci/server`.
+dependencies of `@samirdamle/dci-server`.

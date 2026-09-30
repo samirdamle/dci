@@ -15,7 +15,7 @@ pnpm install
 pnpm dev      # the demo at http://localhost:5173, plus its backend on :8787
 ```
 
-Inside the workspace, `@dci/*` packages resolve to their TypeScript sources through the
+Inside the workspace, `@samirdamle/dci-*` packages resolve to their TypeScript sources through the
 `@dci/source` export condition, so the demo, tests and typechecking never need a prior build.
 
 ## Repository layout
@@ -129,18 +129,40 @@ public packages share one version (a `fixed` group).
 2. On `main`, the **Release** workflow keeps a "Version packages" PR open. It bumps the versions,
    writes the changelogs and syncs each package's `VERSION` constant
    (`scripts/sync-versions.mjs`).
-3. Merging that PR publishes to npm with provenance, tags the release and creates GitHub
-   releases.
+3. Merge that PR, then publish. CI publishing is opt-in (below); by default a maintainer
+   publishes by hand.
 
 Prereleases come from the `next` branch in pre mode (`pnpm changeset pre enter next`), published
 under the `next` dist-tag. Before a release, `pnpm build && pnpm check:packages && pnpm smoke`
 checks exactly what will be published. `pnpm -r --filter "./packages/**" publish --dry-run
 --no-git-checks` shows the publish without doing it.
 
-**One-time setup (maintainers):** add an `NPM_TOKEN` repository secret (an npm automation token
-with publish rights to the scope), or configure npm trusted publishing for
-`.github/workflows/release.yml`. Also allow GitHub Actions to create pull requests (Settings →
-Actions → General → Workflow permissions).
+### Publishing by hand
+
+After merging the "Version packages" PR, from an up-to-date `main`:
+
+```sh
+git switch main && git pull
+pnpm install --frozen-lockfile
+pnpm build && pnpm check:packages && pnpm smoke   # check exactly what will ship
+npm login                                         # once; uses your 2FA
+pnpm -r --filter "./packages/**" publish --access public --otp <code>
+pnpm changeset tag && git push --follow-tags      # one tag per package, e.g. @samirdamle/dci-core@1.0.0
+```
+
+`pnpm publish` goes in dependency order and replaces `workspace:*` with the real version.
+Provenance isn't available from a laptop (npm only signs it in CI), so hand-published versions
+don't carry it. Then create a GitHub release for the tag with the changelog entry and a demo link.
+
+### Publishing from CI (optional)
+
+To let merging the "Version packages" PR publish with provenance, set the repository variable
+`NPM_PUBLISH` to `true` (Settings → Secrets and variables → Actions → Variables) and give the
+workflow npm access. The recommended way is npm **trusted publishing**: after the first manual
+publish, add `samirdamle/dci` and `.github/workflows/release.yml` as a trusted publisher on each
+package's npm settings page. That needs no token and no 2FA bypass. The alternative is an
+`NPM_TOKEN` secret. In both cases, allow GitHub Actions to create pull requests (Settings →
+Actions → General → Workflow permissions) so the workflow can open the "Version packages" PR.
 
 ## Reporting security issues
 

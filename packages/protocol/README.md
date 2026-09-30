@@ -1,16 +1,16 @@
-# @dci/protocol
+# @samirdamle/dci-protocol
 
 The [DCI](https://github.com/samirdamle/dci) wire protocol: request and event types, validation,
 and an SSE encoder and streaming decoder. No dependencies; works in browsers, Node, Deno, Bun and
-edge runtimes. `@dci/core` and `@dci/server` use it; you only need it directly to build your own
+edge runtimes. `@samirdamle/dci-core` and `@samirdamle/dci-server` use it; you only need it directly to build your own
 client or server.
 
 ```sh
-npm install @dci/protocol
+npm install @samirdamle/dci-protocol
 ```
 
 ```ts
-import { createSSEDecoder, encodeEvent, validateRequest } from '@dci/protocol';
+import { createSSEDecoder, encodeEvent, validateRequest } from '@samirdamle/dci-protocol';
 
 const check = validateRequest({
   v: 1,

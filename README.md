@@ -41,8 +41,8 @@ two-way: the agent can update the page through **client actions**.
 ## Quick start
 
 ```tsx
-import type { DciConfig } from '@dci/core';
-import { dci, DciProvider } from '@dci/react';
+import type { DciConfig } from '@samirdamle/dci-core';
+import { dci, DciProvider } from '@samirdamle/dci-react';
 
 const config: DciConfig = { endpoint: '/api/dci' };
 
@@ -56,7 +56,7 @@ export const App = () => (
 ```
 
 ```ts
-import { dciHandler, formatContextForPrompt } from '@dci/server';
+import { dciHandler, formatContextForPrompt } from '@samirdamle/dci-server';
 
 export const POST = dciHandler(async (req, stream) => {
   const context = formatContextForPrompt(req.context); // the selected items, ready for a prompt
@@ -64,7 +64,7 @@ export const POST = dciHandler(async (req, stream) => {
 });
 ```
 
-Not using React? `createDci({ endpoint: '/api/dci' })` from `@dci/core` does the same.
+Not using React? `createDci({ endpoint: '/api/dci' })` from `@samirdamle/dci-core` does the same.
 [Getting started](docs/getting-started.md) walks through a full setup with Claude.
 
 ## Documentation
@@ -83,12 +83,12 @@ Not using React? `createDci({ endpoint: '/api/dci' })` from `@dci/core` does the
 
 ## Packages
 
-| Package                              | Purpose                                                          |
-| ------------------------------------ | ---------------------------------------------------------------- |
-| [`@dci/core`](packages/core)         | Framework-agnostic selection engine, overlay, chat UI, transport |
-| [`@dci/react`](packages/react)       | React bindings: `DciProvider`, hooks, `dci()`                    |
-| [`@dci/server`](packages/server)     | Endpoint helpers for Node, Bun, Deno and edge runtimes           |
-| [`@dci/protocol`](packages/protocol) | Wire-protocol types and the SSE encoder/decoder                  |
+| Package                                         | Purpose                                                          |
+| ----------------------------------------------- | ---------------------------------------------------------------- |
+| [`@samirdamle/dci-core`](packages/core)         | Framework-agnostic selection engine, overlay, chat UI, transport |
+| [`@samirdamle/dci-react`](packages/react)       | React bindings: `DciProvider`, hooks, `dci()`                    |
+| [`@samirdamle/dci-server`](packages/server)     | Endpoint helpers for Node, Bun, Deno and edge runtimes           |
+| [`@samirdamle/dci-protocol`](packages/protocol) | Wire-protocol types and the SSE encoder/decoder                  |
 
 The [demo](https://samirdamle.github.io/dci/) (`apps/demo`) is a mock CRM for a fictional
 Salesforce-style org, with a Claude-powered agent that can change records, a no-key mock mode and
@@ -107,13 +107,13 @@ a Playground to try every option live.
 
 ## Roadmap
 
-| Milestone | Scope                                                                | Status      |
-| --------- | -------------------------------------------------------------------- | ----------- |
-| M0–M1     | Tooling; `data-dci` parsing, DCI tree, context extraction, selection | Done        |
-| M2–M3     | Every selection gesture; the Shadow DOM highlight overlay            | Done        |
-| M4–M5     | Protocol, transport, client actions, `@dci/server`; the chat UI      | Done        |
-| M6–M7     | `createDci()` and React bindings; the CRM demo with a Claude agent   | Done        |
-| M8        | Cross-browser e2e, performance, docs, npm release                    | In progress |
+| Milestone | Scope                                                                      | Status      |
+| --------- | -------------------------------------------------------------------------- | ----------- |
+| M0–M1     | Tooling; `data-dci` parsing, DCI tree, context extraction, selection       | Done        |
+| M2–M3     | Every selection gesture; the Shadow DOM highlight overlay                  | Done        |
+| M4–M5     | Protocol, transport, client actions, `@samirdamle/dci-server`; the chat UI | Done        |
+| M6–M7     | `createDci()` and React bindings; the CRM demo with a Claude agent         | Done        |
+| M8        | Cross-browser e2e, performance, docs, npm release                          | In progress |
 
 After v1: a browser extension that brings DCI to any website, Vue and Svelte bindings, touch
 support, and selecting by query ("all overdue invoices").

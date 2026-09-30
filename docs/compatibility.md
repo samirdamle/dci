@@ -68,13 +68,13 @@ DCI's own UI (overlay, chat, live region) renders inside a shadow root on
 
 Bundle sizes (min+gzip), enforced in CI by `pnpm size` (`.size-limit.json`):
 
-| Package                                                                | Budget | Measured |
-| ---------------------------------------------------------------------- | ------ | -------- |
-| `@dci/protocol`                                                        | 2 KB   | 1.47 KB  |
-| `@dci/core` headless (gestures, selection, chat controller, transport) | 15 KB  | 14.01 KB |
-| `@dci/core` full (`createDci` with overlay, floating-ui, chat UI)      | 40 KB  | 31.34 KB |
-| `@dci/react` on top of core                                            | 2 KB   | 1.13 KB  |
-| `@dci/server`                                                          | 4 KB   | 2.03 KB  |
+| Package                                                                           | Budget | Measured |
+| --------------------------------------------------------------------------------- | ------ | -------- |
+| `@samirdamle/dci-protocol`                                                        | 2 KB   | 1.47 KB  |
+| `@samirdamle/dci-core` headless (gestures, selection, chat controller, transport) | 15 KB  | 14.01 KB |
+| `@samirdamle/dci-core` full (`createDci` with overlay, floating-ui, chat UI)      | 40 KB  | 31.34 KB |
+| `@samirdamle/dci-react` on top of core                                            | 2 KB   | 1.13 KB  |
+| `@samirdamle/dci-server`                                                          | 4 KB   | 2.03 KB  |
 
 The headless budget was raised from the 12 KB target to 15 KB after measuring:
 it includes the chat controller, SSE parser and action registry as well as the

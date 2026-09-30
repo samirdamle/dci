@@ -1,5 +1,5 @@
-import type { ActionsConfig, ChatMode, DciConfig } from '@dci/core';
-import { dci, DciProvider, useChat, useSelection } from '@dci/react';
+import type { ActionsConfig, ChatMode, DciConfig } from '@samirdamle/dci-core';
+import { dci, DciProvider, useChat, useSelection } from '@samirdamle/dci-react';
 import { useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { INVOICES, OPPORTUNITIES } from '../classic-data';
@@ -31,7 +31,7 @@ const ACTIONS: ActionsConfig = {
 
 const MODES: ChatMode[] = ['popover', 'panel'];
 
-/** Annotated sample content wired up with `<DciProvider>` from `@dci/react`. */
+/** Annotated sample content wired up with `<DciProvider>` from `@samirdamle/dci-react`. */
 export function Playground() {
   const rootRef = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<ChatMode>('popover');

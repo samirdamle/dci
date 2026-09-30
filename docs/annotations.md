@@ -40,11 +40,11 @@ how to design your annotations, and exactly what gets sent.
   warns once per element in development.
 - The attribute name is configurable: `createDci({ attribute: 'data-ai' })`.
 
-Don't hand-write JSON in templates. `dci()` (React) and `dciAttr()` (`@dci/core`) serialize it for
+Don't hand-write JSON in templates. `dci()` (React) and `dciAttr()` (`@samirdamle/dci-core`) serialize it for
 you, with sorted keys so the attribute only changes when the data does:
 
 ```tsx
-import { dci } from '@dci/react';
+import { dci } from '@samirdamle/dci-react';
 
 export const InvoiceRow = ({ invoice }: { invoice: Invoice }) => (
   <tr

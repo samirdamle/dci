@@ -1,4 +1,4 @@
-import type { DciConfig, ModifierKey } from '@dci/core';
+import type { DciConfig, ModifierKey } from '@samirdamle/dci-core';
 import { createContext, useContext } from 'react';
 
 /** The DCI options the playground can change live. */

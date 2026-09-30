@@ -1,4 +1,4 @@
-import type { Bindings, ModifierKey } from '@dci/core';
+import type { Bindings, ModifierKey } from '@samirdamle/dci-core';
 
 const KEY_LABEL: Record<string, string> = {
   Alt: 'Alt (⌥)',

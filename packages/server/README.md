@@ -1,4 +1,4 @@
-# @dci/server
+# @samirdamle/dci-server
 
 Helpers for [DCI](https://github.com/samirdamle/dci) endpoints: parse and validate the request,
 stream the answer as Server-Sent Events, and always finish the response. Web-standard, so it runs
@@ -6,11 +6,11 @@ on Node, Bun, Deno, Next.js route handlers and edge runtimes. No LLM SDK is bund
 model is your code.
 
 ```sh
-npm install @dci/server
+npm install @samirdamle/dci-server
 ```
 
 ```ts
-import { dciHandler, formatContextForPrompt } from '@dci/server';
+import { dciHandler, formatContextForPrompt } from '@samirdamle/dci-server';
 
 export const POST = dciHandler(async (req, stream, { signal }) => {
   const context = formatContextForPrompt(req.context); // the selected items, for your prompt
@@ -22,7 +22,7 @@ export const POST = dciHandler(async (req, stream, { signal }) => {
 });
 ```
 
-For Node's `http` module or Express, wrap it with `toNodeHandler` from `@dci/server/node`.
+For Node's `http` module or Express, wrap it with `toNodeHandler` from `@samirdamle/dci-server/node`.
 
 - [A backend with Claude in ~30 lines](https://github.com/samirdamle/dci/blob/main/docs/getting-started.md#3-a-minimal-backend-with-claude)
 - [The protocol](https://github.com/samirdamle/dci/blob/main/docs/protocol.md)

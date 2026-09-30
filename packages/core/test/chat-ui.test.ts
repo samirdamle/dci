@@ -1,4 +1,4 @@
-import type { DciEvent, DciRequest } from '@dci/protocol';
+import type { DciEvent, DciRequest } from '@samirdamle/dci-protocol';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createChatController, type ChatControllerOptions } from '../src/chat/controller';
 import { createChatUi, type ChatUiOptions } from '../src/chat/ui/chat-ui';

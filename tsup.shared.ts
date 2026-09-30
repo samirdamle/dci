@@ -1,6 +1,6 @@
 import { defineConfig, type Options } from 'tsup';
 
-/** Shared tsup setup for every `@dci/*` library: ESM + CJS + `.d.ts`. */
+/** Shared tsup setup for every `@samirdamle/dci-*` library: ESM + CJS + `.d.ts`. */
 export function defineLibConfig(overrides: Options = {}) {
   return defineConfig({
     entry: ['src/index.ts'],

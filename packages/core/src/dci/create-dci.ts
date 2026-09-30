@@ -1,4 +1,4 @@
-import type { DciContextNode, DciRequest } from '@dci/protocol';
+import type { DciContextNode, DciRequest } from '@samirdamle/dci-protocol';
 import {
   createActionRegistry,
   type ActionError,
