@@ -67,6 +67,13 @@ interface DciChatProps {
  */
 declare function DciChat({ render }: DciChatProps): react.JSX.Element;
 
+/**
+ * React bindings for DCI: `DciProvider`, hooks and the `dci()` annotation helper.
+ *
+ * @packageDocumentation
+ * @module @dci/react
+ */
+
 /** Package version. */
 declare const VERSION = "0.0.0";
 

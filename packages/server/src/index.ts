@@ -1,4 +1,12 @@
-/** Placeholder package version; replaced by real exports in later milestones. */
+/**
+ * Helpers for DCI endpoints: request parsing, event streaming and prompt formatting.
+ * Web-standard, so they run on Node, Bun, Deno and edge runtimes.
+ *
+ * @packageDocumentation
+ * @module @dci/server
+ */
+
+/** Package version. */
 export const VERSION = '0.0.0';
 
 export { DciRequestError } from './errors';

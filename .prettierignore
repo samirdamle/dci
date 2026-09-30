@@ -7,3 +7,6 @@ pnpm-lock.yaml
 SPEC.md
 # Generated API reports (scripts/api-report.mjs), compared byte for byte
 packages/*/api
+# Generated: extracted doc samples and the TypeDoc site
+docs/_samples
+docs/api

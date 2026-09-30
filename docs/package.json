@@ -1,0 +1,21 @@
+{
+  "name": "@dci/docs",
+  "private": true,
+  "type": "module",
+  "description": "Type-checks every TypeScript sample in the Markdown docs.",
+  "scripts": {
+    "typecheck": "node ../scripts/check-doc-samples.mjs"
+  },
+  "devDependencies": {
+    "@ai-sdk/anthropic": "^4.0.68",
+    "@anthropic-ai/sdk": "^0.129.0",
+    "@dci/core": "workspace:*",
+    "@dci/protocol": "workspace:*",
+    "@dci/react": "workspace:*",
+    "@dci/server": "workspace:*",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.3.0",
+    "ai": "^7.0.122",
+    "react": "^19.3.0"
+  }
+}
