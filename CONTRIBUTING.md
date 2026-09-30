@@ -55,6 +55,23 @@ The **Playground** drawer changes DCI options live, and the demo reads its start
 the URL, e.g. `/?modifier=Control&fallback=off#/sales`. `/#/classic` keeps the original
 single-page playground.
 
+## The browser extension
+
+`apps/extension` builds with esbuild straight from the workspace sources, so a change in
+`packages/core` shows up in the extension without building the packages first.
+
+1. `pnpm --filter @dci/extension build` writes `dist/chrome` and `dist/firefox`.
+2. Load `dist/chrome` with **Load unpacked** in `chrome://extensions` (Developer mode), or
+   `dist/firefox/manifest.json` from `about:debugging` in Firefox.
+3. After a rebuild, click the reload icon on the extension's card, then reload the page you're
+   testing on.
+
+The Playwright `extension` project (`pnpm e2e --project extension`) builds a test copy in
+`dist/e2e`, loads it into Chromium and drives it on pages served from `http://dci.test`. The CI
+`extension` job builds both store zips, lints the Firefox build with `web-ext` and uploads the
+zips. Privacy-relevant changes (what's read, sent or stored, and permissions) must also update
+the review in [docs/extension.md](docs/extension.md#privacy).
+
 ## Scripts
 
 | Script                              | What it does                                                 |

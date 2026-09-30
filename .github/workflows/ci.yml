@@ -73,6 +73,22 @@ jobs:
       - name: Pending changesets are valid
         run: pnpm exec changeset status --since=origin/main
 
+  extension:
+    name: extension (Firefox lint, store zips)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Build the Chrome and Firefox zips
+        run: pnpm --filter @dci/extension run zip
+      - name: Lint the Firefox build (web-ext, as addons.mozilla.org does)
+        run: pnpm dlx web-ext@8.10.0 lint --source-dir apps/extension/dist/firefox --warnings-as-errors
+      - uses: actions/upload-artifact@v4
+        with:
+          name: extension-zips
+          path: apps/extension/dist/*.zip
+          retention-days: 30
+
   e2e:
     runs-on: ubuntu-latest
     steps:

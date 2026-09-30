@@ -12,6 +12,7 @@ import {
   type TabState,
   type TestResult,
 } from './messages';
+import { capHistory } from './privacy';
 import { readSecrets, SECRETS_KEY } from './secrets';
 import { originPattern, readSettings, SETTINGS_KEY } from './settings';
 import { serve, type WorkerPort } from './worker';
@@ -71,7 +72,8 @@ const history: History = {
     return ((await api.storage.session.get(key))[key] as Anthropic.Beta.BetaMessageParam[]) ?? [];
   },
   async set(sessionId, messages) {
-    await api.storage.session.set({ [`history:${sessionId}`]: messages });
+    // Capped, so a long conversation can't fill the session storage quota.
+    await api.storage.session.set({ [`history:${sessionId}`]: capHistory(messages) });
   },
 };
 
@@ -120,9 +122,16 @@ async function test(): Promise<TestResult> {
   }
 }
 
+/** The popup and the options page, as opposed to content scripts in web pages. */
+const fromExtensionPage = (sender: chrome.runtime.MessageSender) =>
+  sender.id === api.runtime.id && !!sender.url?.startsWith(api.runtime.getURL(''));
+
 api.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (isStateMessage(message) && sender.tab?.id !== undefined) {
     void setTabState(sender.tab.id, message.state);
+  } else if (!fromExtensionPage(sender)) {
+    // Toggling other tabs and spending API credits are for the extension's own pages.
+    return undefined;
   } else if (isToggleMessage(message)) {
     void toggle(message.tabId).then(() => sendResponse(true));
     return true;

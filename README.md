@@ -89,6 +89,7 @@ Not using React? `createDci({ endpoint: '/api/dci' })` from `@samirdamle/dci-cor
 | [Protocol](docs/protocol.md)                           | The wire format, and a backend in Python                                 |
 | [Recipes](docs/recipes.md)                             | Custom transports, headless React chat, redaction, agent frameworks      |
 | [Compatibility](docs/compatibility.md)                 | Browsers, OS modifier keys, CSP, shadow DOM, performance budgets         |
+| [Browser extension](docs/extension.md)                 | DCI on any website: install, backends, privacy review                    |
 | [API reference](https://samirdamle.github.io/dci/api/) | Generated from the TSDoc comments (`pnpm docs:api`)                      |
 | [Specification](SPEC.md)                               | The v1 design                                                            |
 
@@ -104,6 +105,15 @@ Not using React? `createDci({ endpoint: '/api/dci' })` from `@samirdamle/dci-cor
 The [demo](https://samirdamle.github.io/dci/) (`apps/demo`) is a mock CRM for a fictional
 Salesforce-style org, with a Claude-powered agent that can change records, a no-key mock mode and
 a Playground to try every option live.
+
+## Browser extension
+
+The [DCI extension](apps/extension) (Chrome and Firefox, Manifest V3) brings DCI to websites
+that were never annotated. Turn it on for a tab, hold Alt and click a table row, a price or a
+paragraph, then ask. Rows become records with one field per column. Answers come from Claude
+with your own API key, from your own DCI endpoint, or from an offline placeholder. Nothing is
+sent until you ask, and keys never reach web pages. It isn't in the stores yet; see
+[docs/extension.md](docs/extension.md) to load it unpacked.
 
 ## Privacy and security
 
@@ -126,8 +136,9 @@ a Playground to try every option live.
 | M6–M7     | `createDci()` and React bindings; the CRM demo with a Claude agent         | Done   |
 | M8        | Cross-browser e2e, performance, docs, npm release                          | Done   |
 
-After v1: a browser extension that brings DCI to any website, Vue and Svelte bindings, touch
-support, and selecting by query ("all overdue invoices").
+| Extension | DCI on any website: inferred structure, Claude or your endpoint | Built; store listing next |
+
+Next: Vue and Svelte bindings, touch support, and selecting by query ("all overdue invoices").
 
 ## Contributing
 

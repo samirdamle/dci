@@ -22,6 +22,11 @@ export function manifest(target: Target, version: string) {
     // Requested one origin at a time, when the user asks: an always-on site,
     // or the origin of their DCI endpoint.
     optional_host_permissions: ['https://*/*', 'http://*/*'],
+    // The default MV3 policy, stated and tightened: only the extension's own
+    // scripts, no plugins, no remote code.
+    content_security_policy: {
+      extension_pages: "script-src 'self'; object-src 'none'; base-uri 'none'",
+    },
     commands: {
       'toggle-dci': {
         suggested_key: { default: 'Alt+Shift+D' },
@@ -33,7 +38,13 @@ export function manifest(target: Target, version: string) {
     ...(target === 'firefox'
       ? {
           browser_specific_settings: {
-            gecko: { id: 'dci@samirdamle.github.io', strict_min_version: '128.0' },
+            gecko: {
+              id: 'dci@samirdamle.github.io',
+              strict_min_version: '128.0',
+              // What leaves the browser when you ask a question: the selected page
+              // content and the page's URL, sent to the backend you chose.
+              data_collection_permissions: { required: ['websiteContent', 'browsingActivity'] },
+            },
           },
         }
       : { minimum_chrome_version: '121' }),
