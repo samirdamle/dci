@@ -8,7 +8,8 @@ export const CHAT_CSS = `
 }
 .chat[hidden], .tab[hidden] { display: none; }
 .chat[data-mode='popover'] {
-  width: min(380px, calc(100vw - 16px)); max-height: min(560px, calc(100vh - 16px));
+  width: min(380px, calc(100vw - 16px));
+  max-height: min(560px, calc(100vh - 16px), var(--dci-available-height, 100vh));
   border-radius: calc(var(--dci-radius) * 2);
   /* The inverse of the chat's background (dark on light, light on dark), so the
      popover stands out over any page. Override with --dci-chat-border. */

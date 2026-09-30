@@ -5,6 +5,7 @@ import {
   hide,
   offset,
   shift,
+  size,
   type VirtualElement,
 } from '@floating-ui/dom';
 
@@ -31,9 +32,10 @@ export interface Anchoring {
 }
 
 /**
- * Keeps `floating` next to its targets with floating-ui: it flips and shifts
- * at viewport edges, follows scroll and resize, and is hidden (via
- * `data-anchor-hidden`) while the targets are scrolled out of view.
+ * Keeps `floating` next to its targets with floating-ui: it flips, shrinks
+ * (`--dci-available-height`) and shifts at viewport edges, follows scroll and
+ * resize, and is hidden (via `data-anchor-hidden`) while the targets are
+ * scrolled out of view.
  */
 export function anchorFloating(floating: HTMLElement): Anchoring {
   let targets: Element[] = [];
@@ -52,7 +54,22 @@ export function anchorFloating(floating: HTMLElement): Anchoring {
     const { x, y, middlewareData } = await computePosition(ref, floating, {
       strategy: 'fixed',
       placement: 'bottom-start',
-      middleware: [offset(8), flip({ padding: 8 }), shift({ padding: 8 }), hide()],
+      middleware: [
+        offset(8),
+        flip({ padding: 8 }),
+        // When neither side has room for the full height, shrink to the side
+        // flip chose instead of shifting over the targets.
+        size({
+          padding: 8,
+          apply: ({ availableHeight }) =>
+            floating.style.setProperty(
+              '--dci-available-height',
+              `${Math.floor(availableHeight)}px`,
+            ),
+        }),
+        shift({ padding: 8 }),
+        hide(),
+      ],
     });
     floating.style.left = `${x}px`;
     floating.style.top = `${y}px`;
@@ -65,6 +82,7 @@ export function anchorFloating(floating: HTMLElement): Anchoring {
     floating.toggleAttribute('data-parked', !targets.length);
     if (!targets.length) {
       floating.removeAttribute('data-anchor-hidden');
+      floating.style.removeProperty('--dci-available-height');
       floating.style.left = '';
       floating.style.top = '';
       return;

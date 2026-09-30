@@ -164,7 +164,7 @@ describe('Mod+Drag window select', () => {
     const up = (x: number, y: number, extra = {}) =>
       fakePointer(target, { type: 'pointerup', clientX: x, clientY: y, ...mods, ...extra });
     const click = () => fakePointer(target, { clientX: 0, clientY: 0, ...mods });
-    return { f, dci, marquees, previews, down, move, up, click };
+    return { f, dci, marquees, previews, down, move, up, click, target };
   }
   const ids = (els: Element[]) => els.map((e) => e.id);
 
@@ -178,6 +178,16 @@ describe('Mod+Drag window select', () => {
     expect(ids(dci.selection.get())).toEqual(['a', 'c']);
     expect(marquees[marquees.length - 1]).toBeNull();
     expect(previews[previews.length - 1]).toEqual([]);
+  });
+
+  it('uses the release position even before the next frame runs', async () => {
+    const { dci, down, move, up, target } = setup();
+    down(90, 90);
+    await move(150, 120); // started; the preview so far holds nothing
+    // A fast move and release with no frame in between.
+    fakePointer(target, { type: 'pointermove', clientX: 240, clientY: 205, altKey: true });
+    up(250, 210);
+    expect(ids(dci.selection.get())).toEqual(['a', 'c']);
   });
 
   it('right→left selects touched leaf nodes', async () => {

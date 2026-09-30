@@ -78,6 +78,9 @@ export const marqueeGesture: Gesture = (ctx) => {
   function end(apply: boolean) {
     if (!drag) return;
     const d = drag;
+    // The preview is computed once per frame; a release can arrive before the
+    // frame for the last move has run, so bring it up to date now.
+    if (apply && d.started) d.preview = hitTestAt(d);
     drag = null;
     cancelAnimationFrame(d.frame);
     detach();
@@ -96,6 +99,25 @@ export const marqueeGesture: Gesture = (ctx) => {
     else ctx.selection.set(d.preview);
   }
 
+  /** The drag box in page coordinates, and whether it selects by contain or touch. */
+  function marqueeBox(d: Drag) {
+    const x = d.clientX + window.scrollX;
+    const y = d.clientY + window.scrollY;
+    const mode: MarqueeMode = marqueeMode(d.startX, x);
+    return { box: rectFromPoints(d.startX, d.startY, x, y), mode };
+  }
+
+  /** The nodes the box selects at the pointer's latest position. */
+  function hitTestAt(d: Drag): Element[] {
+    // Rects are measured at drag start and re-measured after scrolling.
+    if (d.dirty) {
+      d.candidates = collectCandidates(ctx.tree, ctx.options.root ?? document.body);
+      d.dirty = false;
+    }
+    const { box, mode } = marqueeBox(d);
+    return hitTest(d.candidates, box, mode, ctx.options.windowSelectLevel ?? 'leaf');
+  }
+
   function update() {
     if (!drag) return;
     const d = drag;
@@ -106,16 +128,8 @@ export const marqueeGesture: Gesture = (ctx) => {
       window.scrollBy(dx, dy);
       d.dirty = true;
     }
-    if (d.dirty) {
-      d.candidates = collectCandidates(ctx.tree, ctx.options.root ?? document.body);
-      d.dirty = false;
-    }
-    const x = d.clientX + window.scrollX;
-    const y = d.clientY + window.scrollY;
-    const box = rectFromPoints(d.startX, d.startY, x, y);
-    const mode: MarqueeMode = marqueeMode(d.startX, x);
-    const level = ctx.options.windowSelectLevel ?? 'leaf';
-    const preview = hitTest(d.candidates, box, mode, level);
+    const { box, mode } = marqueeBox(d);
+    const preview = hitTestAt(d);
     const viewportBox = offsetRect(box, -window.scrollX, -window.scrollY);
     ctx.bus.emit('marquee', { rect: viewportBox, mode });
     if (preview.length !== d.preview.length || preview.some((el, i) => el !== d.preview[i])) {
@@ -153,7 +167,10 @@ export const marqueeGesture: Gesture = (ctx) => {
     schedule();
   };
   const onUp = (e: PointerEvent) => {
-    if (drag && e.pointerId === drag.pointerId) end(true);
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    drag.clientX = e.clientX;
+    drag.clientY = e.clientY;
+    end(true);
   };
   const onCancel = () => end(false);
   const onScroll = () => {
