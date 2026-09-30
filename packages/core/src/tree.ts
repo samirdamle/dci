@@ -1,8 +1,11 @@
-import { DEFAULT_ATTRIBUTE, readDci } from './parse';
+import { DCI_UI_ATTRIBUTE } from './keys';
+import { DEFAULT_ATTRIBUTE, readDci, type InferAnnotation } from './parse';
 
 export interface TreeOptions {
   /** Attribute that marks DCI nodes. Defaults to `data-dci`. */
   attribute?: string;
+  /** Annotations for elements without the attribute (see `DciConfig.infer`). */
+  infer?: InferAnnotation;
   /** Scope root; nodes outside it are ignored. Defaults to `document.body`. */
   root?: Element;
 }
@@ -42,11 +45,11 @@ function composedParent(node: Node): Element | null {
 
 export function createDciTree(options: TreeOptions = {}): DciTree {
   const attribute = options.attribute ?? DEFAULT_ATTRIBUTE;
+  const source = { attribute, ...(options.infer ? { infer: options.infer } : {}) };
   const getRoot = () => options.root ?? document.body;
 
-  const isAnnotated = (el: Element) => el.hasAttribute(attribute);
-  const isNavigable = (el: Element) =>
-    isAnnotated(el) && readDci(el, { attribute })?.private !== true;
+  const isAnnotated = (el: Element) => el.hasAttribute(attribute) || readDci(el, source) !== null;
+  const isNavigable = (el: Element) => readDci(el, source)?.private === false;
 
   /** Ancestor-or-self chain of `el` up to the root, or `null` if `el` is outside it. */
   function chain(el: Element): Element[] | null {
@@ -77,6 +80,8 @@ export function createDciTree(options: TreeOptions = {}): DciTree {
     const walker = document.createTreeWalker(container, NodeFilter.SHOW_ELEMENT, {
       acceptNode(node) {
         const el = node as Element;
+        // DCI's own UI (overlay, chat) is never part of the tree, even with `infer`.
+        if (el.hasAttribute(DCI_UI_ATTRIBUTE)) return NodeFilter.FILTER_REJECT;
         if (isNavigable(el)) {
           out.push(el);
           return NodeFilter.FILTER_REJECT;
@@ -118,9 +123,9 @@ export function createDciTree(options: TreeOptions = {}): DciTree {
     prevSibling: (node) => siblingAt(node, -1),
     nextSibling: (node) => siblingAt(node, 1),
     sameTypeSiblings(node) {
-      const type = readDci(node, { attribute })?.type;
+      const type = readDci(node, source)?.type;
       if (type === undefined) return [node];
-      return siblingsWithSelf(node).filter((el) => readDci(el, { attribute })?.type === type);
+      return siblingsWithSelf(node).filter((el) => readDci(el, source)?.type === type);
     },
     pathTo(node) {
       return (chain(node) ?? []).filter(isAnnotated).reverse();

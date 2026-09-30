@@ -3,7 +3,7 @@ import { nodeName } from '../../announce';
 import type { Emitter } from '../../emitter';
 import type { InteractionEvents } from '../../interactions';
 import { labelFor } from '../../overlay';
-import { readDci } from '../../parse';
+import { readDci, type InferAnnotation } from '../../parse';
 import type { SelectionStore } from '../../selection';
 import type { DciTree } from '../../tree';
 import { acquireUiHost, type Theme } from '../../ui-host';
@@ -84,6 +84,8 @@ export interface ChatUiOptions {
   highlightCode?: (code: string, lang: string) => Node;
   /** Attribute used to read node labels. Default `data-dci`. */
   attribute?: string;
+  /** Inferred annotations, for names of unannotated nodes (see `DciConfig.infer`). */
+  infer?: InferAnnotation;
   theme?: Theme;
   /** Where the `<dci-root>` host lives. Default `document.body`. */
   container?: Element;
@@ -136,7 +138,8 @@ export function createChatUi(options: ChatUiOptions): ChatUi {
   const { selection, tree, bus } = options.interactions;
   const strings = resolveStrings(options.strings);
   const render = options.render ?? {};
-  const attribute = options.attribute;
+  const { attribute, infer } = options;
+  const source = { ...(attribute ? { attribute } : {}), ...(infer ? { infer } : {}) };
   const maxChips = options.maxChips ?? 6;
   const maxActions = options.maxActions ?? 4;
   const autoOpen = options.autoOpen ?? 'onSelect';
@@ -223,7 +226,7 @@ export function createChatUi(options: ChatUiOptions): ChatUi {
     flash: (el) => bus?.emit('flash', el),
     selectNode(el) {
       selection.set([el]);
-      bus?.emit('announce', `Selected ${nodeName(el, attribute)}`);
+      bus?.emit('announce', `Selected ${nodeName(el, source)}`);
     },
     runAction: (action) =>
       void controller.send(action.prompt ?? action.label, { action: action.id }),
@@ -261,16 +264,14 @@ export function createChatUi(options: ChatUiOptions): ChatUi {
   function defaultBreadcrumb(): HTMLElement | null {
     const primary = selection.primary();
     if (!tree || !primary) return null;
-    const path = tree
-      .pathTo(primary)
-      .filter((el) => !readDci(el, { ...(attribute ? { attribute } : {}) })?.private);
+    const path = tree.pathTo(primary).filter((el) => !readDci(el, source)?.private);
     if (!path.length) return null;
     const shown: Array<Element | null> =
       path.length > 4 ? [path[0] ?? null, null, ...path.slice(-2)] : path;
     const list = h('ol');
     shown.forEach((el, i) => {
       if (!el) {
-        list.append(h('li', { title: path.map((p) => labelFor(p, attribute)).join(' › ') }, '…'));
+        list.append(h('li', { title: path.map((p) => labelFor(p, source)).join(' › ') }, '…'));
         return;
       }
       const current = i === shown.length - 1;
@@ -280,9 +281,9 @@ export function createChatUi(options: ChatUiOptions): ChatUi {
           type: 'button',
           'aria-current': current ? 'location' : undefined,
           'data-key': `crumb-${i}`,
-          title: labelFor(el, attribute),
+          title: labelFor(el, source),
         },
-        labelFor(el, attribute),
+        labelFor(el, source),
       );
       btn.addEventListener('click', () => api.selectNode(el));
       btn.addEventListener('mouseenter', () => api.flash(el));

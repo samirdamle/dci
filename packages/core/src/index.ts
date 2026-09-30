@@ -14,6 +14,9 @@ export {
   isDciElement,
   parseDciAttribute,
   readDci,
+  refreshInferred,
+  type AnnotationSource,
+  type InferAnnotation,
   type ParseOptions,
   type ParsedDci,
 } from './parse';

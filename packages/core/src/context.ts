@@ -90,7 +90,8 @@ export function toContextNode(el: Element, options: ContextOptions = {}): DciCon
     fallback = true,
     maxTextLength = 500,
   } = options;
-  const parsed = readDci(el, { attribute });
+  const source = { attribute, ...(options.infer ? { infer: options.infer } : {}) };
+  const parsed = readDci(el, source);
   if (parsed?.private) return null;
   if (!parsed && !fallback) return null;
 
@@ -98,14 +99,14 @@ export function toContextNode(el: Element, options: ContextOptions = {}): DciCon
   const ancestors = tree.pathTo(el).filter((a) => a !== el);
   // Never describe an unannotated element that sits inside a private node.
   const owner = ancestors[ancestors.length - 1];
-  if (!parsed && owner && readDci(owner, { attribute })?.private) return null;
+  if (!parsed && owner && readDci(owner, source)?.private) return null;
 
   const node: DciContextNode = parsed
     ? { ...pick(parsed), data: { ...parsed.data }, source: 'annotated' }
     : { data: {}, source: 'fallback', fallback: fallbackInfo(el, options.root, maxTextLength) };
 
   if (includeAncestors) {
-    node.ancestors = ancestors.map((a) => toAncestor(readDci(a, { attribute }), ancestorData));
+    node.ancestors = ancestors.map((a) => toAncestor(readDci(a, source), ancestorData));
   }
   return node;
 }

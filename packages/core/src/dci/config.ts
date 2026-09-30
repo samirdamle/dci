@@ -8,6 +8,7 @@ import type { ChatStrings } from '../chat/ui/strings';
 import type { ActionsConfig } from '../chat/suggested-actions';
 import type { Gesture } from '../interactions';
 import type { ModifierKey } from '../keys';
+import type { InferAnnotation } from '../parse';
 import type { LabelMode, OverlayMode } from '../overlay';
 import type { SessionOptions } from '../session';
 import type { Transport } from '../transport';
@@ -81,6 +82,15 @@ export interface DciConfig {
   root?: Element;
   /** Attribute that marks DCI nodes. Default `'data-dci'`. */
   attribute?: string;
+  /**
+   * Annotate elements that have no DCI attribute, without changing the DOM:
+   * return what their `data-dci` value would be (an object or an id), or
+   * `null`. Inferred nodes behave like annotated ones (hover, selection,
+   * same-type, context); a real attribute always wins. Keep it fast: it runs
+   * for many elements during hover and window select (results are cached per
+   * gesture). Example: `(el) => el.matches('tr') ? { type: 'row', label: … } : null`.
+   */
+  infer?: InferAnnotation;
   /** Key that arms DCI. Default `'Alt'` (Option on macOS). */
   modifier?: ModifierKey;
   /** Remap or disable gestures and keys. */
@@ -195,6 +205,7 @@ const TOP_KEYS: Array<keyof DciConfig> = [
   'transport',
   'root',
   'attribute',
+  'infer',
   'modifier',
   'bindings',
   'maxSelection',
@@ -293,6 +304,8 @@ export function validateConfig(config: DciConfig): ConfigProblems {
     errors.push('`transport` must have a `send(request, { signal })` method.');
   if (config.attribute !== undefined && (typeof config.attribute !== 'string' || !config.attribute))
     errors.push('`attribute` must be a non-empty attribute name, e.g. "data-dci".');
+  if (config.infer !== undefined && typeof config.infer !== 'function')
+    errors.push('`infer` must be a function `(el) => annotation | null`.');
   oneOf(config.modifier, ['Alt', 'Shift', 'Control', 'Meta'], 'modifier', errors);
   count(config.maxSelection, 'maxSelection', errors, 1);
   count(config.maxTextLength, 'maxTextLength', errors, 1);

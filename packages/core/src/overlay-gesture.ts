@@ -7,11 +7,11 @@ export const overlayGesture: Gesture = (ctx) => {
   const config = ctx.options.overlay;
   if (config === false) return () => {};
   const { host, release } = acquireUiHost(config ?? {});
-  const attribute = ctx.options.attribute;
-  const root = ctx.options.root;
+  const { attribute, infer, root } = ctx.options;
   const overlay = createOverlay(host, {
     ...config,
     ...(attribute ? { attribute } : {}),
+    ...(infer ? { infer } : {}),
     ...(root ? { root } : {}),
   });
   overlay.setSelected(ctx.selection.get(), ctx.selection.primary());

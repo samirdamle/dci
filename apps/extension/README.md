@@ -39,13 +39,14 @@ the extension: the background worker reads them, web pages and the content scrip
 
 ## How it works
 
-| Piece             | Where               | What it does                                                                                                                      |
-| ----------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Content script    | `src/content.ts`    | Injected on demand; runs `createDci()` in fallback mode, so unannotated pages work                                                |
-| Port transport    | `src/transport.ts`  | A DCI `Transport` that sends each request to the background worker over a runtime port; Stop disconnects it                       |
-| Background worker | `src/background.ts` | Injects the content script (`activeTab`), keeps the badge in sync, answers requests with the configured backend (`src/worker.ts`) |
-| Backends          | `src/backends/`     | Where requests are answered; keys will live here, never in the page                                                               |
-| Manifests         | `src/manifest.ts`   | One source for Chrome (service worker) and Firefox (event page)                                                                   |
+| Piece             | Where               | What it does                                                                                                                                                           |
+| ----------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Content script    | `src/content.ts`    | Injected on demand; runs `createDci()` with the inference rules below, so unannotated pages work                                                                       |
+| Inference rules   | `src/infer.ts`      | Turns table rows (one field per column), list items, articles, headings, links, buttons, images, form fields and landmarks into DCI nodes; never reads password values |
+| Port transport    | `src/transport.ts`  | A DCI `Transport` that sends each request to the background worker over a runtime port; Stop disconnects it                                                            |
+| Background worker | `src/background.ts` | Injects the content script (`activeTab`), keeps the badge in sync, answers requests with the configured backend (`src/worker.ts`)                                      |
+| Backends          | `src/backends/`     | Where requests are answered; keys will live here, never in the page                                                                                                    |
+| Manifests         | `src/manifest.ts`   | One source for Chrome (service worker) and Firefox (event page)                                                                                                        |
 
 No host permissions are requested up front: DCI only runs on tabs where you turn it on. The
 browser asks separately for each always-on site and for your endpoint's origin.

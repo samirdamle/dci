@@ -7,7 +7,7 @@ import {
 import type { ActionRegistry } from '../actions';
 import { toContextNode, type ContextOptions } from '../context';
 import { isDev } from '../env';
-import { DEFAULT_ATTRIBUTE, readDci } from '../parse';
+import { DEFAULT_ATTRIBUTE, readDci, refreshInferred } from '../parse';
 import type { SelectionStore } from '../selection';
 import { createSession, type Session } from '../session';
 import type { Transport } from '../transport';
@@ -205,6 +205,7 @@ export function createChatController(options: ChatControllerOptions): ChatContro
   }
 
   async function prepare(prompt: string, action?: string): Promise<DciRequest | false> {
+    refreshInferred(); // Inferred data (e.g. a row's text) as it is now, not at selection time.
     let request: DciRequest | false = buildRequest(prompt, action, nextContext());
     if (options.beforeSend) request = await options.beforeSend(request);
     if (!request) return false;
