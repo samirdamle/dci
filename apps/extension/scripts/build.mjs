@@ -1,7 +1,8 @@
 // Builds the extension for each browser into dist/<target>, and with --zip
 // packs each build for its store: dist/dci-<target>-<version>.zip.
 // --e2e builds dist/e2e instead: Chrome only, allowed to run on the test origin
-// (http://dci.test) and with the toolbar toggle exposed to Playwright.
+// (http://dci.test) and to reach the demo backend (127.0.0.1), with the toolbar
+// toggle exposed to Playwright.
 import {
   cpSync,
   mkdirSync,
@@ -24,8 +25,13 @@ const TARGETS = e2e ? ['chrome'] : ['chrome', 'firefox'];
 /** The origin e2e tests serve their pages from (with `page.route`). */
 export const E2E_ORIGIN = 'http://dci.test';
 
-/** Scripts, bundled as classic scripts: MV3 content scripts can't be modules. */
-const ENTRIES = { content: 'src/content.ts', background: 'src/background.ts' };
+/** Scripts, bundled as classic scripts (MV3 content scripts can't be modules). */
+const ENTRIES = {
+  content: 'src/content.ts',
+  background: 'src/background.ts',
+  popup: 'src/popup.ts',
+  options: 'src/options.ts',
+};
 
 async function loadManifest() {
   const out = await build({
@@ -60,7 +66,7 @@ async function buildTarget(target, manifest) {
   });
   cpSync(join(root, 'static'), out, { recursive: true });
   const json = manifest(target, version);
-  if (e2e) json.host_permissions = [`${E2E_ORIGIN}/*`];
+  if (e2e) json.host_permissions = [`${E2E_ORIGIN}/*`, 'http://127.0.0.1/*'];
   writeFileSync(join(out, 'manifest.json'), JSON.stringify(json, null, 2));
   return out;
 }
