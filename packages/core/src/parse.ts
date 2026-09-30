@@ -14,12 +14,30 @@ export interface ParsedDci {
   data: Record<string, unknown>;
 }
 
-export interface ParseOptions {
+/**
+ * Annotates an element that has no DCI attribute, without touching the DOM:
+ * return what its `data-dci` value would be (an object, or an id string), or
+ * `null` when it isn't a DCI node. Called often (hover, window select), so
+ * return `null` fast for elements that don't qualify.
+ */
+export type InferAnnotation = (el: Element) => Record<string, unknown> | string | null | undefined;
+
+/** Where annotations come from: the attribute, then the optional `infer`. */
+export interface AnnotationSource {
   /** Attribute name to read. Defaults to `data-dci`. */
   attribute?: string;
+  /** Annotations for elements without the attribute. Real attributes always win. */
+  infer?: InferAnnotation;
+}
+
+export interface ParseOptions extends AnnotationSource {
   /** Receives parse warnings. Defaults to a dev-mode `console.warn`. */
   warn?: Warn;
 }
+
+/** An `AnnotationSource` from an attribute name (the older signature) or a source. */
+export const toSource = (source?: string | AnnotationSource): AnnotationSource =>
+  typeof source === 'string' ? { attribute: source } : (source ?? {});
 
 const RESERVED = new Set(['id', 'type', 'label', 'private']);
 
@@ -88,9 +106,9 @@ const warned = new WeakSet<Element>();
  * Parse warnings are reported at most once per element.
  */
 export function readDci(el: Element, options: ParseOptions = {}): ParsedDci | null {
-  const { attribute = DEFAULT_ATTRIBUTE, warn = devWarn } = options;
+  const { attribute = DEFAULT_ATTRIBUTE, warn = devWarn, infer } = options;
   const raw = el.getAttribute(attribute);
-  if (raw === null) return null;
+  if (raw === null) return infer ? readInferred(el, infer) : null;
 
   const hit = cache.get(el);
   if (hit && hit.attribute === attribute && hit.raw === raw) return hit.parsed;
@@ -101,6 +119,38 @@ export function readDci(el: Element, options: ParseOptions = {}): ParsedDci | nu
     warn(message);
   });
   cache.set(el, { attribute, raw, parsed });
+  return parsed;
+}
+
+interface InferredEntry {
+  infer: InferAnnotation;
+  generation: number;
+  parsed: ParsedDci | null;
+}
+
+const inferred = new WeakMap<Element, InferredEntry>();
+let generation = 0;
+
+/**
+ * Forget cached inferred annotations, so the next read runs `infer` again.
+ * Called at the start of each gesture and before each send: inferred data
+ * (e.g. a row's cell text) stays fresh without re-inferring on every frame.
+ */
+export function refreshInferred(): void {
+  generation++;
+}
+
+function readInferred(el: Element, infer: InferAnnotation): ParsedDci | null {
+  const hit = inferred.get(el);
+  if (hit && hit.infer === infer && hit.generation === generation) return hit.parsed;
+  const value = infer(el);
+  const parsed =
+    value === null || value === undefined
+      ? null
+      : typeof value === 'string'
+        ? shortForm(value)
+        : fromObject(value);
+  inferred.set(el, { infer, generation, parsed });
   return parsed;
 }
 

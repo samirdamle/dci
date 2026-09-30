@@ -1,4 +1,5 @@
 import { resolveBindings, type Bindings, type BindingsConfig } from './bindings';
+import { refreshInferred } from './parse';
 import { createEmitter, type Emitter } from './emitter';
 import { announceGesture } from './announce';
 import { createHoverState, type HoverState } from './hover';
@@ -127,7 +128,11 @@ export function createInteractions(options: InteractionOptions = {}): Interactio
     bus,
     hover: createHoverState(tree, bus),
   };
-  const offArm = input.onArmChange((armed) => bus.emit('arm', armed));
+  const offArm = input.onArmChange((armed) => {
+    // A new gesture: re-infer annotations once, then reuse them while it lasts.
+    if (armed) refreshInferred();
+    bus.emit('arm', armed);
+  });
   const cleanups = (options.gestures ?? DEFAULT_GESTURES).map((gesture) => gesture(ctx));
 
   return {

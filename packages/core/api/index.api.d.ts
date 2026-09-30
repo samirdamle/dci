@@ -15,9 +15,21 @@ interface ParsedDci {
     /** Every non-reserved key, passed through to the backend as-is. */
     data: Record<string, unknown>;
 }
-interface ParseOptions {
+/**
+ * Annotates an element that has no DCI attribute, without touching the DOM:
+ * return what its `data-dci` value would be (an object, or an id string), or
+ * `null` when it isn't a DCI node. Called often (hover, window select), so
+ * return `null` fast for elements that don't qualify.
+ */
+type InferAnnotation = (el: Element) => Record<string, unknown> | string | null | undefined;
+/** Where annotations come from: the attribute, then the optional `infer`. */
+interface AnnotationSource {
     /** Attribute name to read. Defaults to `data-dci`. */
     attribute?: string;
+    /** Annotations for elements without the attribute. Real attributes always win. */
+    infer?: InferAnnotation;
+}
+interface ParseOptions extends AnnotationSource {
     /** Receives parse warnings. Defaults to a dev-mode `console.warn`. */
     warn?: Warn;
 }
@@ -39,12 +51,20 @@ declare function parseDciAttribute(value: string | null, warn?: Warn): ParsedDci
  * Parse warnings are reported at most once per element.
  */
 declare function readDci(el: Element, options?: ParseOptions): ParsedDci | null;
+/**
+ * Forget cached inferred annotations, so the next read runs `infer` again.
+ * Called at the start of each gesture and before each send: inferred data
+ * (e.g. a row's cell text) stays fresh without re-inferring on every frame.
+ */
+declare function refreshInferred(): void;
 /** Whether `el` carries the DCI attribute. */
 declare const isDciElement: (el: Element, attribute?: string) => boolean;
 
 interface TreeOptions {
     /** Attribute that marks DCI nodes. Defaults to `data-dci`. */
     attribute?: string;
+    /** Annotations for elements without the attribute (see `DciConfig.infer`). */
+    infer?: InferAnnotation;
     /** Scope root; nodes outside it are ignored. Defaults to `document.body`. */
     root?: Element;
 }
@@ -324,6 +344,8 @@ interface OverlayOptions {
     labels?: LabelMode;
     /** Attribute used to read labels. Default `data-dci`. */
     attribute?: string;
+    /** Inferred annotations, for labels of unannotated nodes. */
+    infer?: InferAnnotation;
     /** Observed for layout changes while boxes are shown. Default `document.body`. */
     root?: Element;
 }
@@ -347,7 +369,7 @@ interface Overlay {
 }
 declare const OVERLAY_CSS = "\n.box {\n  position: fixed; left: 0; top: 0; display: none;\n  border-radius: var(--dci-radius);\n  will-change: transform;\n}\n.box.hover { border: 2px dashed var(--dci-hover); }\n.box.selected {\n  border: 2px solid var(--dci-selected);\n  background: color-mix(in srgb, var(--dci-selected) 12%, transparent);\n}\n.box.primary { border-width: 3px; }\n.box.preview {\n  border: 1px solid var(--dci-preview);\n  background: color-mix(in srgb, var(--dci-preview) 10%, transparent);\n}\n.box.flash { border: 3px solid var(--dci-accent); animation: dci-pulse 0.7s ease-out 2; }\n.box.shake { animation: dci-shake 0.3s ease-in-out; }\n.label {\n  position: absolute; left: -2px; bottom: 100%;\n  max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;\n  padding: 1px 6px; border-radius: 4px 4px 0 0;\n  font: 600 11px/16px var(--dci-font, system-ui, sans-serif);\n  color: #fff; background: var(--dci-accent);\n}\n.box.hover .label { background: var(--dci-hover); }\n.label.inside { top: 0; bottom: auto; left: 0; border-radius: 0 0 4px 0; }\n.edge {\n  position: fixed; left: 0; top: 0; display: none; width: 10px; height: 10px;\n  margin: -5px 0 0 -5px; border-radius: 50%;\n  background: var(--dci-selected); box-shadow: 0 0 0 2px var(--dci-bg);\n}\n.marquee {\n  position: fixed; left: 0; top: 0; display: none;\n  border: 1px solid var(--dci-accent);\n  background: color-mix(in srgb, var(--dci-accent) 8%, transparent);\n}\n.marquee.touch { border-style: dashed; }\n@keyframes dci-pulse {\n  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--dci-accent) 60%, transparent); }\n  100% { box-shadow: 0 0 0 12px transparent; }\n}\n@keyframes dci-shake {\n  0%, 100% { translate: 0; }\n  25% { translate: -4px; }\n  75% { translate: 4px; }\n}\n@media (prefers-reduced-motion: reduce) {\n  .box, .box.flash, .box.shake { animation: none !important; }\n}\n";
 /** Name shown in labels: `label ?? type ?? tagName`. */
-declare function labelFor(el: Element, attribute?: string): string;
+declare function labelFor(el: Element, source?: string | AnnotationSource): string;
 /**
  * Draws hover, selected, primary and preview boxes in the host's overlay
  * layer. Boxes are `position: fixed`, moved with `transform`, and updated in
@@ -540,12 +562,12 @@ declare function collectCandidates(tree: DciTree, root: Element): Candidate[];
 declare const marqueeGesture: Gesture;
 
 /** Human-readable name: label, then id, then tag name. */
-declare function nodeName(el: Element, attribute?: string): string;
+declare function nodeName(el: Element, source?: string | AnnotationSource): string;
 /**
  * Screen-reader description of a node and its position among same-type
  * siblings, e.g. `"Invoice #123, invoice 3 of 20"`.
  */
-declare function describeNode(el: Element, tree: DciTree, attribute?: string): string;
+declare function describeNode(el: Element, tree: DciTree, source?: string | AnnotationSource): string;
 /**
  * A polite `aria-live` region, rendered into `parent` (normally the UI
  * host's `live-region` layer) or, without one, a hidden `[data-dci-ui]` host.
@@ -950,6 +972,8 @@ interface ChatUiOptions {
     highlightCode?: (code: string, lang: string) => Node;
     /** Attribute used to read node labels. Default `data-dci`. */
     attribute?: string;
+    /** Inferred annotations, for names of unannotated nodes (see `DciConfig.infer`). */
+    infer?: InferAnnotation;
     theme?: Theme;
     /** Where the `<dci-root>` host lives. Default `document.body`. */
     container?: Element;
@@ -1053,6 +1077,15 @@ interface DciConfig {
     root?: Element;
     /** Attribute that marks DCI nodes. Default `'data-dci'`. */
     attribute?: string;
+    /**
+     * Annotate elements that have no DCI attribute, without changing the DOM:
+     * return what their `data-dci` value would be (an object or an id), or
+     * `null`. Inferred nodes behave like annotated ones (hover, selection,
+     * same-type, context); a real attribute always wins. Keep it fast: it runs
+     * for many elements during hover and window select (results are cached per
+     * gesture). Example: `(el) => el.matches('tr') ? { type: 'row', label: … } : null`.
+     */
+    infer?: InferAnnotation;
     /** Key that arms DCI. Default `'Alt'` (Option on macOS). */
     modifier?: ModifierKey;
     /** Remap or disable gestures and keys. */
@@ -1233,4 +1266,4 @@ declare function createDci(input: DciConfig): DciInstance;
 /** Package version. */
 declare const VERSION: string;
 
-export { AUTOSCROLL_EDGE, AUTOSCROLL_SPEED, type ActionContext, type ActionError, type ActionHandler, type ActionRegistry, type ActionRegistryOptions, type ActionsConfig, type AnchorTo, type Anchoring, type ArmedEventMap, type ArmedEventType, BASE_CSS, BUILTIN_ACTIONS, type Bindings, type BindingsConfig, type BuiltinAction, CHAT_CSS, type Candidate, type ChatController, type ChatControllerOptions, type ChatMessage, type ChatMode, type ChatRenderers, type ChatState, type ChatStatus, type ChatStrings, type ChatUi, type ChatUiApi, type ChatUiOptions, type ConfigProblems, type ContextOptions, DCI_UI_ATTRIBUTE, DEFAULTS, DEFAULT_ATTRIBUTE, DEFAULT_BINDINGS, DEFAULT_GESTURES, DEFAULT_KEYBOARD_BINDINGS, DEFAULT_STRINGS, DRAG_THRESHOLD, type DciAttrValue, type DciChatApi, type DciChatConfig, type DciConfig, type DciEvents, type DciInstance, type DciOverlayConfig, type DciSelectionApi, type DciSelectionChange, type DciTarget, type DciTree, type Emitter, type Gesture, type GestureContext, type GestureResult, HOST_TAG, type HoverState, type InputManager, type InputOptions, type InteractionEvents, type InteractionOptions, type Interactions, type KeyboardBindings, type LabelMode, type LayerName, type MarkdownOptions, type MarqueeMode, type ModifierKey, OVERLAY_CSS, type Overlay, type OverlayConfig, type OverlayMode, type OverlayOptions, type ParseOptions, type ParsedDci, type Rect, type RenderMarkdown, type SSETransportOptions, type SelectSameTypeOptions, type SelectionChange, type SelectionEvents, type SelectionLimit, type SelectionOptions, type SelectionStore, type SendOptions, type Session, type SessionChange, type SessionOptions, type SuggestedAction, type Theme, type ToolStatus, type Transport, type TreeOptions, type UiHost, type UiHostOptions, VERSION, WHEEL_STEP, type Warn, acquireUiHost, anchorFloating, announceGesture, clickGesture, collectCandidates, contains, createActionRegistry, createAnnouncer, createChatController, createChatUi, createDci, createDciTree, createEmitter, createHoverState, createInputManager, createInteractions, createOutlineOverlay, createOverlay, createSSETransport, createSelectionStore, createSession, cssPath, dciAttr, describeNode, eventTarget, hasModifier, hitTest, hoverGesture, intersects, isDciElement, isEditable, isFromDciUi, keyboardGesture, labelFor, marqueeGesture, marqueeMode, matchesCombo, mergeConfig, nodeName, offsetRect, overlayGesture, parseDciAttribute, randomId, readDci, rectFromPoints, renderInline, renderMarkdown, resolveActions, resolveBindings, resolveStrings, resolveTarget, safeUrl, sameTypeGesture, sameTypeNodes, selectSameType, stableStringify, toContextNode, truncateText, unionRect, validateConfig, wheelGesture, wheelPixels };
+export { AUTOSCROLL_EDGE, AUTOSCROLL_SPEED, type ActionContext, type ActionError, type ActionHandler, type ActionRegistry, type ActionRegistryOptions, type ActionsConfig, type AnchorTo, type Anchoring, type AnnotationSource, type ArmedEventMap, type ArmedEventType, BASE_CSS, BUILTIN_ACTIONS, type Bindings, type BindingsConfig, type BuiltinAction, CHAT_CSS, type Candidate, type ChatController, type ChatControllerOptions, type ChatMessage, type ChatMode, type ChatRenderers, type ChatState, type ChatStatus, type ChatStrings, type ChatUi, type ChatUiApi, type ChatUiOptions, type ConfigProblems, type ContextOptions, DCI_UI_ATTRIBUTE, DEFAULTS, DEFAULT_ATTRIBUTE, DEFAULT_BINDINGS, DEFAULT_GESTURES, DEFAULT_KEYBOARD_BINDINGS, DEFAULT_STRINGS, DRAG_THRESHOLD, type DciAttrValue, type DciChatApi, type DciChatConfig, type DciConfig, type DciEvents, type DciInstance, type DciOverlayConfig, type DciSelectionApi, type DciSelectionChange, type DciTarget, type DciTree, type Emitter, type Gesture, type GestureContext, type GestureResult, HOST_TAG, type HoverState, type InferAnnotation, type InputManager, type InputOptions, type InteractionEvents, type InteractionOptions, type Interactions, type KeyboardBindings, type LabelMode, type LayerName, type MarkdownOptions, type MarqueeMode, type ModifierKey, OVERLAY_CSS, type Overlay, type OverlayConfig, type OverlayMode, type OverlayOptions, type ParseOptions, type ParsedDci, type Rect, type RenderMarkdown, type SSETransportOptions, type SelectSameTypeOptions, type SelectionChange, type SelectionEvents, type SelectionLimit, type SelectionOptions, type SelectionStore, type SendOptions, type Session, type SessionChange, type SessionOptions, type SuggestedAction, type Theme, type ToolStatus, type Transport, type TreeOptions, type UiHost, type UiHostOptions, VERSION, WHEEL_STEP, type Warn, acquireUiHost, anchorFloating, announceGesture, clickGesture, collectCandidates, contains, createActionRegistry, createAnnouncer, createChatController, createChatUi, createDci, createDciTree, createEmitter, createHoverState, createInputManager, createInteractions, createOutlineOverlay, createOverlay, createSSETransport, createSelectionStore, createSession, cssPath, dciAttr, describeNode, eventTarget, hasModifier, hitTest, hoverGesture, intersects, isDciElement, isEditable, isFromDciUi, keyboardGesture, labelFor, marqueeGesture, marqueeMode, matchesCombo, mergeConfig, nodeName, offsetRect, overlayGesture, parseDciAttribute, randomId, readDci, rectFromPoints, refreshInferred, renderInline, renderMarkdown, resolveActions, resolveBindings, resolveStrings, resolveTarget, safeUrl, sameTypeGesture, sameTypeNodes, selectSameType, stableStringify, toContextNode, truncateText, unionRect, validateConfig, wheelGesture, wheelPixels };

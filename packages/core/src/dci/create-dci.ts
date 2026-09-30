@@ -112,6 +112,7 @@ export interface DciInstance {
 const SELECTION_KEYS = [
   'root',
   'attribute',
+  'infer',
   'maxSelection',
   'includeAncestors',
   'ancestorData',
@@ -180,10 +181,12 @@ export function createDci(input: DciConfig): DciInstance {
   const chatConfig = () => config.chat ?? {};
 
   function contextOptions(): ContextOptions {
-    const { root, attribute, includeAncestors, ancestorData, fallback, maxTextLength } = config;
+    const { root, attribute, infer, includeAncestors, ancestorData, fallback, maxTextLength } =
+      config;
     return {
       ...(root ? { root } : {}),
       ...(attribute ? { attribute } : {}),
+      ...(infer ? { infer } : {}),
       ...(includeAncestors !== undefined ? { includeAncestors } : {}),
       ...(ancestorData ? { ancestorData } : {}),
       ...(fallback !== undefined ? { fallback } : {}),
@@ -358,6 +361,7 @@ export function createDci(input: DciConfig): DciInstance {
       interactions: { selection, tree, bus },
       ...(config.actions ? { actions: config.actions } : {}),
       ...(config.attribute ? { attribute: config.attribute } : {}),
+      ...(config.infer ? { infer: config.infer } : {}),
       ...(config.theme ? { theme: config.theme } : {}),
       ...(config.container ? { container: config.container } : {}),
     });

@@ -1,5 +1,6 @@
 import { createDci, HOST_TAG, type DciInstance } from '@samirdamle/dci-core';
 import { ext } from './ext';
+import { inferAnnotation } from './infer';
 import type { StateMessage, TabState } from './messages';
 import { readSettings, SETTINGS_KEY, settingsToConfig } from './settings';
 import { portTransport } from './transport';
@@ -30,7 +31,12 @@ async function start() {
   const api = ext();
   const settings = readSettings((await api.storage.local.get(SETTINGS_KEY))[SETTINGS_KEY]);
   if (g.__dciExtension) return; // Started twice in a row (e.g. two quick clicks).
-  const dci = createDci({ transport: portTransport(), ...settingsToConfig(settings) });
+  const dci = createDci({
+    transport: portTransport(),
+    // Most pages have no DCI annotations; infer structure from the markup.
+    infer: inferAnnotation,
+    ...settingsToConfig(settings),
+  });
 
   const onChanged = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
     if (area === 'local' && SETTINGS_KEY in changes) {

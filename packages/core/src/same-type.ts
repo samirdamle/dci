@@ -10,8 +10,11 @@ type SameTypeContext = Pick<GestureContext, 'tree' | 'selection' | 'options'>;
  * only when `fallback` is on. Returns `[]` when there is nothing to match on.
  */
 export function sameTypeNodes(ctx: SameTypeContext, node: Element): Element[] {
-  const attribute = ctx.options.attribute;
-  const parsed = readDci(node, attribute ? { attribute } : {});
+  const { attribute, infer } = ctx.options;
+  const parsed = readDci(node, {
+    ...(attribute ? { attribute } : {}),
+    ...(infer ? { infer } : {}),
+  });
   if (parsed?.type !== undefined) return ctx.tree.sameTypeSiblings(node);
   if (!(ctx.options.fallback ?? true)) return [];
 

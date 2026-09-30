@@ -194,6 +194,41 @@ The fallback reads the tag name, the trimmed visible text (up to `maxTextLength`
 `aria-label`, `alt`, `title`, `href`, form field values (**never** from password inputs) and a
 short CSS path. Set `fallback: false` to make only annotated elements selectable.
 
+### Inferred annotations
+
+When you can't annotate the markup (a third-party widget, server-rendered HTML, the
+[browser extension](../apps/extension/README.md)), `infer` gives elements without the attribute an
+annotation from what they are. It's called for any element DCI looks at and returns an annotation,
+or `null` to leave the element alone:
+
+```ts
+import { createDci } from '@samirdamle/dci-core';
+
+const dci = createDci({
+  endpoint: '/api/dci',
+  infer(el) {
+    // Rows of any table become records with one field per column.
+    if (el.tagName !== 'TR' || !el.querySelector('td')) return null;
+    const table = el.closest('table')!;
+    const headers = [...table.querySelectorAll('th')].map((th) => th.textContent!.trim());
+    const cells = [...el.querySelectorAll('td')].map((td) => td.textContent!.trim());
+    return {
+      type: 'row',
+      label: cells[0] ?? 'row',
+      ...Object.fromEntries(headers.map((h, i) => [h, cells[i] ?? ''])),
+    };
+  },
+});
+```
+
+Inferred nodes behave like annotated ones: hierarchy, same-type select, labels, and `private`.
+They're sent with `"source": "annotated"`. A real `data-dci` attribute always wins, and DCI's own
+UI is never inferred. Results are cached per element until the next arm or send; call
+`refreshInferred()` if the page changed and you need fresh results sooner. Client actions that find
+nodes by id only see real annotations.
+
+Keep `infer` fast: it runs during hover and window select, so check the tag name first.
+
 ### Redacting or enriching
 
 `beforeSend` sees every request before it leaves the page. Return a changed request, or `false` to

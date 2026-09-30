@@ -25,9 +25,9 @@ test.describe('browser extension', () => {
     await expect(page.locator('dci-root')).toBeAttached();
     await expect.poll(() => extension.badge(page)).toBe('ON');
 
-    // An unannotated cell is selectable through the fallback.
+    // An unannotated cell selects its row, inferred from the table.
     await page.getByText('Ada Lovelace').click({ modifiers: ['Alt'] });
-    await expect(chat(page).locator('.chip .name')).toHaveText(['Ada Lovelace']);
+    await expect(chat(page).locator('.chip .name')).toHaveText(['#1001']);
 
     // The request goes content script → port → background worker → offline backend.
     await chat(page).locator('textarea').fill('Who is this?');
@@ -45,6 +45,26 @@ test.describe('browser extension', () => {
     await expect.poll(() => extension.badge(page)).toBe('');
     await page.getByText('Alan Turing').click({ modifiers: ['Alt'] });
     await expect(page.locator('dci-root')).toHaveCount(0);
+  });
+
+  test('plain pages get structure: rows, same-type select and headings', async ({
+    page,
+    extension,
+  }) => {
+    await openPage(page, PLAIN);
+    await extension.toggle(page);
+    const chips = chat(page).locator('.chip .name');
+
+    await page.getByText('$75').click({ modifiers: ['Alt'] });
+    await expect(chips).toHaveText(['#1002']);
+
+    // Alt+Double-click selects every row of the same type; the header row isn't one.
+    await page.getByText('Alan Turing').dblclick({ modifiers: ['Alt'] });
+    await expect(chips).toHaveCount(2);
+    expect((await chips.allTextContents()).sort()).toEqual(['#1001', '#1002']);
+
+    await page.getByRole('heading', { name: 'Orders' }).click({ modifiers: ['Alt'] });
+    await expect(chips).toHaveText(['Orders']);
   });
 
   test('leaves pages that run their own DCI alone', async ({ page, extension }) => {
@@ -87,10 +107,10 @@ test.describe('browser extension', () => {
     await page.getByText('Ada Lovelace').click({ modifiers: ['Alt'] });
     await chat(page).locator('textarea').fill('Who is this?');
     await page.keyboard.press('Enter');
-    // The demo backend (mock mode) describes the selected element.
-    await expect(chat(page).locator('.msg.assistant')).toContainText(
-      'Here is what I can see about Ada Lovelace',
-    );
+    // The demo backend (mock mode) echoes the selected row, one field per column.
+    const answer = chat(page).locator('.msg.assistant');
+    await expect(answer).toContainText('Here is what I can see about #1001 (a row)');
+    await expect(answer).toContainText('Customer: Ada Lovelace');
   });
 
   test('the Claude backend asks for a key until one is set', async ({ page, extension }) => {

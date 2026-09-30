@@ -53,9 +53,10 @@ export const keyboardGesture: Gesture = (ctx) =>
     if (!kb) return;
     if (inDialog(deepActiveElement())) return;
     const { selection, tree, bus } = ctx;
-    const attribute = ctx.options.attribute;
+    const { attribute, infer } = ctx.options;
+    const source = { ...(attribute ? { attribute } : {}), ...(infer ? { infer } : {}) };
     const say = (el: Element, prefix: string) =>
-      bus.emit('announce', `${prefix} ${describeNode(el, tree, attribute)}`);
+      bus.emit('announce', `${prefix} ${describeNode(el, tree, source)}`);
 
     if (kb.selectFocused && matchesCombo(e, kb.selectFocused)) {
       const focused = deepActiveElement();

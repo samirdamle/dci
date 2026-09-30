@@ -1,5 +1,5 @@
 import type { Rect } from './interactions';
-import { readDci } from './parse';
+import { readDci, toSource, type AnnotationSource, type InferAnnotation } from './parse';
 import type { UiHost } from './ui-host';
 
 export type OverlayMode = 'boxes' | 'outline';
@@ -12,6 +12,8 @@ export interface OverlayOptions {
   labels?: LabelMode;
   /** Attribute used to read labels. Default `data-dci`. */
   attribute?: string;
+  /** Inferred annotations, for labels of unannotated nodes. */
+  infer?: InferAnnotation;
   /** Observed for layout changes while boxes are shown. Default `document.body`. */
   root?: Element;
 }
@@ -86,8 +88,8 @@ const LABEL_HEIGHT = 18;
 const EDGE_INSET = 8;
 
 /** Name shown in labels: `label ?? type ?? tagName`. */
-export function labelFor(el: Element, attribute?: string): string {
-  const parsed = readDci(el, attribute ? { attribute } : {});
+export function labelFor(el: Element, source?: string | AnnotationSource): string {
+  const parsed = readDci(el, toSource(source));
   return parsed?.label ?? parsed?.type ?? el.tagName.toLowerCase();
 }
 
@@ -199,7 +201,7 @@ export function createOverlay(host: UiHost, options: OverlayOptions = {}): Overl
           : labels === 'hover' && (t.roles.includes('hover') || t.roles.includes('primary'));
       if (showLabel) {
         const depth = t.roles.includes('hover') && hoverDepth ? ` ▲${hoverDepth}` : '';
-        t.label = labelFor(t.el, options.attribute) + depth;
+        t.label = labelFor(t.el, options) + depth;
       }
     }
     return out;

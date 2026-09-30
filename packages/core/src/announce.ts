@@ -1,12 +1,12 @@
 import { DCI_UI_ATTRIBUTE } from './keys';
 import { acquireUiHost } from './ui-host';
 import type { Gesture } from './interactions';
-import { readDci } from './parse';
+import { readDci, toSource, type AnnotationSource } from './parse';
 import type { DciTree } from './tree';
 
 /** Human-readable name: label, then id, then tag name. */
-export function nodeName(el: Element, attribute?: string): string {
-  const parsed = readDci(el, attribute ? { attribute } : {});
+export function nodeName(el: Element, source?: string | AnnotationSource): string {
+  const parsed = readDci(el, toSource(source));
   return parsed?.label ?? parsed?.id ?? el.tagName.toLowerCase();
 }
 
@@ -14,9 +14,13 @@ export function nodeName(el: Element, attribute?: string): string {
  * Screen-reader description of a node and its position among same-type
  * siblings, e.g. `"Invoice #123, invoice 3 of 20"`.
  */
-export function describeNode(el: Element, tree: DciTree, attribute?: string): string {
-  const name = nodeName(el, attribute);
-  const type = readDci(el, attribute ? { attribute } : {})?.type;
+export function describeNode(
+  el: Element,
+  tree: DciTree,
+  source?: string | AnnotationSource,
+): string {
+  const name = nodeName(el, source);
+  const type = readDci(el, toSource(source))?.type;
   if (!type) return name;
   const peers = tree.sameTypeSiblings(el);
   return peers.length > 1 ? `${name}, ${type} ${peers.indexOf(el) + 1} of ${peers.length}` : name;
