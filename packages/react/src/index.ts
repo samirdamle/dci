@@ -8,7 +8,7 @@
 import { dciAttr, type DciAttrValue } from '@samirdamle/dci-core';
 
 /** Package version. */
-export const VERSION = '0.0.0';
+export const VERSION = '1.0.0';
 
 export { DciProvider, useDci, type DciProviderProps } from './provider';
 export {
