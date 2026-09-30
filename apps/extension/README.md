@@ -4,8 +4,8 @@ DCI on any website: turn it on for a tab, hold **Alt** (Option on macOS), click 
 row, a price, a paragraph) and ask about it. Built on `@samirdamle/dci-core`, so it has the same
 gestures, highlight and chat as an app that integrates DCI.
 
-> **Status:** work in progress, tracked in [#88](https://github.com/samirdamle/dci/issues/88).
-> Not in the browser stores yet: load it unpacked (below).
+> Not in the browser stores yet: load it unpacked (below). The user guide, including the privacy
+> review, is [docs/extension.md](../../docs/extension.md).
 
 ## Try it
 
@@ -45,7 +45,7 @@ the extension: the background worker reads them, web pages and the content scrip
 | Inference rules   | `src/infer.ts`      | Turns table rows (one field per column), list items, articles, headings, links, buttons, images, form fields and landmarks into DCI nodes; never reads password values |
 | Port transport    | `src/transport.ts`  | A DCI `Transport` that sends each request to the background worker over a runtime port; Stop disconnects it                                                            |
 | Background worker | `src/background.ts` | Injects the content script (`activeTab`), keeps the badge in sync, answers requests with the configured backend (`src/worker.ts`)                                      |
-| Backends          | `src/backends/`     | Where requests are answered; keys will live here, never in the page                                                                                                    |
+| Backends          | `src/backends/`     | Where requests are answered: offline, Claude (your key) or your DCI endpoint                                                                                           |
 | Manifests         | `src/manifest.ts`   | One source for Chrome (service worker) and Firefox (event page)                                                                                                        |
 
 No host permissions are requested up front: DCI only runs on tabs where you turn it on. The
@@ -60,3 +60,7 @@ browser asks separately for each always-on site and for your endpoint's origin.
 | `pnpm --filter @dci/extension test`     | Unit tests (transport, worker, settings, manifests)        |
 | `pnpm e2e --project=extension`          | Load the extension into Chromium and drive it (Playwright) |
 | `node apps/extension/scripts/icons.mjs` | Redraw the icons in `static/icons`                         |
+| `pnpm extension:screenshots`            | Retake the store screenshots in `store/screenshots`        |
+
+Store listing text, permission justifications and data disclosures are in
+[`store/listing.md`](store/listing.md).

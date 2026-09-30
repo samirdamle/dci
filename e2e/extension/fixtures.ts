@@ -128,7 +128,7 @@ export const test = base.extend<{ page: Page }, { extension: Extension }>({
 /** Serve `html` at `ORIGIN + path` in `page` and open it. */
 export async function openPage(page: Page, html: string, path = '/') {
   await page.route(`${ORIGIN}/**`, (route) =>
-    route.fulfill({ contentType: 'text/html', body: `<!doctype html>${html}` }),
+    route.fulfill({ contentType: 'text/html; charset=utf-8', body: `<!doctype html>${html}` }),
   );
   await page.goto(`${ORIGIN}${path}`);
 }

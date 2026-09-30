@@ -1,6 +1,7 @@
 import { createDci, HOST_TAG, type DciInstance } from '@samirdamle/dci-core';
 import { ext } from './ext';
 import { inferAnnotation } from './infer';
+import { pageInfo } from './privacy';
 import type { StateMessage, TabState } from './messages';
 import { readSettings, SETTINGS_KEY, settingsToConfig } from './settings';
 import { portTransport } from './transport';
@@ -35,6 +36,8 @@ async function start() {
     transport: portTransport(),
     // Most pages have no DCI annotations; infer structure from the markup.
     infer: inferAnnotation,
+    // The URL goes out without its fragment or secret-looking query parameters.
+    page: pageInfo,
     ...settingsToConfig(settings),
   });
 

@@ -27,6 +27,7 @@
     "coverage": "vitest run --coverage",
     "e2e": "playwright test",
     "e2e:perf": "PW_PERF=1 playwright test --workers=1",
+    "extension:screenshots": "PW_STORE=1 playwright test store.ext --project extension",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

@@ -1,3 +1,4 @@
+import { isSecureEndpoint } from '../privacy';
 import type { Secrets } from '../secrets';
 import type { Settings } from '../settings';
 import { claudeBackend, type History } from './claude';
@@ -17,6 +18,15 @@ const needsSetup = (message: string): Backend =>
 export function selectBackend(settings: Settings, secrets: Secrets, history: History): Backend {
   switch (settings.backend) {
     case 'endpoint':
+      if (
+        settings.endpointUrl &&
+        secrets.endpointAuthorization &&
+        !isSecureEndpoint(new URL(settings.endpointUrl))
+      ) {
+        return needsSetup(
+          'Use an https endpoint URL: the Authorization header is never sent over http.',
+        );
+      }
       return settings.endpointUrl
         ? endpointBackend({
             url: settings.endpointUrl,

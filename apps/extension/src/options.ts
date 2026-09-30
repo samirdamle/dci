@@ -1,5 +1,6 @@
 import { ext } from './ext';
 import type { TestMessage, TestResult } from './messages';
+import { isSecureEndpoint } from './privacy';
 import { CLAUDE_MODELS, originPattern, type BackendKind, type Settings } from './settings';
 import { loadSecrets, loadSettings, saveSecrets, saveSettings } from './store';
 
@@ -85,6 +86,13 @@ async function save(): Promise<boolean> {
       if (!/^https?:$/.test(url.protocol)) throw new Error();
     } catch {
       show('Enter the endpoint’s full http(s) URL.', 'error');
+      return false;
+    }
+    if (input('endpointAuthorization').value.trim() && !isSecureEndpoint(url)) {
+      show(
+        'Use an https URL to send an Authorization header (http is fine for localhost).',
+        'error',
+      );
       return false;
     }
     // Needs the user gesture, so it comes before any other await.
