@@ -144,6 +144,6 @@ declare function decodeSSEStream(stream: ReadableStream<Uint8Array>): AsyncGener
  * @module @samirdamle/dci-protocol
  */
 /** Package version. */
-declare const VERSION = "0.0.0";
+declare const VERSION: string;
 
 export { type ClientActionEvent, type CustomEvent, type DciAncestor, type DciContextNode, type DciEvent, type DciEventType, type DciFallbackInfo, type DciRequest, type DoneEvent, ERROR_CODES, type ErrorEvent, PROTOCOL_VERSION, type SSEDecoder, type TextDeltaEvent, type ToolEndEvent, type ToolStartEvent, VERSION, type ValidationResult, createSSEDecoder, decodeSSEStream, encodeComment, encodeEvent, isDciRequest, isSupportedVersion, toEvent, validateRequest };

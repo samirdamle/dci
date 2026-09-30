@@ -11,7 +11,8 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const check = process.argv.includes('--check');
 const PACKAGES = ['protocol', 'core', 'react', 'server'];
-const LINE = /^export const VERSION = '[^']*';$/m;
+// Typed `string` so the API reports don't change with every release.
+const LINE = /^export const VERSION: string = '[^']*';$/m;
 
 let stale = 0;
 for (const name of PACKAGES) {
@@ -21,7 +22,7 @@ for (const name of PACKAGES) {
   const file = join(root, 'packages', name, 'src/index.ts');
   const source = readFileSync(file, 'utf8');
   if (!LINE.test(source)) throw new Error(`No VERSION line in ${file}`);
-  const next = source.replace(LINE, `export const VERSION = '${version}';`);
+  const next = source.replace(LINE, `export const VERSION: string = '${version}';`);
   if (next === source) continue;
   stale += 1;
   if (check) console.error(`packages/${name}: VERSION is not ${version}`);

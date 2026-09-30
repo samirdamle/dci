@@ -36,6 +36,6 @@ declare function formatContextForPrompt(context: DciContextNode[], { style }?: F
  * @module @samirdamle/dci-server
  */
 /** Package version. */
-declare const VERSION = "0.0.0";
+declare const VERSION: string;
 
 export { type ContextStyle, DciRequestError, type FormatOptions, VERSION, formatContextForPrompt, parseDciRequest };
