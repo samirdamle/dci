@@ -3,8 +3,6 @@ import type { AddressInfo } from 'node:net';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Page } from '@playwright/test';
-// From source: the repo root doesn't depend on the server package.
-import { dciHandler } from '../../packages/server/src/index';
 import { expect, openPage, test } from './fixtures';
 
 /**
@@ -82,24 +80,20 @@ The late orders are all soft goods from the same warehouse, which points to one 
 let server: Server;
 let endpoint = '';
 
+/** One SSE event in the DCI protocol (docs/protocol.md). */
+const sse = (type: string, data: object = {}) =>
+  `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`;
+
 test.beforeAll(async () => {
-  const handle = dciHandler(async (req, stream) => {
-    const answer = /late/i.test(req.prompt) ? ANSWERS.late! : ANSWERS.summary!;
-    for (const word of answer.split(/(?<= )/)) stream.text(word);
-  });
+  // A minimal DCI endpoint: streams the scripted answer word by word.
   server = createServer(async (req, res) => {
-    const chunks: Buffer[] = [];
-    for await (const chunk of req) chunks.push(chunk as Buffer);
-    const response = await handle(
-      new Request(`http://127.0.0.1${req.url}`, {
-        method: req.method ?? 'GET',
-        headers: req.headers as Record<string, string>,
-        ...(req.method === 'POST' ? { body: Buffer.concat(chunks) } : {}),
-      }),
-    );
-    res.writeHead(response.status, Object.fromEntries(response.headers));
-    for await (const chunk of response.body!) res.write(chunk);
-    res.end();
+    let body = '';
+    for await (const chunk of req) body += String(chunk);
+    const { prompt } = JSON.parse(body || '{}') as { prompt?: string };
+    const answer = /late/i.test(prompt ?? '') ? ANSWERS.late! : ANSWERS.summary!;
+    res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' });
+    for (const word of answer.split(/(?<= )/)) res.write(sse('text-delta', { text: word }));
+    res.end(sse('done'));
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   endpoint = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api/dci`;
