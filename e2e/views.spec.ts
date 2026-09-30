@@ -44,6 +44,29 @@ test.describe('CRM views', () => {
     }
   });
 
+  test('the top bar fits beside the docked chat panel', async ({ app, page }) => {
+    for (const width of [1280, 1024]) {
+      await page.setViewportSize({ width, height: 800 });
+      await app.open('/sales', { chatMode: 'panel' });
+      await app.click(page.locator(`[data-dci*='"id":"kpi.win-rate"']`));
+      await expect(app.chat.chips).toHaveText(['Win Rate']);
+      // Wait until the page has made room for the panel.
+      await expect
+        .poll(() => page.evaluate(() => getComputedStyle(document.body).paddingRight))
+        .toBe('380px');
+      const header = page.locator('header').first();
+      await expect
+        .poll(() => header.evaluate((h) => h.scrollWidth - h.clientWidth), {
+          message: `${width}px`,
+        })
+        .toBeLessThanOrEqual(0);
+      // Nothing in the top bar is hidden under the panel.
+      await page.getByRole('button', { name: 'Gestures and keys' }).click();
+      await expect(page.getByRole('dialog', { name: 'Gestures and keys' })).toBeVisible();
+      await page.keyboard.press('Escape');
+    }
+  });
+
   test('window select picks whole opportunity rows', async ({ app, page }) => {
     await page.setViewportSize({ width: 1400, height: 1000 });
     await app.open('/sales/opportunities');

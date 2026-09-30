@@ -22,21 +22,22 @@ test.describe('playground', () => {
     await expect(drawer(page)).toBeVisible();
 
     await choose(page, 'Mode', 'Panel');
-    await choose(page, 'Modifier key', 'Ctrl');
+    // Shift, not Ctrl: Ctrl+Click is a right-click on macOS.
+    await choose(page, 'Modifier key', 'Shift');
     // Non-modal: the page stays usable while the drawer is open.
     await kpi(page, 'win-rate').click({ modifiers: ['Alt'] });
     await expect(chips(page)).toHaveCount(0);
-    await kpi(page, 'win-rate').click({ modifiers: ['Control'] });
+    await kpi(page, 'win-rate').click({ modifiers: ['Shift'] });
     await expect(chips(page)).toHaveText(['Win Rate']);
     await expect(page.locator('dci-root .chat')).toHaveAttribute('role', 'complementary');
 
     await page.getByRole('button', { name: 'Gestures and keys' }).click();
     const sheet = page.getByRole('dialog', { name: 'Gestures and keys' });
-    await expect(sheet).toContainText('Ctrl+Click');
+    await expect(sheet).toContainText('Shift+Click');
     await expect(sheet).not.toContainText('Alt (⌥)+Click');
     await page.keyboard.press('Escape');
     await expect(sheet).toBeHidden();
-    await expect(page.getByRole('note')).toContainText('Hold Ctrl');
+    await expect(page.getByRole('note')).toContainText('Hold Shift');
   });
 
   test('the inspector previews the request and logs the response', async ({ page }) => {
