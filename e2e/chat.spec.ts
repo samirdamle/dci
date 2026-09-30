@@ -69,10 +69,12 @@ test.describe('chat', () => {
   }
 
   test('flips above the row near the bottom of the viewport', async ({ page }) => {
-    // The row sits ~40px above the bottom edge: no room below for the popover.
+    // The row sits at the bottom edge: no room below for the popover. Pin it
+    // there, since browsers differ in how they scroll a row they're clicking.
     await page.setViewportSize({ width: 1200, height: 480 });
     await ready(page);
     const target = row(page, 'INV-104');
+    await target.evaluate((el) => el.scrollIntoView({ block: 'end' }));
     await openOn(page, 'INV-104');
     await expect
       .poll(async () => {
@@ -80,6 +82,21 @@ test.describe('chat', () => {
         return Math.round(r.y - (c.y + c.height));
       })
       .toBe(8);
+  });
+
+  test('shrinks to fit above the row when it fits on neither side', async ({ page }) => {
+    // Too short for the full popover above or below the row.
+    await page.setViewportSize({ width: 1200, height: 200 });
+    await ready(page);
+    const target = row(page, 'INV-104');
+    await target.evaluate((el) => el.scrollIntoView({ block: 'end' }));
+    await openOn(page, 'INV-104');
+    await expect
+      .poll(async () => {
+        const [r, c] = [await box(target), await box(chat(page))];
+        return [Math.round(r.y - (c.y + c.height)), c.y >= 8];
+      })
+      .toEqual([8, true]);
   });
 
   test('suggested action streams a reply with tool progress and chips', async ({ page }) => {

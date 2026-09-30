@@ -78,22 +78,27 @@ test.describe('selection', () => {
     const names = await opps.names(5);
     const r = (i: number) => opps.rows.nth(i);
 
-    await app.windowSelect(r(0), r(2));
-    await expect(app.chat.chips).toHaveText(names.slice(0, 3));
-
-    await app.windowSelect(r(3), r(4), { extra: ['Shift'] });
-    await expect(app.chat.chips).toHaveText(names.slice(0, 5));
-
-    // Subtract with whichever of Ctrl/Cmd isn't the DCI modifier.
-    await app.windowSelect(r(1), r(2), { extra: [modifier === 'Control' ? 'Meta' : 'Control'] });
-    await expect(app.chat.chips).toHaveText([names[0]!, names[3]!, names[4]!]);
+    // The selected rows, in any order (rows already selected keep their place).
+    const selected = () => app.chat.chips.allTextContents().then((t) => t.sort());
+    const rows = (...i: number[]) => i.map((n) => names[n]!).sort();
 
     // Right→left selects what it touches.
     await app.windowSelect(r(1), r(2), { touch: true });
-    const touched = await app.chat.chips.allTextContents();
-    expect(touched).toContain(names[1]);
-    expect(touched).toContain(names[2]);
-    expect(touched).not.toContain(names[0]);
+    await expect.poll(selected).toEqual(expect.arrayContaining(rows(1, 2)));
+    expect(await selected()).not.toContain(names[0]);
+
+    // Left→right selects what it contains, replacing the selection; Shift adds.
+    await app.windowSelect(r(0), r(2));
+    await expect.poll(selected).toEqual(rows(0, 1, 2));
+    await app.windowSelect(r(3), r(4), { extra: ['Shift'] });
+    await expect.poll(selected).toEqual(rows(0, 1, 2, 3, 4));
+
+    // Subtract with whichever of Ctrl/Cmd isn't the DCI modifier; Cmd on macOS,
+    // where Ctrl+press is a right-click. Last, because headless WebKit on Linux
+    // can keep reporting Ctrl as held on the next drag after it's released.
+    const subtract = modifier === 'Control' || process.platform === 'darwin' ? 'Meta' : 'Control';
+    await app.windowSelect(r(1), r(2), { extra: [subtract] });
+    await expect.poll(selected).toEqual(rows(0, 3, 4));
   });
 
   test('window select auto-scrolls at the viewport edge, and Esc cancels', async ({
