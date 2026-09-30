@@ -42,7 +42,9 @@ export interface Candidate {
 
 /**
  * Candidates hit by `box` in `mode`, reduced to the innermost (`'leaf'`) or
- * outermost (`'top'`) matches. O(n × depth); rects are measured up front.
+ * outermost (`'top'`) matches. In `touch` mode a node enclosing the whole box
+ * only counts when nothing inside it is hit. O(n × depth); rects are measured
+ * up front.
  */
 export function hitTest(
   candidates: Candidate[],
@@ -50,8 +52,21 @@ export function hitTest(
   mode: MarqueeMode,
   level: 'leaf' | 'top' = 'leaf',
 ): Element[] {
-  const test = mode === 'contain' ? contains : intersects;
-  const hit = candidates.map((c) => (mode === 'contain' ? test(box, c.rect) : test(c.rect, box)));
+  const hit = candidates.map((c) =>
+    mode === 'contain' ? contains(box, c.rect) : intersects(c.rect, box),
+  );
+  if (mode === 'touch') {
+    // A container that encloses the whole box is the surface being dragged
+    // on, not something the box touched, when anything inside it is hit.
+    const hitBelow = new Array<boolean>(candidates.length).fill(false);
+    candidates.forEach((c, i) => {
+      if (!hit[i]) return;
+      for (let p = c.parent; p >= 0 && !hitBelow[p]; p = candidates[p]!.parent) hitBelow[p] = true;
+    });
+    candidates.forEach((c, i) => {
+      if (hitBelow[i] && contains(c.rect, box)) hit[i] = false;
+    });
+  }
   const drop = new Array<boolean>(candidates.length).fill(false);
   candidates.forEach((c, i) => {
     if (!hit[i]) return;

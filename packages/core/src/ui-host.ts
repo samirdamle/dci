@@ -127,6 +127,8 @@ function createHost(options: UiHostOptions): UiHost {
   for (const name of LAYERS) {
     const layer = document.createElement('div');
     layer.setAttribute('data-layer', name);
+    // Boxes and labels are visual only; screen readers hear the live region.
+    if (name === 'overlay') layer.setAttribute('aria-hidden', 'true');
     shadow.appendChild(layer);
     layers[name] = layer;
   }

@@ -103,6 +103,10 @@ tasks. Tracing is disabled in the perf project because it skews frame times.
 - **Touch** devices have no gesture yet (planned: long-press or a toggle mode).
   Programmatic selection (`dci.selection.set()`) works everywhere.
 - **Alt+Drag on Linux** can be taken by the window manager (see above).
+- **Control as the modifier on macOS**: Ctrl+Click is a secondary click there
+  (it opens the context menu), so pick Option, Cmd or Shift on macOS. The
+  `chromium-ctrl` e2e project runs the selection suite with Control on Linux
+  and Windows only.
 - **No constructable stylesheets** (Safari before 16.4): styles fall back to
   `<style>`, which a strict CSP blocks unless it allows `'unsafe-inline'`.
 - The Firefox and WebKit rows are verified by the nightly matrix, not on every

@@ -1,4 +1,5 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { KanbanBoard, RecordTable } from './pages/crm';
+import { expect, test } from './pages/fixtures';
 
 /**
  * The full loop against the demo backend in mock mode: select records, ask,
@@ -7,73 +8,36 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
  * load starts a fresh org and session.
  */
 
-async function open(page: Page, path: string) {
-  await page.goto(`/#${path}`);
-  await page.waitForSelector('dci-root', { state: 'attached' });
-}
-
-const chat = (page: Page) => page.locator('dci-root .chat');
-const chips = (page: Page) => page.locator('dci-root .chip .name');
-
-async function windowSelect(page: Page, from: Locator, to: Locator) {
-  const a = (await from.boundingBox())!;
-  const b = (await to.boundingBox())!;
-  await page.keyboard.down('Alt');
-  await page.mouse.move(a.x - 4, a.y - 3);
-  await page.mouse.down();
-  await page.mouse.move(
-    Math.min(b.x + b.width + 4, page.viewportSize()!.width - 2),
-    b.y + b.height + 3,
-    {
-      steps: 6,
-    },
-  );
-  await page.mouse.up();
-  await page.keyboard.up('Alt');
-}
-
-async function ask(page: Page, prompt: string) {
-  await chat(page).locator('textarea').fill(prompt);
-  await chat(page).locator('textarea').press('Enter');
-}
-
 test.describe('agent write-back (mock mode)', () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 1000 });
   });
 
-  test('shows the backend mode', async ({ page }) => {
-    await open(page, '/sales');
+  test('shows the backend mode', async ({ app, page }) => {
+    await app.open('/sales');
     await expect(page.getByText('Mock mode')).toBeVisible();
   });
 
-  test('moving 3 deals updates the list, the Kanban and the record page', async ({ page }) => {
-    await open(page, '/sales/opportunities');
-    await page.getByLabel('Filter Opportunities').fill('Prospecting');
-    const rows = page.locator('tbody tr');
-    const names = (await rows.evaluateAll((trs) =>
-      trs.slice(0, 3).map((tr) => (tr as HTMLTableRowElement).cells[0]!.textContent!),
-    )) as string[];
-    await windowSelect(page, rows.nth(0), rows.nth(2));
-    await expect(chips(page)).toHaveText(names);
+  test('moving 3 deals updates the list, the Kanban and the record page', async ({ app, page }) => {
+    await app.open('/sales/opportunities');
+    const opps = new RecordTable(page, 'Opportunities');
+    await opps.filter.fill('Prospecting');
+    const names = await opps.names(3);
+    await app.windowSelect(opps.rows.nth(0), opps.rows.nth(2));
+    await expect(app.chat.chips).toHaveText(names);
 
-    await ask(page, 'Move these 3 deals to Negotiation and add a follow-up task for each');
-    await expect(chat(page).locator('.msg.assistant')).toContainText('Done. I made 6 changes');
-    await expect(chat(page).locator('details.tools summary')).toHaveText('7 steps');
+    await app.chat.ask('Move these 3 deals to Negotiation and add a follow-up task for each');
+    await expect(app.chat.assistant).toContainText('Done. I made 6 changes');
+    await expect(app.chat.root.locator('details.tools summary')).toHaveText('7 steps');
 
     // The list: the filter no longer matches (they left Prospecting)…
-    await page.getByLabel('Filter Opportunities').fill('');
-    for (const name of names)
-      await expect(page.locator('tbody tr', { hasText: name }).first()).toContainText(
-        'Negotiation',
-      );
+    await opps.filter.fill('');
+    for (const name of names) await expect(opps.row(name)).toContainText('Negotiation');
 
     // …the Kanban board…
-    await chat(page).getByRole('button', { name: 'Close chat' }).click();
+    await app.chat.close();
     await page.getByRole('link', { name: 'Pipeline' }).click();
-    const negotiation = page
-      .getByRole('region', { name: 'Opportunity pipeline' })
-      .getByLabel('Negotiation');
+    const negotiation = new KanbanBoard(page).column('Negotiation');
     for (const name of names)
       await expect(negotiation.getByText(name, { exact: true })).toBeVisible();
 
@@ -85,27 +49,28 @@ test.describe('agent write-back (mock mode)', () => {
     await expect(page.getByRole('tabpanel').getByText(`Follow up: ${names[0]}`)).toBeVisible();
   });
 
-  test('comparing 3 campaigns recommends where to shift budget', async ({ page }) => {
-    await open(page, '/marketing/campaigns');
-    const rows = page.locator('tbody tr');
-    await windowSelect(page, rows.nth(0), rows.nth(2));
-    await chat(page).getByRole('button', { name: 'Compare with selected' }).click();
-    const answer = chat(page).locator('.msg.assistant');
+  test('comparing 3 campaigns recommends where to shift budget', async ({ app, page }) => {
+    await app.open('/marketing/campaigns');
+    const campaigns = new RecordTable(page, 'Campaigns');
+    await app.windowSelect(campaigns.rows.nth(0), campaigns.rows.nth(2));
+    await app.chat.action('Compare with selected').click();
+    const answer = app.chat.assistant;
     await expect(answer).toContainText('Spring Trail Webinar spent $42,000 for 18 leads');
     await expect(answer).toContainText('Recommendation: shift budget from');
   });
 
-  test('without a server, the mock runs in the browser and still writes back', async ({ page }) => {
+  test('without a server, the mock runs in the browser and still writes back', async ({
+    app,
+    page,
+  }) => {
     await page.route('**/api/mode', (route) => route.fulfill({ status: 404, body: 'Not found' }));
-    await open(page, '/sales/leads');
+    await app.open('/sales/leads');
     await expect(page.getByText('Mock mode')).toHaveAttribute('title', /in your browser/);
-    const row = page.locator('tbody tr', { hasText: 'Jordan Park' });
-    await row
-      .locator('td')
-      .first()
-      .click({ modifiers: ['Alt'] });
-    await ask(page, 'Mark this lead as qualified');
-    await expect(chat(page).locator('.msg.assistant')).toContainText('Done.');
+    const leads = new RecordTable(page, 'Leads');
+    const row = leads.row('Jordan Park');
+    await app.click(leads.cell(row, 0));
+    await app.chat.ask('Mark this lead as qualified');
+    await expect(app.chat.assistant).toContainText('Done.');
     await expect(row).toContainText('Qualified');
   });
 });

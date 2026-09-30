@@ -64,6 +64,17 @@ describe('geometry', () => {
       expect(ids(hitTest(candidates, r(-5, -5, 205, 105), 'contain', 'top'))).toEqual(['table']);
     });
 
+    it("touch + 'top' skips containers that enclose the box, unless nothing inside is hit", () => {
+      // Inside the table, crossing both rows: the rows, not the table.
+      expect(ids(hitTest(candidates, r(90, 40, 110, 60), 'touch', 'top'))).toEqual([
+        'row1',
+        'row2',
+      ]);
+      // Inside one cell: the innermost enclosing node still counts.
+      expect(ids(hitTest(candidates, r(10, 10, 20, 20), 'touch', 'top'))).toEqual(['c11']);
+      expect(ids(hitTest(candidates, r(10, 10, 20, 20), 'touch'))).toEqual(['c11']);
+    });
+
     it('handles 1,000 candidates well within a frame', () => {
       const many: Candidate[] = Array.from({ length: 1000 }, (_, i) => ({
         el: candidates[0]!.el,
@@ -137,9 +148,13 @@ describe('Mod+Drag window select', () => {
       marquees.push(m && `${m.mode}:${m.rect.left},${m.rect.top},${m.rect.right},${m.rect.bottom}`),
     );
     dci.bus.on('marqueePreview', (els) => previews.push(els.map((e) => e.id)));
-    fakeKey('Alt', { altKey: true });
+    const modifier = options.modifier ?? 'Alt';
+    const prop = { Alt: 'altKey', Control: 'ctrlKey', Meta: 'metaKey', Shift: 'shiftKey' }[
+      modifier
+    ];
+    fakeKey(modifier, { [prop]: true });
     const target = f.get('#a');
-    const mods = { altKey: true };
+    const mods = { [prop]: true };
     const down = (x: number, y: number, extra = {}) =>
       fakePointer(target, { type: 'pointerdown', clientX: x, clientY: y, ...mods, ...extra });
     const move = async (x: number, y: number, extra = {}) => {
@@ -200,6 +215,20 @@ describe('Mod+Drag window select', () => {
     expect(dci.selection.get()).toEqual([]);
   });
 
+  it('with Control as the modifier, Ctrl selects and only Cmd subtracts', async () => {
+    const { dci, down, move, up, f } = setup({ modifier: 'Control' });
+    dci.selection.set([f.get('#d')]);
+    down(90, 90);
+    await move(210, 160);
+    up(210, 160);
+    expect(ids(dci.selection.get())).toEqual(['a']);
+
+    down(90, 90);
+    await move(210, 160, { metaKey: true });
+    up(210, 160, { metaKey: true });
+    expect(dci.selection.get()).toEqual([]);
+  });
+
   it('treats a press without movement as a click', async () => {
     const { dci, down, move, up, click, marquees } = setup();
     down(150, 120);
@@ -224,14 +253,17 @@ describe('Mod+Drag window select', () => {
   });
 
   it('Esc cancels the drag without changing the selection', async () => {
-    const { dci, down, move, up, marquees, f } = setup();
+    const { dci, down, move, up, click, marquees, f } = setup();
     dci.selection.set([f.get('#d')]);
     down(90, 90);
     await move(250, 210);
     const esc = fakeKey('Escape', { altKey: true });
     expect(esc.defaultPrevented).toBe(true);
     expect(marquees[marquees.length - 1]).toBeNull();
+    // The button is released later; the click it produces is swallowed too.
+    await new Promise((res) => setTimeout(res, 5));
     up(250, 210);
+    expect(click().defaultPrevented).toBe(true);
     expect(ids(dci.selection.get())).toEqual(['d']);
   });
 

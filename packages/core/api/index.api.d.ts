@@ -517,7 +517,9 @@ interface Candidate {
 }
 /**
  * Candidates hit by `box` in `mode`, reduced to the innermost (`'leaf'`) or
- * outermost (`'top'`) matches. O(n × depth); rects are measured up front.
+ * outermost (`'top'`) matches. In `touch` mode a node enclosing the whole box
+ * only counts when nothing inside it is hit. O(n × depth); rects are measured
+ * up front.
  */
 declare function hitTest(candidates: Candidate[], box: Rect, mode: MarqueeMode, level?: 'leaf' | 'top'): Element[];
 
@@ -531,9 +533,9 @@ declare const AUTOSCROLL_SPEED = 20;
 declare function collectCandidates(tree: DciTree, root: Element): Candidate[];
 /**
  * Mod+Drag window select. Left→right selects nodes fully inside the box;
- * right→left selects nodes it touches. Shift adds, Ctrl/Cmd subtracts,
- * Esc cancels. Rects are measured once at drag start (and after scrolling),
- * so each frame is a plain rectangle test.
+ * right→left selects nodes it touches. Shift adds, Ctrl/Cmd subtracts
+ * (whichever isn't the DCI modifier), Esc cancels. Rects are measured once at
+ * drag start (and after scrolling), so each frame is a plain rectangle test.
  */
 declare const marqueeGesture: Gesture;
 

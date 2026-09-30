@@ -63,12 +63,17 @@ interface Drag {
 
 /**
  * Mod+Drag window select. Left→right selects nodes fully inside the box;
- * right→left selects nodes it touches. Shift adds, Ctrl/Cmd subtracts,
- * Esc cancels. Rects are measured once at drag start (and after scrolling),
- * so each frame is a plain rectangle test.
+ * right→left selects nodes it touches. Shift adds, Ctrl/Cmd subtracts
+ * (whichever isn't the DCI modifier), Esc cancels. Rects are measured once at
+ * drag start (and after scrolling), so each frame is a plain rectangle test.
  */
 export const marqueeGesture: Gesture = (ctx) => {
   let drag: Drag | null = null;
+  // The DCI modifier itself is held throughout, so it can't also mean add or subtract.
+  const mod = ctx.input.modifier;
+  const adds = (e: PointerEvent) => e.shiftKey && mod !== 'Shift';
+  const subtracts = (e: PointerEvent) =>
+    (e.ctrlKey && mod !== 'Control') || (e.metaKey && mod !== 'Meta');
 
   function end(apply: boolean) {
     if (!drag) return;
@@ -129,8 +134,8 @@ export const marqueeGesture: Gesture = (ctx) => {
     if (!drag || e.pointerId !== drag.pointerId) return;
     drag.clientX = e.clientX;
     drag.clientY = e.clientY;
-    drag.shift = e.shiftKey;
-    drag.subtract = e.ctrlKey || e.metaKey;
+    drag.shift = adds(e);
+    drag.subtract = subtracts(e);
     if (!drag.started) {
       const moved = Math.hypot(
         e.clientX + window.scrollX - drag.startX,
@@ -171,10 +176,17 @@ export const marqueeGesture: Gesture = (ctx) => {
     for (const [type, fn] of listeners) window.removeEventListener(type, fn as EventListener, true);
   };
 
+  // After Esc the button is still down: swallow the click its release makes.
+  const onReleaseAfterCancel = () => {
+    window.removeEventListener('pointerup', onReleaseAfterCancel, true);
+    ctx.input.suppressNextClick();
+  };
+
   // Registered before the keyboard gesture, so Esc cancels a drag first.
   const offKey = ctx.input.onKeyDown((e) => {
     if (e.key !== 'Escape' || !drag?.started) return;
     end(false);
+    window.addEventListener('pointerup', onReleaseAfterCancel, true);
     return 'consume';
   });
 
@@ -189,8 +201,8 @@ export const marqueeGesture: Gesture = (ctx) => {
       startY: e.clientY + window.scrollY,
       clientX: e.clientX,
       clientY: e.clientY,
-      shift: e.shiftKey,
-      subtract: e.ctrlKey || e.metaKey,
+      shift: adds(e),
+      subtract: subtracts(e),
       started: false,
       candidates: [],
       preview: [],
@@ -207,5 +219,6 @@ export const marqueeGesture: Gesture = (ctx) => {
     offDown();
     offKey();
     end(false);
+    window.removeEventListener('pointerup', onReleaseAfterCancel, true);
   };
 };
