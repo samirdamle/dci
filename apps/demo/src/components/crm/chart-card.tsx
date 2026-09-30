@@ -120,6 +120,9 @@ export function ChartCard<T extends Record<string, unknown>>({
                   type="monotone"
                   stroke={`var(--color-${s.key})`}
                   strokeWidth={2}
+                  // Recharts' hover dot is drawn outside the annotated <g>, on top of the
+                  // point, so Mod+Click would land on the chart instead. DCI highlights anyway.
+                  activeDot={false}
                   dot={(props: { cx?: number; cy?: number; index?: number; payload?: unknown }) => (
                     <g
                       key={`${s.key}-${props.index}`}

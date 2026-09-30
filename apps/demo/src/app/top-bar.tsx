@@ -38,21 +38,25 @@ export function TopBar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur">
+    // A container, so it adapts to its own width (narrower when the chat panel is docked).
+    <header className="@container sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur">
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-1 data-[orientation=vertical]:h-4" />
       <Button
         variant="outline"
         size="sm"
-        className="w-64 justify-start text-muted-foreground"
+        className="max-w-64 min-w-0 flex-1 justify-start text-muted-foreground"
         onClick={() => setOpen(true)}
       >
         <Search className="size-4" />
-        Search Summit Gear…
-        <kbd className="ml-auto rounded border bg-muted px-1.5 text-[10px] text-foreground">⌘K</kbd>
+        <span className="truncate">Search Summit Gear…</span>
+        <kbd className="ml-auto hidden rounded border bg-muted px-1.5 text-[10px] text-foreground @lg:inline">
+          ⌘K
+        </kbd>
       </Button>
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex shrink-0 items-center gap-2">
         <Badge
+          className="hidden @3xl:inline-flex"
           variant="outline"
           title="Summit Gear Co. is made up; not affiliated with Salesforce."
         >
@@ -60,6 +64,7 @@ export function TopBar() {
         </Badge>
         {backend && (
           <Badge
+            className="hidden @3xl:inline-flex"
             variant={backend.mode === 'claude' ? 'default' : 'secondary'}
             title={
               backend.mode === 'claude'
