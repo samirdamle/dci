@@ -75,7 +75,7 @@ declare function DciChat({ render }: DciChatProps): react.JSX.Element;
  */
 
 /** Package version. */
-declare const VERSION = "0.0.0";
+declare const VERSION: string;
 
 /**
  * Annotation props for JSX: `<tr {...dci({ id, type: 'invoice', label, amount })}>`.

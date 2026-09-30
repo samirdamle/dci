@@ -7,7 +7,7 @@
  */
 
 /** Package version. */
-export const VERSION = '1.0.0';
+export const VERSION: string = '1.0.0';
 
 export { DciRequestError } from './errors';
 export { parseDciRequest } from './parse';

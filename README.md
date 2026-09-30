@@ -4,12 +4,12 @@
 exactly those things as context for an AI conversation, instead of describing them in words.
 
 [![CI](https://github.com/samirdamle/dci/actions/workflows/ci.yml/badge.svg)](https://github.com/samirdamle/dci/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@samirdamle/dci-core?label=npm)](https://www.npmjs.com/package/@samirdamle/dci-core)
 &nbsp;**Live demo:** https://samirdamle.github.io/dci/
 
 ![Alt+Click a deal in the demo CRM, ask about it, and the answer streams in next to it](docs/assets/demo.gif)
 
-> **Status:** feature-complete for v1 and in its final quality pass (see the [roadmap](#roadmap)).
-> The packages are not on npm yet.
+> **Status:** v1.0.0 is on npm. Start with [Getting started](docs/getting-started.md).
 
 ## Why
 
@@ -39,6 +39,10 @@ replaceable), backend-agnostic (a small documented protocol; plain LLM calls or 
 two-way: the agent can update the page through **client actions**.
 
 ## Quick start
+
+```sh
+npm install @samirdamle/dci-react @samirdamle/dci-server
+```
 
 ```tsx
 import type { DciConfig } from '@samirdamle/dci-core';
@@ -107,13 +111,13 @@ a Playground to try every option live.
 
 ## Roadmap
 
-| Milestone | Scope                                                                      | Status      |
-| --------- | -------------------------------------------------------------------------- | ----------- |
-| M0–M1     | Tooling; `data-dci` parsing, DCI tree, context extraction, selection       | Done        |
-| M2–M3     | Every selection gesture; the Shadow DOM highlight overlay                  | Done        |
-| M4–M5     | Protocol, transport, client actions, `@samirdamle/dci-server`; the chat UI | Done        |
-| M6–M7     | `createDci()` and React bindings; the CRM demo with a Claude agent         | Done        |
-| M8        | Cross-browser e2e, performance, docs, npm release                          | In progress |
+| Milestone | Scope                                                                      | Status |
+| --------- | -------------------------------------------------------------------------- | ------ |
+| M0–M1     | Tooling; `data-dci` parsing, DCI tree, context extraction, selection       | Done   |
+| M2–M3     | Every selection gesture; the Shadow DOM highlight overlay                  | Done   |
+| M4–M5     | Protocol, transport, client actions, `@samirdamle/dci-server`; the chat UI | Done   |
+| M6–M7     | `createDci()` and React bindings; the CRM demo with a Claude agent         | Done   |
+| M8        | Cross-browser e2e, performance, docs, npm release                          | Done   |
 
 After v1: a browser extension that brings DCI to any website, Vue and Svelte bindings, touch
 support, and selecting by query ("all overdue invoices").
