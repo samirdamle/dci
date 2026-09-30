@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -29,9 +28,36 @@ export interface Extension {
   badge(page: Page): Promise<string>;
 }
 
-async function tabId(ext: { worker: Worker }, page: Page): Promise<number> {
+/**
+ * Run `fn` in the extension's current service worker. MV3 workers are stopped
+ * when idle and started again on demand, so the one found at launch may be
+ * gone, or still starting (without extension APIs yet): retry briefly.
+ */
+async function inWorker<A, R>(context: BrowserContext, fn: (arg: A) => R | Promise<R>, arg?: A) {
+  for (let attempt = 0; ; attempt++) {
+    const worker =
+      [...context.serviceWorkers()]
+        .reverse()
+        .find((w) => w.url().startsWith('chrome-extension://')) ??
+      (await context.waitForEvent('serviceworker'));
+    try {
+      const ready = await worker.evaluate(
+        () => !!(globalThis as { chrome?: { storage?: unknown } }).chrome?.storage,
+      );
+      // Playwright's evaluate() generics don't accept a generic `fn`; the call is sound.
+      if (ready) return (await worker.evaluate(fn as never, arg as never)) as R;
+    } catch (err) {
+      if (attempt >= 20) throw err;
+    }
+    if (attempt >= 20) throw new Error('The extension service worker never became ready.');
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+}
+
+async function tabId(context: BrowserContext, page: Page): Promise<number> {
   const url = page.url();
-  return ext.worker.evaluate(
+  return inWorker(
+    context,
     async (u) => (await chrome.tabs.query({})).find((t) => t.url === u)!.id!,
     url,
   );
@@ -41,7 +67,7 @@ export const test = base.extend<{ page: Page }, { extension: Extension }>({
   extension: [
     // eslint-disable-next-line no-empty-pattern -- Playwright requires the destructuring.
     async ({}, use) => {
-      execFileSync(process.execPath, ['scripts/build.mjs', '--e2e'], { cwd: extensionDir });
+      // Built once by e2e/global-setup.ts.
       const path = join(extensionDir, 'dist/e2e');
       // Extensions need the full Chromium (new headless), not the headless shell.
       const context = await chromium.launchPersistentContext('', {
@@ -53,15 +79,16 @@ export const test = base.extend<{ page: Page }, { extension: Extension }>({
         context,
         worker,
         toggle: async (page) => {
-          const id = await tabId(ext, page);
-          await worker.evaluate(
+          const id = await tabId(context, page);
+          await inWorker(
+            context,
             (i) => (globalThis as unknown as { dciToggle(id: number): Promise<void> }).dciToggle(i),
             id,
           );
         },
         badge: async (page) => {
-          const id = await tabId(ext, page);
-          return worker.evaluate((tabId) => chrome.action.getBadgeText({ tabId }), id);
+          const id = await tabId(context, page);
+          return inWorker(context, (tabId) => chrome.action.getBadgeText({ tabId }), id);
         },
       };
       await use(ext);

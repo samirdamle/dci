@@ -20,6 +20,8 @@ const record = !!process.env.PW_RECORD;
 
 export default defineConfig<DemoOptions>({
   testDir: './e2e',
+  // Builds the browser extension for e2e/extension (once, before all workers).
+  globalSetup: './e2e/global-setup.ts',
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
