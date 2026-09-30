@@ -1,7 +1,10 @@
 name: Release
 
-# On main: open (or update) a "Version packages" PR from pending changesets;
-# merging it publishes to npm with provenance and creates GitHub releases.
+# On main: open (or update) a "Version packages" PR from pending changesets.
+# Publishing from CI is opt-in: set the repository variable NPM_PUBLISH=true
+# (with an NPM_TOKEN secret or npm trusted publishing) and merging that PR
+# publishes to npm with provenance and creates GitHub releases. Otherwise
+# merge it and publish by hand (CONTRIBUTING.md, "Publishing by hand").
 # On next: the same, as prereleases under the `next` dist-tag (the branch is
 # in changesets pre mode: `pnpm changeset pre enter next`).
 on:
@@ -35,7 +38,8 @@ jobs:
       - uses: changesets/action@v1
         with:
           version: pnpm version-packages
-          publish: pnpm release
+          # Empty = version only; the maintainer publishes by hand.
+          publish: ${{ vars.NPM_PUBLISH == 'true' && 'pnpm release' || '' }}
           title: Version packages
           commit: Version packages
         env:

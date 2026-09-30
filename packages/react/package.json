@@ -67,7 +67,6 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
     "exports": {
       ".": {
         "import": {
