@@ -210,6 +210,8 @@ async def dci(request: Request):
         history = sessions.setdefault(req["sessionId"], [])
         history.append({"role": "user", "content": f"{describe(req['context'])}\n\n{req['prompt']}"})
         try:
+            # The model call: send the conversation to Claude (or your own model or
+            # agent) and stream each piece of its reply back as a text-delta event.
             async with client.messages.stream(
                 model="claude-sonnet-5-5", max_tokens=4096, messages=history
             ) as response:
