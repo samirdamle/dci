@@ -47,6 +47,27 @@ test.describe('chat', () => {
       .toBe(0);
   });
 
+  for (const scheme of ['light', 'dark'] as const) {
+    test(`the popover has a 2px border in the inverse color (${scheme})`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme });
+      await ready(page);
+      await openOn(page, 'INV-101');
+      const style = await page.evaluate(() => {
+        const host = document.querySelector('dci-root')!;
+        const c = getComputedStyle(host.shadowRoot!.querySelector('.chat')!);
+        return {
+          width: c.borderTopWidth,
+          border: c.borderTopColor,
+          fg: c.color, // the chat's text color is --dci-fg
+          bg: c.backgroundColor,
+        };
+      });
+      expect(style.width).toBe('2px');
+      expect(style.border).toBe(style.fg);
+      expect(style.border).not.toBe(style.bg);
+    });
+  }
+
   test('flips above the row near the bottom of the viewport', async ({ page }) => {
     // The row sits ~40px above the bottom edge: no room below for the popover.
     await page.setViewportSize({ width: 1200, height: 480 });
