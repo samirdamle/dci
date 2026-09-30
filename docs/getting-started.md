@@ -7,9 +7,6 @@ about them, and an answer from Claude streams back. It takes three pieces:
 2. **The client**: `createDci()` (plain JavaScript) or `<DciProvider>` (React).
 3. **An endpoint**: a small server route that calls your model and streams the answer.
 
-> The packages are published to npm with the v1 release. Until then, use the workspace packages
-> from this repository (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
-
 ## Install
 
 ```sh
