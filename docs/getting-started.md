@@ -107,9 +107,29 @@ StrictMode. Hooks such as `useSelection()` and `useChat()` are described in the
 
 ## 3. A minimal backend with Claude
 
-`dciHandler` from `@samirdamle/dci-server` parses and validates the request, streams whatever you send and
-always finishes the response. The model call is yours; here it's Claude through the Anthropic SDK,
-with the conversation kept per session:
+`dciHandler` from `@samirdamle/dci-server` parses and validates the request, streams whatever you
+send and always finishes the response. The model call is yours. To see the whole loop working before
+you wire one up, start with a placeholder that streams a canned reply:
+
+```ts
+import { dciHandler, formatContextForPrompt } from '@samirdamle/dci-server';
+
+/** Placeholder model: replace the body with a call to your LLM or agent. */
+async function* callModel(prompt: string, context: string): AsyncIterable<string> {
+  yield `Context (${context.length} characters) and prompt ("${prompt}") passed on to model.\n\n`;
+  yield 'Analysis of the context sent back from model.';
+}
+
+export const handler = dciHandler(async (req, stream) => {
+  // The selected items, as an XML block the model can read.
+  const context = formatContextForPrompt(req.context);
+  // Call your model here, and stream its reply back as it arrives.
+  for await (const text of callModel(req.prompt, context)) stream.text(text);
+});
+```
+
+Then swap the placeholder for a real model. Here it's Claude through the Anthropic SDK, with the
+conversation kept per session:
 
 ```ts
 import Anthropic from '@anthropic-ai/sdk';
@@ -125,6 +145,7 @@ export const handler = dciHandler(async (req, stream, { signal }) => {
   const context = formatContextForPrompt(req.context);
   history.push({ role: 'user', content: `${context}\n\n${req.prompt}` });
 
+  // The model call: send the conversation to Claude and stream its reply back.
   const response = client.messages.stream(
     {
       model: 'claude-sonnet-5-5',
@@ -134,7 +155,7 @@ export const handler = dciHandler(async (req, stream, { signal }) => {
     },
     { signal }, // stops generating when the user presses Stop
   );
-  response.on('text', (delta) => stream.text(delta));
+  response.on('text', (delta) => stream.text(delta)); // each piece of the answer, as it arrives
   const message = await response.finalMessage();
   history.push({ role: 'assistant', content: message.content });
 });
@@ -158,6 +179,7 @@ import { createServer } from 'node:http';
 import { toNodeHandler } from '@samirdamle/dci-server/node';
 import { dciHandler } from '@samirdamle/dci-server';
 
+// An echo, to keep this short: call your model here, as in the handlers above.
 const handler = dciHandler(async (req, stream) => stream.text(`You said: ${req.prompt}`));
 const serve = toNodeHandler(handler);
 

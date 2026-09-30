@@ -62,9 +62,16 @@ export const App = () => (
 ```ts
 import { dciHandler, formatContextForPrompt } from '@samirdamle/dci-server';
 
+/** Placeholder model: replace the body with a call to your LLM or agent. */
+async function* callModel(prompt: string, context: string): AsyncIterable<string> {
+  yield `Context (${context.length} characters) and prompt ("${prompt}") passed on to model.\n\n`;
+  yield 'Analysis of the context sent back from model.';
+}
+
 export const POST = dciHandler(async (req, stream) => {
   const context = formatContextForPrompt(req.context); // the selected items, ready for a prompt
-  stream.text(`You asked "${req.prompt}" about:\n${context}`); // call your LLM or agent here
+  // Call your model here, and stream its reply back as it arrives.
+  for await (const text of callModel(req.prompt, context)) stream.text(text);
 });
 ```
 

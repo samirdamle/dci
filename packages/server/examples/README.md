@@ -1,7 +1,9 @@
 # `@samirdamle/dci-server` examples
 
-Each example serves a DCI endpoint at `/api/dci`. They answer with a canned reply so they run
-without an API key; replace `answer()` with your LLM or agent call (the demo app in M7 shows Claude).
+Each example serves a DCI endpoint at `/api/dci`. They share one handler in `shared.ts`, which
+answers through a placeholder `callModel()` so they run without an API key. Replace its body with
+your LLM or agent call; [getting started](../../../docs/getting-started.md#3-a-minimal-backend-with-claude)
+shows one with Claude, and the demo app has a full agent.
 
 | File            | Framework                                    |
 | --------------- | -------------------------------------------- |
@@ -19,7 +21,9 @@ export const handler = dciHandler(async (req, stream, { signal }) => {
   const context = formatContextForPrompt(req.context); // XML block for the prompt
   stream.toolStart('lookup', 'search', 'Looking things up…');
   stream.toolEnd('lookup', true);
-  stream.text('…streamed answer…');
+  // Your model call goes here; stream each piece of its reply:
+  stream.text('Context and prompt passed on to model. ');
+  stream.text('Analysis of the context sent back from model.');
   stream.clientAction('highlight', { ids: req.context.map((n) => n.id) });
   // `done` is sent for you, even if this function throws.
 });

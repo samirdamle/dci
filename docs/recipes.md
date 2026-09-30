@@ -23,13 +23,14 @@ import { dciHandler, formatContextForPrompt } from '@samirdamle/dci-server';
 import { streamText } from 'ai';
 
 export const POST = dciHandler(async (req, stream, { signal }) => {
+  // The model call: the AI SDK sends the selection and the question to the model.
   const result = streamText({
     model: anthropic('claude-sonnet-5-5'),
     system: 'Answer questions about the items the user selected on screen.',
     prompt: `${formatContextForPrompt(req.context)}\n\n${req.prompt}`,
     abortSignal: signal,
   });
-  for await (const text of result.textStream) stream.text(text);
+  for await (const text of result.textStream) stream.text(text); // stream the reply back
 });
 ```
 
@@ -216,12 +217,24 @@ type AgentEvent =
   | { kind: 'tool-call'; id: string; tool: string; input: unknown }
   | { kind: 'tool-result'; id: string; ok: boolean; changed?: { id: string; patch: object } };
 
-/** Your agent: anything that yields AgentEvents for a prompt. */
-declare function runAgent(
+/**
+ * Placeholder agent. Replace the body with your framework's run loop, and map
+ * its events to `AgentEvent`s (keep memory per `sessionId`; pass `signal` on).
+ */
+async function* runAgent(
   sessionId: string,
   prompt: string,
   signal: AbortSignal,
-): AsyncIterable<AgentEvent>;
+): AsyncIterable<AgentEvent> {
+  if (signal.aborted) return;
+  yield { kind: 'tool-call', id: 't1', tool: 'lookup', input: { sessionId } };
+  yield { kind: 'tool-result', id: 't1', ok: true };
+  yield {
+    kind: 'token',
+    text: `Context and prompt (${prompt.length} characters) passed on to model.\n\n`,
+  };
+  yield { kind: 'token', text: 'Analysis of the context sent back from model.' };
+}
 
 function forward(event: AgentEvent, stream: DciStream) {
   switch (event.kind) {
@@ -237,6 +250,7 @@ function forward(event: AgentEvent, stream: DciStream) {
 
 export const POST = dciHandler(async (req, stream, { signal }) => {
   const prompt = `${formatContextForPrompt(req.context)}\n\n${req.prompt}`;
+  // Run your agent here, forwarding its events to the page as they happen.
   for await (const event of runAgent(req.sessionId, prompt, signal)) forward(event, stream);
 });
 ```
