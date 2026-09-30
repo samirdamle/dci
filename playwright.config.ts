@@ -2,7 +2,9 @@ import { defineConfig, devices } from '@playwright/test';
 import type { DemoOptions } from './e2e/pages/fixtures';
 
 const PORT = 5173;
-const baseURL = `http://localhost:${PORT}`;
+// An IP, not `localhost`: on Windows that can resolve to IPv6 while Vite listens on IPv4.
+const HOST = '127.0.0.1';
+const baseURL = `http://${HOST}:${PORT}`;
 const isCI = !!process.env.CI;
 
 /**
@@ -66,13 +68,23 @@ export default defineConfig<DemoOptions>({
               ]
             : []),
         ],
-  webServer: {
-    command: `pnpm --filter @dci/demo dev --port ${PORT} --strictPort`,
-    url: baseURL,
-    reuseExistingServer: !isCI && !record,
-    timeout: 120_000,
-    // The demo backend in deterministic mock mode, with no artificial streaming delay
-    // (except when recording the GIF, where the answer should visibly stream).
-    env: { DCI_DEMO_MOCK: '1', DCI_DEMO_MOCK_DELAY: record ? '12' : '0' },
-  },
+  // The demo's two processes, started separately so each has its own readiness
+  // check and output (and nothing depends on a shell wrapper, which Windows lacks).
+  webServer: [
+    {
+      // The demo backend in deterministic mock mode, with no artificial streaming delay
+      // (except when recording the GIF, where the answer should visibly stream).
+      command: 'pnpm --filter @dci/demo run server',
+      port: 8787,
+      reuseExistingServer: !isCI && !record,
+      env: { DCI_DEMO_MOCK: '1', DCI_DEMO_MOCK_DELAY: record ? '12' : '0' },
+    },
+    {
+      command: `pnpm --filter @dci/demo run dev:web --host ${HOST} --port ${PORT} --strictPort`,
+      url: baseURL,
+      reuseExistingServer: !isCI && !record,
+      timeout: 120_000,
+      stdout: 'pipe',
+    },
+  ],
 });
