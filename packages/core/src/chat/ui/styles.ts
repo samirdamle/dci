@@ -10,6 +10,9 @@ export const CHAT_CSS = `
 .chat[data-mode='popover'] {
   width: min(380px, calc(100vw - 16px)); max-height: min(560px, calc(100vh - 16px));
   border-radius: calc(var(--dci-radius) * 2);
+  /* The inverse of the chat's background (dark on light, light on dark), so the
+     popover stands out over any page. Override with --dci-chat-border. */
+  border: 2px solid var(--dci-chat-border, var(--dci-fg));
 }
 .chat[data-mode='popover'][data-parked] { right: 16px; bottom: 16px; }
 .chat[data-mode='popover'][data-anchor-hidden] { visibility: hidden; }
