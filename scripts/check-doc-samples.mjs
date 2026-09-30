@@ -2,8 +2,8 @@
 /**
  * Type-check every TypeScript sample in the Markdown docs.
  *
- * Extracts each ```ts / ```tsx fence from README.md, CONTRIBUTING.md and
- * docs/**\/*.md into docs/_samples/, one module per block, and compiles them
+ * Extracts each ```ts / ```tsx fence from README.md, CONTRIBUTING.md, the
+ * package READMEs and docs/**\/*.md into docs/_samples/, one module per block, and compiles them
  * with docs/tsconfig.json. Mark a fence `ts nocheck` for deliberate fragments.
  * Placeholders samples may use (`token`, `store`, …) are declared in
  * docs/samples-env.d.ts.
@@ -27,7 +27,15 @@ function markdownFiles(dir) {
   });
 }
 
-const files = [join(root, 'README.md'), join(root, 'CONTRIBUTING.md'), ...markdownFiles(docs)];
+const packageReadmes = readdirSync(join(root, 'packages')).map((name) =>
+  join(root, 'packages', name, 'README.md'),
+);
+const files = [
+  join(root, 'README.md'),
+  join(root, 'CONTRIBUTING.md'),
+  ...packageReadmes,
+  ...markdownFiles(docs),
+];
 const FENCE = /^```(tsx|ts)\b([^\n]*)\n([\s\S]*?)^```$/gm;
 
 rmSync(out, { recursive: true, force: true });

@@ -10,3 +10,4 @@ packages/*/api
 # Generated: extracted doc samples and the TypeDoc site
 docs/_samples
 docs/api
+.pack
