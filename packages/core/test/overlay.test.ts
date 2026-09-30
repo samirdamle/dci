@@ -28,6 +28,17 @@ afterEach(() => {
 });
 
 describe('UI host', () => {
+  it('mounts without a custom element registry (extension content scripts)', () => {
+    vi.stubGlobal('customElements', null);
+    try {
+      const { host, release } = acquireUiHost();
+      expect(host.shadow.mode).toBe('open');
+      release();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('mounts one <dci-root> with an open shadow root and layers', () => {
     const { host, release } = acquireUiHost();
     const el = document.querySelector('dci-root')!;

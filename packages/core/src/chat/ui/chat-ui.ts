@@ -107,8 +107,23 @@ function deepActive(): Element | null {
   return el;
 }
 
+/** The first `max` characters of `text` on one line, or undefined if blank. */
+function snippet(text: string | undefined, max = 40): string | undefined {
+  const line = text?.replace(/\s+/g, ' ').trim();
+  if (!line) return undefined;
+  return line.length > max ? `${line.slice(0, max - 1)}…` : line;
+}
+
+/** A chip's name: the annotation's label or type; for fallback nodes, what the user sees. */
 const chipLabel = (n: DciContextNode) =>
-  n.label ?? n.type ?? n.fallback?.ariaLabel ?? n.fallback?.tagName ?? 'element';
+  n.label ??
+  n.type ??
+  n.fallback?.ariaLabel ??
+  n.fallback?.alt ??
+  n.fallback?.title ??
+  snippet(n.fallback?.text) ??
+  n.fallback?.tagName ??
+  'element';
 
 /**
  * The default chat shell: a popover anchored to the selection or a docked

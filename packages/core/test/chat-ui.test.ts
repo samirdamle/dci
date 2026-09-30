@@ -158,6 +158,20 @@ describe('chips and breadcrumb', () => {
     expect(text(s.$$('.chip .name'))).toEqual(['Acme']);
   });
 
+  it('names unannotated (fallback) chips by what the user sees', async () => {
+    const s = setup();
+    const note = document.createElement('p');
+    note.id = 'note';
+    note.textContent = '  Payment is overdue by\n 12 days; the customer asked for a new invoice. ';
+    s.f.root.append(note);
+    await select(s, 'outside', 'note');
+    expect(text(s.$$('.chip .name'))).toEqual([
+      'outside',
+      'Payment is overdue by 12 days; the cust…',
+    ]);
+    expect(text(s.$$('.chip small'))).toEqual(['unannotated', 'unannotated']);
+  });
+
   it('collapses extra chips behind "+N more"', async () => {
     const s = setup({ maxChips: 1 });
     await select(s, 'a', 'b', 'c');

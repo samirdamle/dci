@@ -1,0 +1,21 @@
+{
+  "name": "@dci/extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DCI for any website: hold Alt, click what you mean, ask.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "zip": "node scripts/build.mjs --zip",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@samirdamle/dci-core": "workspace:*",
+    "@samirdamle/dci-protocol": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.3.4",
+    "esbuild": "^0.28.2"
+  }
+}

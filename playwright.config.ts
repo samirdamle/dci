@@ -20,6 +20,8 @@ const record = !!process.env.PW_RECORD;
 
 export default defineConfig<DemoOptions>({
   testDir: './e2e',
+  // Builds the browser extension for e2e/extension (once, before all workers).
+  globalSetup: './e2e/global-setup.ts',
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
@@ -50,6 +52,8 @@ export default defineConfig<DemoOptions>({
         ]
       : [
           { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+          // The browser extension, loaded unpacked into Chromium (e2e/extension).
+          { name: 'extension', testMatch: /.*\.ext\.ts/ },
           // The selection gestures again with Control as the DCI modifier. Not on
           // macOS, where Ctrl+Click opens the context menu instead of clicking.
           ...(process.platform === 'darwin'

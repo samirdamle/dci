@@ -27,6 +27,7 @@ Inside the workspace, `@samirdamle/dci-*` packages resolve to their TypeScript s
 | `packages/react`    | React bindings                                                     |
 | `packages/server`   | Endpoint helpers (`dciHandler`, `toNodeHandler`)                   |
 | `apps/demo`         | The CRM demo (Vite, React, Tailwind v4, shadcn/ui) and its backend |
+| `apps/extension`    | The browser extension: DCI on any website (Manifest V3)            |
 | `docs`              | Guides; its `package.json` type-checks every code sample           |
 | `e2e`               | Playwright tests against the demo; page objects in `e2e/pages`     |
 | `scripts`           | API report, doc-sample checker, dev runner                         |
