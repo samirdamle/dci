@@ -1,6 +1,6 @@
 {
   "name": "@samirdamle/dci-server",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Node helpers for the DCI endpoint protocol.",
   "keywords": [
     "ai",
