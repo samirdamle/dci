@@ -95,7 +95,9 @@ export const BASE_CSS = `
 const LAYERS: LayerName[] = ['overlay', 'chat', 'live-region'];
 
 function defineElement() {
-  if (typeof customElements === 'undefined' || customElements.get(HOST_TAG)) return;
+  // Content scripts (browser extensions) have no custom element registry:
+  // `customElements` is null there. The host still works as an undefined element.
+  if (!globalThis.customElements || customElements.get(HOST_TAG)) return;
   customElements.define(HOST_TAG, class extends HTMLElement {});
 }
 

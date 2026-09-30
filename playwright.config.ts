@@ -50,6 +50,8 @@ export default defineConfig<DemoOptions>({
         ]
       : [
           { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+          // The browser extension, loaded unpacked into Chromium (e2e/extension).
+          { name: 'extension', testMatch: /.*\.ext\.ts/ },
           // The selection gestures again with Control as the DCI modifier. Not on
           // macOS, where Ctrl+Click opens the context menu instead of clicking.
           ...(process.platform === 'darwin'
