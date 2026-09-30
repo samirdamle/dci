@@ -12,11 +12,16 @@ export function manifest(target: Target, version: string) {
     version,
     icons: { 16: 'icons/16.png', 32: 'icons/32.png', 48: 'icons/48.png', 128: 'icons/128.png' },
     action: {
-      default_title: 'Turn DCI on or off for this tab',
+      default_title: 'DCI',
       default_icon: { 16: 'icons/16.png', 32: 'icons/32.png' },
+      default_popup: 'popup.html',
     },
+    options_ui: { page: 'options.html', open_in_tab: true },
     // activeTab: DCI only runs on tabs where the user turned it on.
     permissions: ['activeTab', 'scripting', 'storage'],
+    // Requested one origin at a time, when the user asks: an always-on site,
+    // or the origin of their DCI endpoint.
+    optional_host_permissions: ['https://*/*', 'http://*/*'],
     commands: {
       'toggle-dci': {
         suggested_key: { default: 'Alt+Shift+D' },

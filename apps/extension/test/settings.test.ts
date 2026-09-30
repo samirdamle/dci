@@ -13,7 +13,13 @@ describe('settings', () => {
 
   it('maps to DCI options', () => {
     expect(
-      settingsToConfig({ modifier: 'Shift', chatMode: 'panel', chatSide: 'left', maxSelection: 5 }),
+      settingsToConfig({
+        ...DEFAULT_SETTINGS,
+        modifier: 'Shift',
+        chatMode: 'panel',
+        chatSide: 'left',
+        maxSelection: 5,
+      }),
     ).toEqual({ modifier: 'Shift', maxSelection: 5, chat: { mode: 'panel', side: 'left' } });
   });
 });
@@ -32,6 +38,8 @@ describe('manifest', () => {
       expect(m).not.toHaveProperty('host_permissions');
       expect(m).not.toHaveProperty('content_scripts');
       expect(m.permissions).toEqual(['activeTab', 'scripting', 'storage']);
+      // Asked for one origin at a time: always-on sites and the endpoint.
+      expect(m.optional_host_permissions).toEqual(['https://*/*', 'http://*/*']);
     }
   });
 });

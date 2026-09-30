@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>DCI options</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body class="options">
+    <main>
+      <header>
+        <img src="icons/48.png" alt="" width="32" height="32" />
+        <h1>DCI options</h1>
+      </header>
+
+      <form id="form">
+        <section aria-labelledby="backend-heading">
+          <h2 id="backend-heading">Answers</h2>
+          <fieldset>
+            <legend>Answers come from</legend>
+            <label class="check">
+              <input type="radio" name="backend" value="offline" />
+              <span>Offline placeholder <span class="hint">(no setup; canned replies)</span></span>
+            </label>
+            <label class="check">
+              <input type="radio" name="backend" value="claude" />
+              <span>Claude, with your Anthropic API key</span>
+            </label>
+            <label class="check">
+              <input type="radio" name="backend" value="endpoint" />
+              <span>Your DCI endpoint</span>
+            </label>
+          </fieldset>
+
+          <div id="claude-fields">
+            <label class="field">
+              <span>Anthropic API key</span>
+              <input id="apiKey" type="password" autocomplete="off" spellcheck="false" />
+              <span class="hint"
+                >Stored in this browser's extension storage. Only the extension's background worker
+                reads it; web pages never see it.</span
+              >
+            </label>
+            <label class="field">
+              <span>Model</span>
+              <select id="model"></select>
+            </label>
+          </div>
+
+          <div id="endpoint-fields">
+            <label class="field">
+              <span>Endpoint URL</span>
+              <input id="endpointUrl" type="url" placeholder="https://example.com/api/dci" />
+              <span class="hint"
+                >Any backend that speaks the DCI protocol. The browser asks you to allow the
+                extension to reach its site.</span
+              >
+            </label>
+            <label class="field">
+              <span>Authorization header <span class="hint">(optional)</span></span>
+              <input
+                id="endpointAuthorization"
+                type="password"
+                autocomplete="off"
+                placeholder="Bearer …"
+              />
+            </label>
+          </div>
+
+          <div class="row">
+            <button class="primary" type="submit">Save</button>
+            <button id="test" type="button">Test connection</button>
+            <span id="result" role="status"></span>
+          </div>
+        </section>
+
+        <section aria-labelledby="selection-heading">
+          <h2 id="selection-heading">Selecting and chatting</h2>
+          <label class="field">
+            <span>Modifier key</span>
+            <select id="modifier">
+              <option value="Alt">Alt (Option on macOS)</option>
+              <option value="Control">Ctrl</option>
+              <option value="Meta">Cmd / Windows key</option>
+              <option value="Shift">Shift</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Chat</span>
+            <select id="chatMode">
+              <option value="popover">Next to the selection</option>
+              <option value="panel">Docked panel</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Panel side</span>
+            <select id="chatSide">
+              <option value="right">Right</option>
+              <option value="left">Left</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Most items per selection</span>
+            <input id="maxSelection" type="number" min="1" max="500" />
+          </label>
+        </section>
+      </form>
+
+      <section aria-labelledby="sites-heading">
+        <h2 id="sites-heading">Always-on sites</h2>
+        <p class="muted" id="no-sites">None yet. Turn one on from the toolbar popup.</p>
+        <ul class="sites" id="sites"></ul>
+      </section>
+
+      <section aria-labelledby="privacy-heading">
+        <h2 id="privacy-heading">Privacy</h2>
+        <p>
+          DCI runs only on tabs where you turn it on. Nothing leaves your browser until you send a
+          message; then only what you selected, your question and the page's address and title go to
+          the backend you chose above.
+        </p>
+      </section>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

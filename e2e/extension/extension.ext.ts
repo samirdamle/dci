@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 import { expect, openPage, test } from './fixtures';
 
@@ -61,5 +62,66 @@ test.describe('browser extension', () => {
     await page.goto('http://dci.test/second');
     await expect.poll(() => extension.badge(page)).toBe('');
     await expect(page.locator('dci-root')).toHaveCount(0);
+  });
+
+  test('the options page saves an endpoint, tests it, and chat answers come from it', async ({
+    page,
+    extension,
+  }) => {
+    const options = await extension.openPage('options.html');
+    await options.getByLabel('Your DCI endpoint').check();
+    await options.getByLabel('Endpoint URL').fill('http://127.0.0.1:8787/api/dci');
+    await options.getByRole('button', { name: 'Save' }).click();
+    await expect(options.getByRole('status')).toHaveText('Saved.');
+    await options.getByRole('button', { name: 'Test connection' }).click();
+    await expect(options.getByRole('status')).toContainText('Connected.');
+
+    // A fresh load of the options page shows what was saved.
+    await options.reload();
+    await expect(options.getByLabel('Your DCI endpoint')).toBeChecked();
+    await expect(options.getByLabel('Endpoint URL')).toHaveValue('http://127.0.0.1:8787/api/dci');
+    await options.close();
+
+    await openPage(page, PLAIN);
+    await extension.toggle(page);
+    await page.getByText('Ada Lovelace').click({ modifiers: ['Alt'] });
+    await chat(page).locator('textarea').fill('Who is this?');
+    await page.keyboard.press('Enter');
+    // The demo backend (mock mode) describes the selected element.
+    await expect(chat(page).locator('.msg.assistant')).toContainText(
+      'Here is what I can see about Ada Lovelace',
+    );
+  });
+
+  test('the Claude backend asks for a key until one is set', async ({ page, extension }) => {
+    await extension.store({ settings: { backend: 'claude' } });
+    await openPage(page, PLAIN);
+    await extension.toggle(page);
+    await page.getByText('Ada Lovelace').click({ modifiers: ['Alt'] });
+    await chat(page).locator('textarea').fill('Who is this?');
+    await page.keyboard.press('Enter');
+    await expect(chat(page)).toContainText(
+      'Add your Anthropic API key in the DCI extension options.',
+    );
+  });
+
+  test('an always-on site starts DCI on every page load', async ({ page, extension }) => {
+    await extension.store({ settings: { alwaysOnSites: ['http://dci.test'] } });
+    await openPage(page, PLAIN, '/always');
+    await expect(page.locator('dci-root')).toBeAttached();
+    await expect.poll(() => extension.badge(page)).toBe('ON');
+    await page.goto('http://dci.test/always-again');
+    await expect(page.locator('dci-root')).toBeAttached();
+  });
+
+  test('the options page and popup have no axe violations', async ({ extension }) => {
+    for (const path of ['options.html', 'popup.html']) {
+      const page = await extension.openPage(path);
+      // The popup opened as a tab sees itself as the active tab, which DCI can't run on.
+      await expect(page.getByRole('status').first()).not.toHaveText('…');
+      const results = await new AxeBuilder({ page }).analyze();
+      expect(results.violations.map((v) => `${path} ${v.id}: ${v.help}`)).toEqual([]);
+      await page.close();
+    }
   });
 });

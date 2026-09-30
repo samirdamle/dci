@@ -4,9 +4,8 @@ DCI on any website: turn it on for a tab, hold **Alt** (Option on macOS), click 
 row, a price, a paragraph) and ask about it. Built on `@samirdamle/dci-core`, so it has the same
 gestures, highlight and chat as an app that integrates DCI.
 
-> **Status:** early work in progress, tracked in [#88](https://github.com/samirdamle/dci/issues/88).
-> Answers come from an offline placeholder for now; real backends (your DCI endpoint, or Claude
-> with your API key) are next.
+> **Status:** work in progress, tracked in [#88](https://github.com/samirdamle/dci/issues/88).
+> Not in the browser stores yet: load it unpacked (below).
 
 ## Try it
 
@@ -20,9 +19,23 @@ pnpm --filter @dci/extension build   # dist/chrome and dist/firefox
 - **Firefox:** open `about:debugging#/runtime/this-firefox`, **Load Temporary Add-on** and pick
   `apps/extension/dist/firefox/manifest.json`.
 
-Then, on any page, click the DCI toolbar button (or press **Alt+Shift+D**). The badge shows
-**ON**; hold Alt and click something. Click the button again to turn DCI off. A page that
-integrates DCI itself keeps its own, and the badge shows **—**.
+Then, on any page, open the DCI toolbar popup and choose **Turn on for this tab** (or press
+**Alt+Shift+D**). The badge shows **ON**; hold Alt and click something, then ask. **Always on for
+this site** starts DCI on every page of that site. A page that integrates DCI itself keeps its
+own, and the badge shows **—**.
+
+## Where answers come from
+
+Choose in the extension's options (the popup's **Options** link):
+
+| Backend             | Setup                                             | Notes                                                                                                 |
+| ------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Offline placeholder | None (the default)                                | Canned replies, to try the gestures                                                                   |
+| Claude              | Your Anthropic API key, and a model               | Called directly from the extension's background worker; follow-up questions keep the conversation     |
+| Your DCI endpoint   | Its URL, and optionally an `Authorization` header | Any backend speaking [the DCI protocol](../../docs/protocol.md); the browser asks to allow its origin |
+
+**Test connection** sends a short question through the chosen backend. Keys and headers stay in
+the extension: the background worker reads them, web pages and the content script never do.
 
 ## How it works
 
@@ -34,7 +47,8 @@ integrates DCI itself keeps its own, and the badge shows **—**.
 | Backends          | `src/backends/`     | Where requests are answered; keys will live here, never in the page                                                               |
 | Manifests         | `src/manifest.ts`   | One source for Chrome (service worker) and Firefox (event page)                                                                   |
 
-No host permissions are requested: DCI only runs on tabs where you turn it on.
+No host permissions are requested up front: DCI only runs on tabs where you turn it on. The
+browser asks separately for each always-on site and for your endpoint's origin.
 
 ## Scripts
 

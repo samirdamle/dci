@@ -12,6 +12,7 @@ import {
 declare const chrome: {
   tabs: { query(query: object): Promise<Array<{ id?: number; url?: string }>> };
   action: { getBadgeText(details: { tabId: number }): Promise<string> };
+  storage: { local: { clear(): Promise<void>; set(values: object): Promise<void> } };
 };
 
 const extensionDir = join(dirname(fileURLToPath(import.meta.url)), '../../apps/extension');
@@ -26,6 +27,10 @@ export interface Extension {
   toggle(page: Page): Promise<void>;
   /** The toolbar badge text for `page`'s tab. */
   badge(page: Page): Promise<string>;
+  /** Open one of the extension's own pages (e.g. `options.html`) in a new tab. */
+  openPage(path: string): Promise<Page>;
+  /** Replace the extension's stored settings and secrets. */
+  store(values: Record<string, unknown>): Promise<void>;
 }
 
 /**
@@ -90,6 +95,21 @@ export const test = base.extend<{ page: Page }, { extension: Extension }>({
           const id = await tabId(context, page);
           return inWorker(context, (tabId) => chrome.action.getBadgeText({ tabId }), id);
         },
+        openPage: async (path) => {
+          const page = await context.newPage();
+          // `new URL(…).origin` is "null" for chrome-extension: URLs; the host is the id.
+          await page.goto(`chrome-extension://${new URL(worker.url()).host}/${path}`);
+          return page;
+        },
+        store: (values) =>
+          inWorker(
+            context,
+            async (v) => {
+              await chrome.storage.local.clear();
+              await chrome.storage.local.set(v);
+            },
+            values,
+          ),
       };
       await use(ext);
       await context.close();
@@ -97,6 +117,8 @@ export const test = base.extend<{ page: Page }, { extension: Extension }>({
     { scope: 'worker' },
   ],
   page: async ({ extension }, use) => {
+    // Every test starts from the default settings (offline answers).
+    await extension.store({});
     const page = await extension.context.newPage();
     await use(page);
     await page.close();

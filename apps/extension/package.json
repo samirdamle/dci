@@ -11,8 +11,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.129.0",
     "@samirdamle/dci-core": "workspace:*",
-    "@samirdamle/dci-protocol": "workspace:*"
+    "@samirdamle/dci-protocol": "workspace:*",
+    "@samirdamle/dci-server": "workspace:*"
   },
   "devDependencies": {
     "@types/chrome": "^0.3.4",

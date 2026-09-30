@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>DCI</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body class="popup">
+    <header>
+      <img src="icons/32.png" alt="" width="20" height="20" />
+      <h1>DCI</h1>
+    </header>
+    <main>
+      <p id="status" role="status">…</p>
+      <button id="toggle" class="primary" type="button" hidden>Turn on for this tab</button>
+      <label class="check" id="always-row" hidden>
+        <input type="checkbox" id="always" />
+        <span>Always on for <strong id="site"></strong></span>
+      </label>
+      <p class="muted" id="hint">
+        Hold <kbd id="modifier">Alt</kbd> and click anything on the page to ask about it.
+      </p>
+    </main>
+    <footer>
+      <span id="backend" class="muted"></span> ·
+      <a href="options.html" id="options">Options</a>
+    </footer>
+    <script src="popup.js"></script>
+  </body>
+</html>

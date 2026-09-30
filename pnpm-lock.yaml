@@ -174,12 +174,18 @@ importers:
 
   apps/extension:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.129.0
+        version: 0.129.0(zod@4.6.5)
       '@samirdamle/dci-core':
         specifier: workspace:*
         version: link:../../packages/core
       '@samirdamle/dci-protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
+      '@samirdamle/dci-server':
+        specifier: workspace:*
+        version: link:../../packages/server
     devDependencies:
       '@types/chrome':
         specifier: ^0.3.4
