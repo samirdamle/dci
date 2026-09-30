@@ -1,4 +1,4 @@
-import { readDci } from '@dci/core';
+import { readDci } from '@samirdamle/dci-core';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { KanbanBoard, KpiCard, RecordHeader, RecordTable, RelatedList } from './index';

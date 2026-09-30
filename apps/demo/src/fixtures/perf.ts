@@ -1,4 +1,4 @@
-import { createDci, type DciEvent, type DciInstance, type Transport } from '@dci/core';
+import { createDci, type DciEvent, type DciInstance, type Transport } from '@samirdamle/dci-core';
 
 /**
  * Perf fixture (`/perf.html?rows=1000`): a grid of annotated rows × cells

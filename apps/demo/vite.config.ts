@@ -13,7 +13,7 @@ export default defineConfig({
   server: { proxy: { '/api': `http://localhost:${process.env.DCI_DEMO_PORT ?? 8787}` } },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
-    // Consume workspace `@dci/*` packages from source for instant HMR.
+    // Consume workspace `@samirdamle/dci-*` packages from source for instant HMR.
     conditions: ['@dci/source', ...defaultClientConditions],
   },
 });

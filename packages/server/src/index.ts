@@ -3,7 +3,7 @@
  * Web-standard, so they run on Node, Bun, Deno and edge runtimes.
  *
  * @packageDocumentation
- * @module @dci/server
+ * @module @samirdamle/dci-server
  */
 
 /** Package version. */
@@ -14,4 +14,4 @@ export { parseDciRequest } from './parse';
 export { createDciStream, SSE_HEADERS, type DciStream, type DciStreamOptions } from './stream';
 export { dciHandler, type DciHandlerFn, type DciHandlerOptions, type WebHandler } from './handler';
 export { formatContextForPrompt, type ContextStyle, type FormatOptions } from './format';
-export type { DciContextNode, DciEvent, DciRequest } from '@dci/protocol';
+export type { DciContextNode, DciEvent, DciRequest } from '@samirdamle/dci-protocol';

@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
-import { dciHandler, type DciHandlerFn } from '@dci/server';
-import { toNodeHandler } from '@dci/server/node';
+import { dciHandler, type DciHandlerFn } from '@samirdamle/dci-server';
+import { toNodeHandler } from '@samirdamle/dci-server/node';
 import { createMockResponder } from '../src/agent/mock-responder';
 import { createClaudeAgent, DEFAULT_MODEL } from './claude-agent';
 import { createSessionStore } from './sessions';

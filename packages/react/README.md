@@ -1,15 +1,15 @@
-# @dci/react
+# @samirdamle/dci-react
 
 React bindings for [DCI](https://github.com/samirdamle/dci): let people **Alt+Click** parts of
 your app and ask an AI about exactly those things.
 
 ```sh
-npm install @dci/react
+npm install @samirdamle/dci-react
 ```
 
 ```tsx
-import type { DciConfig } from '@dci/core';
-import { dci, DciProvider, useSelection } from '@dci/react';
+import type { DciConfig } from '@samirdamle/dci-core';
+import { dci, DciProvider, useSelection } from '@samirdamle/dci-react';
 
 const config: DciConfig = { endpoint: '/api/dci' };
 

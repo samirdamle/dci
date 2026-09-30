@@ -1,4 +1,4 @@
-import type { DciRequest } from '@dci/protocol';
+import type { DciRequest } from '@samirdamle/dci-protocol';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { dciAttr, stableStringify } from '../src/dci/attr';
 import { DEFAULTS, mergeConfig, validateConfig } from '../src/dci/config';

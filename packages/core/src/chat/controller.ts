@@ -3,7 +3,7 @@ import {
   type DciContextNode,
   type DciEvent,
   type DciRequest,
-} from '@dci/protocol';
+} from '@samirdamle/dci-protocol';
 import type { ActionRegistry } from '../actions';
 import { toContextNode, type ContextOptions } from '../context';
 import { isDev } from '../env';

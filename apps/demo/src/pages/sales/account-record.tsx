@@ -1,4 +1,4 @@
-import { dci } from '@dci/react';
+import { dci } from '@samirdamle/dci-react';
 import { Building2, CalendarClock } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 import { OwnerAvatar, RecordHeader, RecordTable, RelatedList, StatusBadge } from '@/components/crm';

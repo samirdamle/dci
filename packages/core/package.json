@@ -1,5 +1,5 @@
 {
-  "name": "@dci/core",
+  "name": "@samirdamle/dci-core",
   "version": "0.0.0",
   "description": "Framework-agnostic DCI selection engine, overlay, chat UI and transport.",
   "keywords": [
@@ -55,7 +55,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@dci/protocol": "workspace:*",
+    "@samirdamle/dci-protocol": "workspace:*",
     "@floating-ui/dom": "^1.8.0"
   },
   "publishConfig": {

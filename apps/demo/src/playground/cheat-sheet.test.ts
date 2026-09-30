@@ -1,4 +1,4 @@
-import { resolveBindings } from '@dci/core';
+import { resolveBindings } from '@samirdamle/dci-core';
 import { describe, expect, it } from 'vitest';
 import { cheatSheetRows } from './cheat-sheet-rows';
 

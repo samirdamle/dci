@@ -1,4 +1,4 @@
-import { createDci, type DciEvent, type Transport } from '@dci/core';
+import { createDci, type DciEvent, type Transport } from '@samirdamle/dci-core';
 
 /**
  * Compatibility fixture: a strict-CSP page (see compat.html) with annotated

@@ -19,7 +19,7 @@ actions for free:
 
 ```ts
 import { anthropic } from '@ai-sdk/anthropic';
-import { dciHandler, formatContextForPrompt } from '@dci/server';
+import { dciHandler, formatContextForPrompt } from '@samirdamle/dci-server';
 import { streamText } from 'ai';
 
 export const POST = dciHandler(async (req, stream, { signal }) => {
@@ -39,8 +39,8 @@ Already have a route that returns `result.toTextStreamResponse()`? Adapt it on t
 small transport:
 
 ```ts
-import { createDci, type Transport } from '@dci/core';
-import type { DciContextNode } from '@dci/protocol';
+import { createDci, type Transport } from '@samirdamle/dci-core';
+import type { DciContextNode } from '@samirdamle/dci-protocol';
 
 const describe = (nodes: DciContextNode[]) =>
   nodes
@@ -95,7 +95,7 @@ Build the chat from your own components and keep DCI's selection, context and st
 `<DciChat>` switches the built-in UI off while it's mounted and hands you the live chat state:
 
 ```tsx
-import { DciChat, type UseChatResult } from '@dci/react';
+import { DciChat, type UseChatResult } from '@samirdamle/dci-react';
 
 function MyChat({ chat }: { chat: UseChatResult }) {
   if (!chat.open) return null;
@@ -154,8 +154,8 @@ To restyle rather than rebuild, replace single sections of the built-in UI with 
 to cancel the send; the chat then shows "Message not sent."
 
 ```ts
-import { createDci } from '@dci/core';
-import type { DciContextNode, DciRequest } from '@dci/protocol';
+import { createDci } from '@samirdamle/dci-core';
+import type { DciContextNode, DciRequest } from '@samirdamle/dci-protocol';
 
 const EMAIL = /[\w.+-]+@[\w-]+\.[\w.]+/g;
 
@@ -208,7 +208,7 @@ use, the Claude Agent SDK, LangGraph, Mastra, your own loop), the mapping is the
 Most agent frameworks emit a stream of events. A small adapter turns them into DCI events:
 
 ```ts
-import { dciHandler, formatContextForPrompt, type DciStream } from '@dci/server';
+import { dciHandler, formatContextForPrompt, type DciStream } from '@samirdamle/dci-server';
 
 /** The events a typical agent loop yields (adapt to your framework's names). */
 type AgentEvent =

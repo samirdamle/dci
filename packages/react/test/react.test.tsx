@@ -1,5 +1,5 @@
-import type * as Core from '@dci/core';
-import type { DciEvent, DciInstance, DciRequest, Transport } from '@dci/core';
+import type * as Core from '@samirdamle/dci-core';
+import type { DciEvent, DciInstance, DciRequest, Transport } from '@samirdamle/dci-core';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { StrictMode, useEffect, useState, type ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -16,7 +16,7 @@ import {
 
 // Track live instances to check StrictMode and cleanup behaviour.
 const live = vi.hoisted(() => new Set<unknown>());
-vi.mock('@dci/core', async (importOriginal) => {
+vi.mock('@samirdamle/dci-core', async (importOriginal) => {
   const core: typeof Core = await importOriginal();
   return {
     ...core,

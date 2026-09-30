@@ -1,8 +1,8 @@
-import type { DciAncestor, DciContextNode, DciFallbackInfo } from '@dci/protocol';
+import type { DciAncestor, DciContextNode, DciFallbackInfo } from '@samirdamle/dci-protocol';
 import { DEFAULT_ATTRIBUTE, readDci } from './parse';
 import { createDciTree, type TreeOptions } from './tree';
 
-// The wire types live in @dci/protocol; re-exported for convenience.
+// The wire types live in @samirdamle/dci-protocol; re-exported for convenience.
 export type { DciAncestor, DciContextNode, DciFallbackInfo };
 
 export interface ContextOptions extends TreeOptions {

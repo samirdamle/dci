@@ -1,5 +1,5 @@
-import type { DciRequest } from '@dci/core';
-import { useChat, useDci, useSelection } from '@dci/react';
+import type { DciRequest } from '@samirdamle/dci-core';
+import { useChat, useDci, useSelection } from '@samirdamle/dci-react';
 import { useEffect, useState } from 'react';
 import { useLastExchange } from './event-log';
 

@@ -1,4 +1,4 @@
-import type { DciEvent, DciRequest } from '@dci/protocol';
+import type { DciEvent, DciRequest } from '@samirdamle/dci-protocol';
 import type { BuiltinAction } from '../actions';
 import type { BindingsConfig } from '../bindings';
 import type { ChatRenderers, ChatMode } from '../chat/ui/chat-ui';

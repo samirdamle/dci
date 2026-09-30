@@ -1,4 +1,4 @@
-import type { DciEvent, DciRequest, Transport } from '@dci/core';
+import type { DciEvent, DciRequest, Transport } from '@samirdamle/dci-core';
 import { useSyncExternalStore } from 'react';
 
 export interface ExchangeLog {

@@ -1,4 +1,4 @@
-import type { DciContextNode, DciRequest } from '@dci/protocol';
+import type { DciContextNode, DciRequest } from '@samirdamle/dci-protocol';
 
 export type ChatStatus = 'idle' | 'sending' | 'streaming' | 'error';
 

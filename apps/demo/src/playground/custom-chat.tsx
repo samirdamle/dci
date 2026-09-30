@@ -1,5 +1,5 @@
-import { resolveActions } from '@dci/core';
-import { DciChat, useSelection, type UseChatResult } from '@dci/react';
+import { resolveActions } from '@samirdamle/dci-core';
+import { DciChat, useSelection, type UseChatResult } from '@samirdamle/dci-react';
 import { Check, Loader2, Send, Square, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { ACTIONS } from '@/app/dci-config';

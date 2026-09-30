@@ -1,4 +1,4 @@
-import { useDciAction } from '@dci/react';
+import { useDciAction } from '@samirdamle/dci-react';
 import { objectOf, type OrgObject, type Task } from '@/data';
 import { orgStore } from '@/lib/org';
 

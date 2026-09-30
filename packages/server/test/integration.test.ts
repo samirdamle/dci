@@ -1,5 +1,5 @@
-import { createSSETransport } from '@dci/core';
-import type { DciEvent, DciRequest } from '@dci/protocol';
+import { createSSETransport } from '@samirdamle/dci-core';
+import type { DciEvent, DciRequest } from '@samirdamle/dci-protocol';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -43,7 +43,7 @@ const request = (prompt: string): DciRequest => ({
   page: { url: 'http://localhost/', title: 'Test' },
 });
 
-describe('core transport ↔ @dci/server over Node http', () => {
+describe('core transport ↔ @samirdamle/dci-server over Node http', () => {
   it('round-trips a request and streams every event type', async () => {
     const transport = createSSETransport({
       endpoint,

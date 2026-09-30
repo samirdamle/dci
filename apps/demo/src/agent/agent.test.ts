@@ -1,4 +1,4 @@
-import type { DciContextNode, DciEvent, DciRequest } from '@dci/protocol';
+import type { DciContextNode, DciEvent, DciRequest } from '@samirdamle/dci-protocol';
 import { describe, expect, it } from 'vitest';
 import { createOrgStore, generateOrg } from '../data';
 import { runCrmTool } from './crm-tools';

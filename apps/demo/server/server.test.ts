@@ -1,7 +1,7 @@
 // @vitest-environment node
 import type Anthropic from '@anthropic-ai/sdk';
-import { decodeSSEStream, type DciEvent, type DciRequest } from '@dci/protocol';
-import { createDciStream } from '@dci/server';
+import { decodeSSEStream, type DciEvent, type DciRequest } from '@samirdamle/dci-protocol';
+import { createDciStream } from '@samirdamle/dci-server';
 import { describe, expect, it } from 'vitest';
 import { createClaudeAgent } from './claude-agent';
 import { createSessionStore } from './sessions';

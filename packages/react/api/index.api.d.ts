@@ -1,5 +1,5 @@
-import { DciConfig, DciInstance, ChatState, SendOptions, DciContextNode, DciSelectionApi, ActionHandler, DciAttrValue } from '@dci/core';
-export { DciAttrValue, DciConfig, DciInstance } from '@dci/core';
+import { DciConfig, DciInstance, ChatState, SendOptions, DciContextNode, DciSelectionApi, ActionHandler, DciAttrValue } from '@samirdamle/dci-core';
+export { DciAttrValue, DciConfig, DciInstance } from '@samirdamle/dci-core';
 import * as react from 'react';
 import { RefObject, ReactNode } from 'react';
 
@@ -71,7 +71,7 @@ declare function DciChat({ render }: DciChatProps): react.JSX.Element;
  * React bindings for DCI: `DciProvider`, hooks and the `dci()` annotation helper.
  *
  * @packageDocumentation
- * @module @dci/react
+ * @module @samirdamle/dci-react
  */
 
 /** Package version. */

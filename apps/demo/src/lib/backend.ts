@@ -1,4 +1,4 @@
-import { createSSETransport, type Transport } from '@dci/core';
+import { createSSETransport, type Transport } from '@samirdamle/dci-core';
 import { useSyncExternalStore } from 'react';
 import { createMockResponder } from '@/agent/mock-responder';
 import { createOrgStore, generateOrg } from '@/data';

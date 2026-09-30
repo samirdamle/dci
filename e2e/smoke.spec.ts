@@ -6,7 +6,12 @@ test('demo renders every package version in a card', async ({ page }) => {
   await expect(page.getByText('DCI Demo')).toBeVisible();
   const rows = page.getByTestId('package-version');
   await expect(rows).toHaveCount(4);
-  for (const name of ['@dci/protocol', '@dci/core', '@dci/react', '@dci/server']) {
+  for (const name of [
+    '@samirdamle/dci-protocol',
+    '@samirdamle/dci-core',
+    '@samirdamle/dci-react',
+    '@samirdamle/dci-server',
+  ]) {
     await expect(rows.filter({ hasText: name })).toContainText(/v\d+\.\d+\.\d+/);
   }
 });

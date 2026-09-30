@@ -141,7 +141,7 @@ declare function decodeSSEStream(stream: ReadableStream<Uint8Array>): AsyncGener
  * streaming decoder. No dependencies.
  *
  * @packageDocumentation
- * @module @dci/protocol
+ * @module @samirdamle/dci-protocol
  */
 /** Package version. */
 declare const VERSION = "0.0.0";

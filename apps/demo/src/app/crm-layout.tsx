@@ -1,4 +1,4 @@
-import { DciProvider } from '@dci/react';
+import { DciProvider } from '@samirdamle/dci-react';
 import { useMemo, useRef } from 'react';
 import { Outlet } from 'react-router';
 import { useTheme } from '@/lib/theme-context';

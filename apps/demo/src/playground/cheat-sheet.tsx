@@ -1,4 +1,4 @@
-import { resolveBindings } from '@dci/core';
+import { resolveBindings } from '@samirdamle/dci-core';
 import {
   Dialog,
   DialogContent,

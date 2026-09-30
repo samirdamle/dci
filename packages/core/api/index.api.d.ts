@@ -1,5 +1,5 @@
-import { DciContextNode, DciRequest, DciEvent } from '@dci/protocol';
-export { DciAncestor, DciContextNode, DciEvent, DciFallbackInfo, DciRequest } from '@dci/protocol';
+import { DciContextNode, DciRequest, DciEvent } from '@samirdamle/dci-protocol';
+export { DciAncestor, DciContextNode, DciEvent, DciFallbackInfo, DciRequest } from '@samirdamle/dci-protocol';
 
 type Warn = (message: string) => void;
 
@@ -1227,7 +1227,7 @@ declare function createDci(input: DciConfig): DciInstance;
  * the chat UI and controller, transports and `createDci()`.
  *
  * @packageDocumentation
- * @module @dci/core
+ * @module @samirdamle/dci-core
  */
 /** Package version. */
 declare const VERSION = "0.0.0";

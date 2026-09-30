@@ -1,5 +1,10 @@
-import { encodeEvent, type DciContextNode, type DciEvent, type DciRequest } from '@dci/protocol';
-import { createSSEDecoder } from '@dci/protocol';
+import {
+  encodeEvent,
+  type DciContextNode,
+  type DciEvent,
+  type DciRequest,
+} from '@samirdamle/dci-protocol';
+import { createSSEDecoder } from '@samirdamle/dci-protocol';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createDciStream,

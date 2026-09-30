@@ -1,4 +1,4 @@
-import { dci } from '@dci/react';
+import { dci } from '@samirdamle/dci-react';
 import { Clock, DoorOpen, GitFork, LogIn, Mail, type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader, StatusBadge } from '@/components/crm';

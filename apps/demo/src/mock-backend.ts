@@ -1,9 +1,9 @@
-import type { DciContextNode, DciEvent, DciRequest, Transport } from '@dci/core';
+import type { DciContextNode, DciEvent, DciRequest, Transport } from '@samirdamle/dci-core';
 
 /**
  * A pretend backend so the static demo (GitHub Pages) works end to end. It
  * streams a canned, context-aware markdown reply with tool progress and a
- * `highlight` client action, exactly like a real `@dci/server` endpoint.
+ * `highlight` client action, exactly like a real `@samirdamle/dci-server` endpoint.
  */
 const sleep = (ms: number, signal: AbortSignal) =>
   new Promise<void>((resolve) => {

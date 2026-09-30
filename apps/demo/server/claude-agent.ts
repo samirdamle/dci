@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { DciHandlerFn } from '@dci/server';
-import { formatContextForPrompt } from '@dci/server';
+import type { DciHandlerFn } from '@samirdamle/dci-server';
+import { formatContextForPrompt } from '@samirdamle/dci-server';
 import { ACTION_INSTRUCTIONS } from '../src/agent/actions';
 import { runCrmTool, TOOL_DEFINITIONS, toolLabel } from '../src/agent/crm-tools';
 import { dayOffset } from '../src/data/random';

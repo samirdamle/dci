@@ -1,4 +1,4 @@
-import { ERROR_CODES, type DciRequest } from '@dci/protocol';
+import { ERROR_CODES, type DciRequest } from '@samirdamle/dci-protocol';
 import { DciRequestError } from './errors';
 import { parseDciRequest } from './parse';
 import { createDciStream, type DciStream, type DciStreamOptions } from './stream';

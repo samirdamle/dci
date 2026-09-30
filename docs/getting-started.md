@@ -13,9 +13,9 @@ about them, and an answer from Claude streams back. It takes three pieces:
 ## Install
 
 ```sh
-npm install @dci/core            # plain JavaScript/TypeScript
-npm install @dci/react           # React (also installs @dci/core)
-npm install @dci/server          # your endpoint (Node, Bun, Deno, edge)
+npm install @samirdamle/dci-core            # plain JavaScript/TypeScript
+npm install @samirdamle/dci-react           # React (also installs @samirdamle/dci-core)
+npm install @samirdamle/dci-server          # your endpoint (Node, Bun, Deno, edge)
 ```
 
 ## 1. Annotate what users talk about
@@ -41,7 +41,7 @@ That's enough to start. The [annotation guide](annotations.md) covers `type` nam
 ## 2a. Plain JavaScript: `createDci()`
 
 ```ts
-import { createDci } from '@dci/core';
+import { createDci } from '@samirdamle/dci-core';
 
 const dci = createDci({ endpoint: '/api/dci' });
 
@@ -56,7 +56,7 @@ Building the attribute by hand gets tedious; `dciAttr()` returns `{ 'data-dci': 
 keys, ready to spread or set:
 
 ```ts
-import { dciAttr } from '@dci/core';
+import { dciAttr } from '@samirdamle/dci-core';
 
 const row = document.createElement('tr');
 const attr = dciAttr({ id: 'inv_123', type: 'invoice', label: 'Invoice #123', amount: 420 });
@@ -66,8 +66,8 @@ row.setAttribute('data-dci', attr['data-dci']);
 ## 2b. React: `<DciProvider>` and `dci()`
 
 ```tsx
-import type { DciConfig } from '@dci/core';
-import { dci, DciProvider } from '@dci/react';
+import type { DciConfig } from '@samirdamle/dci-core';
+import { dci, DciProvider } from '@samirdamle/dci-react';
 
 // Module scope (or useMemo), so re-renders don't reconfigure DCI.
 const config: DciConfig = { endpoint: '/api/dci' };
@@ -110,13 +110,13 @@ StrictMode. Hooks such as `useSelection()` and `useChat()` are described in the
 
 ## 3. A minimal backend with Claude
 
-`dciHandler` from `@dci/server` parses and validates the request, streams whatever you send and
+`dciHandler` from `@samirdamle/dci-server` parses and validates the request, streams whatever you send and
 always finishes the response. The model call is yours; here it's Claude through the Anthropic SDK,
 with the conversation kept per session:
 
 ```ts
 import Anthropic from '@anthropic-ai/sdk';
-import { dciHandler, formatContextForPrompt } from '@dci/server';
+import { dciHandler, formatContextForPrompt } from '@samirdamle/dci-server';
 
 const client = new Anthropic(); // reads ANTHROPIC_API_KEY
 const sessions = new Map<string, Anthropic.MessageParam[]>();
@@ -158,8 +158,8 @@ in front of it; the handler reads the body itself):
 
 ```ts
 import { createServer } from 'node:http';
-import { toNodeHandler } from '@dci/server/node';
-import { dciHandler } from '@dci/server';
+import { toNodeHandler } from '@samirdamle/dci-server/node';
+import { dciHandler } from '@samirdamle/dci-server';
 
 const handler = dciHandler(async (req, stream) => stream.text(`You said: ${req.prompt}`));
 const serve = toNodeHandler(handler);

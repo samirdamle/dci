@@ -1,4 +1,4 @@
-import { dci, type DciAttrValue } from '@dci/react';
+import { dci, type DciAttrValue } from '@samirdamle/dci-react';
 import type { ReactNode } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 

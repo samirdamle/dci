@@ -3,8 +3,8 @@
 DCI talks to your backend with one HTTP request and a stream of
 [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html) back. The
 protocol is small on purpose: any language that can read JSON and write a streaming response can
-implement it. `@dci/protocol` has the TypeScript types, validation, and an SSE encoder and
-streaming decoder; `@dci/server` implements the server side for JavaScript runtimes.
+implement it. `@samirdamle/dci-protocol` has the TypeScript types, validation, and an SSE encoder and
+streaming decoder; `@samirdamle/dci-server` implements the server side for JavaScript runtimes.
 
 - [Request](#request)
 - [Response: the event stream](#response-the-event-stream)
@@ -118,7 +118,7 @@ data: {}
 ## Errors
 
 - **Before streaming** (bad input, auth), answer with a normal HTTP error. The client shows
-  `HTTP <status>: <body>` with code `http_<status>`. `@dci/server` answers 405 for non-`POST`,
+  `HTTP <status>: <body>` with code `http_<status>`. `@samirdamle/dci-server` answers 405 for non-`POST`,
   415 for non-JSON and 400 for invalid requests, with a JSON body `{ error, code, issues }`.
 - **During streaming**, send an `error` event and then `done`. The chat shows the message and a
   Retry button.
@@ -164,12 +164,12 @@ data: {"source":"Invoice policy","url":"https://example.com/policy"}
   new optional event fields) happen within a version, so servers must accept unknown request
   fields and clients ignore unknown events.
 - A server that doesn't speak the request's `v` answers with an `error` event with code
-  `unsupported_version`, then `done`. `@dci/server` does this for you.
+  `unsupported_version`, then `done`. `@samirdamle/dci-server` does this for you.
 
 ## Writing a backend in any language
 
 The whole server side is: parse the JSON, call your model or agent, write SSE events, end with
-`done`. With `@dci/server` in JavaScript that's `dciHandler` (see
+`done`. With `@samirdamle/dci-server` in JavaScript that's `dciHandler` (see
 [getting started](getting-started.md#3-a-minimal-backend-with-claude)). Here's the same backend in
 Python with FastAPI and the Anthropic SDK:
 
@@ -240,10 +240,15 @@ curl -N http://localhost:8787/api/dci \
   -d '{"v":1,"sessionId":"s1","prompt":"Hi","context":[],"page":{"url":"/","title":"Test"}}'
 ```
 
-In JavaScript, `@dci/protocol` gives you the pieces without any server framework:
+In JavaScript, `@samirdamle/dci-protocol` gives you the pieces without any server framework:
 
 ```ts
-import { createSSEDecoder, encodeEvent, validateRequest, type DciEvent } from '@dci/protocol';
+import {
+  createSSEDecoder,
+  encodeEvent,
+  validateRequest,
+  type DciEvent,
+} from '@samirdamle/dci-protocol';
 
 // Server side: validate and encode.
 const result = validateRequest(JSON.parse('{"v":1}'));

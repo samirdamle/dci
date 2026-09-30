@@ -1,4 +1,4 @@
-import type { DciContextNode } from '@dci/protocol';
+import type { DciContextNode } from '@samirdamle/dci-protocol';
 
 export interface SuggestedAction {
   id: string;

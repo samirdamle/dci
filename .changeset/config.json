@@ -2,7 +2,14 @@
   "$schema": "https://unpkg.com/@changesets/config/schema.json",
   "changelog": ["@changesets/changelog-github", { "repo": "samirdamle/dci" }],
   "commit": false,
-  "fixed": [["@dci/core", "@dci/react", "@dci/server", "@dci/protocol"]],
+  "fixed": [
+    [
+      "@samirdamle/dci-core",
+      "@samirdamle/dci-react",
+      "@samirdamle/dci-server",
+      "@samirdamle/dci-protocol"
+    ]
+  ],
   "linked": [],
   "access": "public",
   "baseBranch": "main",

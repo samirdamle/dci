@@ -15,7 +15,7 @@ pnpm install
 pnpm dev      # the demo at http://localhost:5173, plus its backend on :8787
 ```
 
-Inside the workspace, `@dci/*` packages resolve to their TypeScript sources through the
+Inside the workspace, `@samirdamle/dci-*` packages resolve to their TypeScript sources through the
 `@dci/source` export condition, so the demo, tests and typechecking never need a prior build.
 
 ## Repository layout

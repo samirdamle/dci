@@ -1,5 +1,5 @@
 import express from 'express';
-import { toNodeHandler } from '@dci/server/node';
+import { toNodeHandler } from '@samirdamle/dci-server/node';
 import { handler } from './shared';
 
 const app = express();
