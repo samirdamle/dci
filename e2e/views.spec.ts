@@ -22,6 +22,28 @@ test.describe('CRM views', () => {
     }
   });
 
+  test('no view scrolls sideways at 1024px, sidebar open or collapsed', async ({ app, page }) => {
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await app.open('/sales');
+    const overflow = () =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+    const views: Array<[string, string]> = [['/sales', 'Sales Home'], ...ROUTES];
+    for (const state of ['expanded', 'collapsed']) {
+      if (state === 'collapsed') await page.locator('[data-slot="sidebar-trigger"]').click();
+      await expect(page.locator('[data-slot="sidebar"][data-state]')).toHaveAttribute(
+        'data-state',
+        state,
+      );
+      for (const [path, title] of views) {
+        await page.evaluate((hash) => (location.hash = hash), path);
+        await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
+        expect(await overflow(), `${path} (${state})`).toBeLessThanOrEqual(0);
+      }
+    }
+  });
+
   test('window select picks whole opportunity rows', async ({ app, page }) => {
     await page.setViewportSize({ width: 1400, height: 1000 });
     await app.open('/sales/opportunities');

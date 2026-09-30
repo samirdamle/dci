@@ -32,7 +32,8 @@ export function App() {
           <HashRouter>
             <SidebarProvider>
               <AppSidebar />
-              <SidebarInset>
+              {/* min-w-0: wide tables scroll inside their card instead of widening the page. */}
+              <SidebarInset className="min-w-0">
                 <TopBar />
                 <Routes>
                   <Route element={<CrmLayout />}>
