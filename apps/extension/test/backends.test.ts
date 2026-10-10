@@ -156,7 +156,7 @@ describe('Claude backend', () => {
     });
     const turn = body.messages[0].content as string;
     expect(turn).toContain('URL: https://shop.example/orders');
-    expect(turn).toContain('<selected_context>');
+    expect(turn.match(/<selected_context>/g)).toHaveLength(1);
     expect(turn).toContain('Ada');
     expect(turn.endsWith('Who is this?')).toBe(true);
 

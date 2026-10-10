@@ -13,6 +13,7 @@ export const overlayGesture: Gesture = (ctx) => {
     ...(attribute ? { attribute } : {}),
     ...(infer ? { infer } : {}),
     ...(root ? { root } : {}),
+    marker: (el) => ctx.selection.marker(el),
   });
   overlay.setSelected(ctx.selection.get(), ctx.selection.primary());
 

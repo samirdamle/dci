@@ -39,6 +39,7 @@ export {
   type SelectionOptions,
   type SelectionStore,
 } from './selection';
+export { formatMarker, letterMarker, type MarkerSeries } from './markers';
 export { createEmitter, type Emitter } from './emitter';
 export {
   DCI_UI_ATTRIBUTE,

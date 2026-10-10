@@ -68,6 +68,7 @@ async function load() {
   select('modifier').value = settings.modifier;
   select('chatMode').value = settings.chatMode;
   select('chatSide').value = settings.chatSide;
+  select('markers').value = settings.markers;
   input('maxSelection').value = String(settings.maxSelection);
   showBackendFields();
   renderSites(settings.alwaysOnSites);
@@ -115,6 +116,7 @@ async function save(): Promise<boolean> {
     modifier: select('modifier').value as Settings['modifier'],
     chatMode: select('chatMode').value as Settings['chatMode'],
     chatSide: select('chatSide').value as Settings['chatSide'],
+    markers: select('markers').value as Settings['markers'],
     maxSelection: Number.isInteger(maxSelection) && maxSelection > 0 ? maxSelection : 50,
   };
   await Promise.all([

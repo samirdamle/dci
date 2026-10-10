@@ -143,6 +143,26 @@ describe('overlay', () => {
     ]);
   });
 
+  it('puts a marker badge on selected boxes only, beside an inside label', async () => {
+    const f = mount(
+      `<i id="a" data-dci='{"type":"row"}'></i><i id="b" data-dci='{"type":"row"}'></i>`,
+      { a: [0, 5, 10, 40], b: [0, 50, 10, 60] },
+      { marker: (el: Element) => (el.id === 'a' ? 'A' : 'B') },
+    );
+    const [a, b] = [f.get('#a'), f.get('#b')];
+    overlay.setSelected([a], a);
+    overlay.setHover(b);
+    await frame();
+    const marker = (box: HTMLElement) => box.querySelector('.marker')?.textContent ?? null;
+    expect(boxes().map(marker)).toEqual(['A', null]);
+    // `a` is at the top edge: its label moves inside, to the right of the marker.
+    expect(boxes()[0]!.querySelector('.label')?.className).toBe('label inside beside');
+    overlay.setSelected([]);
+    overlay.setHover(null);
+    await frame();
+    expect(boxes()).toHaveLength(0);
+  });
+
   it("labels every selected box with labels: 'all' and none with 'none'", async () => {
     const f = mount(`<i id="a" data-dci="a"></i><i id="b" data-dci="b"></i>`, {
       a: [0, 30, 10, 40],

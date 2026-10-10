@@ -114,6 +114,7 @@ const SELECTION_KEYS = [
   'attribute',
   'infer',
   'maxSelection',
+  'markers',
   'includeAncestors',
   'ancestorData',
   'fallback',
@@ -196,6 +197,7 @@ export function createDci(input: DciConfig): DciInstance {
   const selectionOptions = (): SelectionOptions => ({
     ...contextOptions(),
     ...(config.maxSelection !== undefined ? { maxSelection: config.maxSelection } : {}),
+    ...(config.markers !== undefined ? { markers: config.markers } : {}),
   });
 
   // Requests always go through the current config, so `update()` can swap it.

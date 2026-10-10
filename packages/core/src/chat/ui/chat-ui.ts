@@ -298,6 +298,7 @@ export function createChatUi(options: ChatUiOptions): ChatUi {
     const name = h(
       'button',
       { type: 'button', 'data-key': `chip-${i}`, title: node.id ? `${label} (${node.id})` : label },
+      node.marker ? h('span', { class: 'marker' }, node.marker) : null,
       h('span', { class: 'name' }, label),
       node.id
         ? h('small', {}, `#${node.id}`)
@@ -325,7 +326,11 @@ export function createChatUi(options: ChatUiOptions): ChatUi {
     remove.addEventListener('click', () => controller.removeContext(node));
     return h(
       'span',
-      { class: 'chip', 'data-fallback': node.source === 'fallback' || undefined },
+      {
+        class: 'chip',
+        'data-fallback': node.source === 'fallback' || undefined,
+        'data-marker': node.marker,
+      },
       name,
       remove,
     );

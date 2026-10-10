@@ -51,8 +51,10 @@ Other things to know:
   shows **—**.
 - **Navigation:** navigating to a new page turns DCI off in that tab, unless the site is always
   on.
+- **Markers:** each selected item gets a badge (A, B, C…), so you can ask "Compare A and B".
+  Choose letters, numbers or no markers on the options page.
 - **Settings:** the options page sets the modifier key, where the chat opens (next to the
-  selection, or docked as a side panel) and the selection limit.
+  selection, or docked as a side panel), markers and the selection limit.
 
 ## Where answers come from
 

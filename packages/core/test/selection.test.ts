@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { MarkerSeries } from '../src/markers';
 import { createSelectionStore, type SelectionChange } from '../src/selection';
 import { mountFixture } from './test-utils';
 
@@ -221,6 +222,53 @@ describe('createSelectionStore', () => {
     });
   });
 
+  describe('markers', () => {
+    const markers = (store: ReturnType<typeof setup>['store'], els: Element[]) =>
+      els.map((el) => store.marker(el));
+
+    it('follows selection order, and keeps markers when others are removed', () => {
+      const { store, a, b, c, d } = setup();
+      store.add(b);
+      store.add([a, c]);
+      expect(markers(store, [b, a, c])).toEqual(['A', 'B', 'C']);
+      store.remove(a);
+      expect(markers(store, [b, a, c])).toEqual(['A', null, 'C']);
+      // Never reused within a selection: the next one is D.
+      store.toggle(d);
+      store.toggle(a);
+      expect(markers(store, [d, a])).toEqual(['D', 'E']);
+    });
+
+    it('starts over when the selection is replaced or cleared', () => {
+      const { store, a, b, c } = setup();
+      store.add([a, b]);
+      store.set([c, a]);
+      expect(markers(store, [c, a, b])).toEqual(['A', 'B', null]);
+      store.clear();
+      store.add(b);
+      expect(store.marker(b)).toBe('A');
+      store.remove(b);
+      store.add(c);
+      expect(store.marker(c)).toBe('A');
+    });
+
+    it('supports numbers, custom series and off', () => {
+      const f = mountFixture('<p id="x" data-dci="x"></p><p id="y" data-dci="y"></p>');
+      const [x, y] = [f.get('#x'), f.get('#y')];
+      const of = (markers: MarkerSeries | false) => {
+        const store = createSelectionStore({ root: f.root, markers });
+        store.set([x, y]);
+        return [store.marker(x), store.marker(y)];
+      };
+      expect(of('numbers')).toEqual(['1', '2']);
+      expect(of((i) => `R${i + 1}`)).toEqual(['R1', 'R2']);
+      expect(of(false)).toEqual([null, null]);
+      const store = createSelectionStore({ root: f.root, markers: false });
+      store.set([x]);
+      expect(store.toContext()[0]).not.toHaveProperty('marker');
+    });
+  });
+
   describe('toContext', () => {
     it('serializes the selection and drops private nodes', () => {
       const f = mountFixture(`
@@ -228,7 +276,9 @@ describe('createSelectionStore', () => {
         <div id="p" data-dci='{"id":"p","private":true}'></div>`);
       const store = createSelectionStore({ root: f.root, includeAncestors: false });
       store.set([f.get('#a'), f.get('#p')]);
-      expect(store.toContext()).toEqual([{ id: 'a', type: 't', data: {}, source: 'annotated' }]);
+      expect(store.toContext()).toEqual([
+        { id: 'a', type: 't', data: {}, source: 'annotated', marker: 'A' },
+      ]);
     });
   });
 

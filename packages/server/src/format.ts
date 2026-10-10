@@ -27,10 +27,16 @@ function path(node: DciContextNode): string {
 
 const hasData = (data: Record<string, unknown>) => Object.keys(data).length > 0;
 
+/** Tells the model what markers are, when the selection has them. */
+const MARKER_NOTE =
+  'Each item has a marker (such as A or 1) shown on the page; the user may refer to an item by its marker, as in "compare A and B".';
+const hasMarkers = (context: DciContextNode[]) => context.some((n) => n.marker);
+
 function xml(context: DciContextNode[]): string {
   const nodes = context.map((node, i) => {
     const attrs = [
       `index="${i + 1}"`,
+      node.marker && `marker="${escapeAttr(node.marker)}"`,
       node.type && `type="${escapeAttr(node.type)}"`,
       node.id && `id="${escapeAttr(node.id)}"`,
       `source="${node.source}"`,
@@ -46,19 +52,22 @@ function xml(context: DciContextNode[]): string {
       ? [`${open}>`, ...children.map((c) => `    ${c}`), '  </node>'].join('\n')
       : `${open} />`;
   });
-  return ['<selected_context>', ...nodes, '</selected_context>'].join('\n');
+  const note = hasMarkers(context) ? [`  <note>${escapeText(MARKER_NOTE)}</note>`] : [];
+  return ['<selected_context>', ...note, ...nodes, '</selected_context>'].join('\n');
 }
 
 function markdown(context: DciContextNode[]): string {
   const items = context.map((node, i) => {
     const meta = [node.type, node.id && `id \`${node.id}\``].filter(Boolean).join(', ');
-    const lines = [`${i + 1}. **${nodeName(node)}**${meta ? ` (${meta})` : ''}`];
+    const marker = node.marker ? `[${node.marker}] ` : '';
+    const lines = [`${i + 1}. ${marker}**${nodeName(node)}**${meta ? ` (${meta})` : ''}`];
     if (node.ancestors?.length) lines.push(`   - Path: ${path(node)}`);
     if (hasData(node.data)) lines.push(`   - Data: \`${JSON.stringify(node.data)}\``);
     if (node.fallback) lines.push(`   - Element: \`${JSON.stringify(node.fallback)}\``);
     return lines.join('\n');
   });
-  return ['## Selected context', '', ...items].join('\n');
+  const note = hasMarkers(context) ? [MARKER_NOTE, ''] : [];
+  return ['## Selected context', '', ...note, ...items].join('\n');
 }
 
 /**

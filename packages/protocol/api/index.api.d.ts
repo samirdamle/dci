@@ -28,6 +28,12 @@ interface DciContextNode {
     id?: string;
     type?: string;
     label?: string;
+    /**
+     * The node's short name in the current selection (`"A"`, `"B"`… or `"1"`,
+     * `"2"`…), shown on its badge and chip. The user can refer to it in the prompt:
+     * "Compare A and B". Absent when markers are off.
+     */
+    marker?: string;
     /** Parsed `data-dci` payload with reserved keys removed (empty for fallback nodes). */
     data: Record<string, unknown>;
     ancestors?: DciAncestor[];

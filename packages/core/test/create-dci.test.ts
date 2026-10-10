@@ -61,6 +61,7 @@ describe('config', () => {
     const { errors, warnings } = validateConfig({
       modifier: 'Ctrl' as 'Control',
       maxSelection: 0,
+      markers: 'roman' as 'letters',
       chat: { mode: 'sidebar' as 'panel', modee: 1 } as never,
       modifer: 'Alt',
     } as never);
@@ -68,6 +69,7 @@ describe('config', () => {
       '`endpoint` or `transport` is required, e.g. `createDci({ endpoint: "/api/dci" })`.',
       '`modifier` must be one of "Alt", "Shift", "Control", "Meta" (got "Ctrl").',
       '`maxSelection` must be an integer ≥ 1 (got 0).',
+      '`markers` must be one of "letters", "numbers" (got "roman").',
       '`chat.mode` must be one of "popover", "panel" (got "sidebar").',
     ]);
     expect(warnings).toEqual([
@@ -124,6 +126,31 @@ describe('selection', () => {
 });
 
 describe('chat and actions', () => {
+  it('sends markers that match the chips, and follows `markers` updates', async () => {
+    const { dci, requests } = setup();
+    dci.selection.set('inv_2');
+    dci.selection.add('inv_1');
+    await tick();
+    const chips = () =>
+      [...shadow()!.querySelectorAll('.chip')].map(
+        (c) =>
+          `${c.querySelector('.marker')?.textContent}:${c.querySelector('.name')?.textContent}`,
+      );
+    expect(chips()).toEqual(['A:Invoice 2', 'B:Invoice 1']);
+    await dci.chat.send('Compare A and B');
+    expect(requests[0]!.context.map((n) => [n.marker, n.id])).toEqual([
+      ['A', 'inv_2'],
+      ['B', 'inv_1'],
+    ]);
+    dci.update({ markers: 'numbers' });
+    dci.selection.set(['inv_1', 'inv_2']);
+    await tick();
+    expect(dci.selection.get().map((n) => n.marker)).toEqual(['1', '2']);
+    dci.update({ markers: false });
+    await tick();
+    expect(dci.selection.get().map((n) => n.marker)).toEqual([undefined, undefined]);
+  });
+
   it('sends the selection, emits messages and runs client actions', async () => {
     const script = (): ReturnType<typeof reply> => [
       { type: 'client-action', name: 'markPaid', args: { id: 'inv_1' } },

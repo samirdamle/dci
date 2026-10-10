@@ -12,6 +12,8 @@ export interface DemoSettings {
   ancestorData: 'compact' | 'full';
   maxSelection: number;
   overlayMode: 'boxes' | 'outline';
+  /** Badges on selected items: A, B, C (default), 1, 2, 3, or none. */
+  markers: 'letters' | 'numbers' | 'off';
   confirmBeforeSend: boolean;
 }
 
@@ -24,6 +26,7 @@ export const DEFAULT_SETTINGS: DemoSettings = {
   ancestorData: 'compact',
   maxSelection: 50,
   overlayMode: 'boxes',
+  markers: 'letters',
   confirmBeforeSend: false,
 };
 
@@ -33,6 +36,7 @@ const CHOICES: { [K in keyof DemoSettings]?: readonly DemoSettings[K][] } = {
   modifier: ['Alt', 'Control', 'Meta', 'Shift'],
   ancestorData: ['compact', 'full'],
   overlayMode: ['boxes', 'outline'],
+  markers: ['letters', 'numbers', 'off'],
 };
 
 /**
@@ -69,6 +73,7 @@ export function settingsToConfig(s: DemoSettings): DciConfig {
     ancestorData: s.ancestorData,
     maxSelection: s.maxSelection,
     overlay: { mode: s.overlayMode },
+    markers: s.markers === 'off' ? false : s.markers,
     chat: { mode: s.chatMode, confirmBeforeSend: s.confirmBeforeSend },
   };
 }

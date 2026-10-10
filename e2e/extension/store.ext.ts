@@ -61,11 +61,11 @@ const PAGE = `
 
 /** Scripted answers, keyed by the question. */
 const ANSWERS: Record<string, string> = {
-  late: `Three of these orders are **past their ship-by date**:
+  late: `All three are **past their ship-by date**, A by the most:
 
-- **#4824** (Katherine Johnson): headlamp and batteries, 7 days late
-- **#4822** (Grace Hopper): down sleeping bag, 6 days late
-- **#4827** (Barbara Liskov): rain shell, 5 days late
+- **A** · #4824 (Katherine Johnson): headlamp and batteries, 7 days late
+- **B** · #4822 (Grace Hopper): down sleeping bag, 6 days late
+- **C** · #4827 (Barbara Liskov): rain shell, 5 days late
 
 A short note for each customer: apologize, give the new ship date, and offer free express shipping. Want me to draft them?`,
   summary: `**8 orders, $1,374.45 in total.**
