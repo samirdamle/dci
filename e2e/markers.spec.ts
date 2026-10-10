@@ -17,12 +17,21 @@ test.describe('selection markers', () => {
     await app.windowSelect(opps.rows.nth(0), opps.rows.nth(1), { extra: ['Shift'] });
     await expect(app.chat.chips).toHaveText([names[2]!, names[0]!, names[1]!]);
     await expect(app.chat.root.locator('.chip .marker')).toHaveText(['A', 'B', 'C']);
+    await expect(app.chat.root.locator('.head h2')).toHaveText('Ask about A B C');
+    // Each chip's badge sits inside its chip (not pinned to the chat's corner).
+    const chip = (await app.chat.root.locator('.chip').first().boundingBox())!;
+    const badge = (await app.chat.root.locator('.chip .marker').first().boundingBox())!;
+    expect(badge.x).toBeGreaterThanOrEqual(chip.x);
+    expect(badge.y).toBeGreaterThanOrEqual(chip.y);
+    expect(badge.x + badge.width).toBeLessThanOrEqual(chip.x + chip.width);
+    expect(badge.y + badge.height).toBeLessThanOrEqual(chip.y + chip.height);
     const badges = page.locator('dci-root .box.selected .marker').filter({ visible: true });
     await expect(badges).toHaveText(['A', 'B', 'C']);
 
     // Removing B keeps C.
     await app.chat.removeChip(names[0]!);
     await expect(app.chat.root.locator('.chip .marker')).toHaveText(['A', 'C']);
+    await expect(app.chat.root.locator('.head h2')).toHaveText('Ask about A C');
     await expect(badges).toHaveText(['A', 'C']);
 
     const request = page.waitForRequest('**/api/dci');

@@ -137,6 +137,9 @@ describe('chat and actions', () => {
           `${c.querySelector('.marker')?.textContent}:${c.querySelector('.name')?.textContent}`,
       );
     expect(chips()).toEqual(['A:Invoice 2', 'B:Invoice 1']);
+    const title = () => shadow()!.querySelector('.head h2')!;
+    expect(title().textContent).toBe('Ask about A B');
+    expect([...title().querySelectorAll('.marker')].map((m) => m.textContent)).toEqual(['A', 'B']);
     await dci.chat.send('Compare A and B');
     expect(requests[0]!.context.map((n) => [n.marker, n.id])).toEqual([
       ['A', 'inv_2'],
@@ -149,6 +152,7 @@ describe('chat and actions', () => {
     dci.update({ markers: false });
     await tick();
     expect(dci.selection.get().map((n) => n.marker)).toEqual([undefined, undefined]);
+    expect(title().textContent).toBe('Ask about this');
   });
 
   it('sends the selection, emits messages and runs client actions', async () => {

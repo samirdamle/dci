@@ -18,6 +18,9 @@ import { CHAT_CSS } from './styles';
 
 export type ChatMode = 'popover' | 'panel';
 
+/** Markers shown in the header before "+N". */
+const MAX_TITLE_MARKERS = 6;
+
 /** What the default UI and custom renderers can call. */
 export interface ChatUiApi {
   readonly controller: ChatController;
@@ -245,6 +248,11 @@ export function createChatUi(options: ChatUiOptions): ChatUi {
         ?.focus();
   }
 
+  /** The selected nodes' markers, in selection order (empty when markers are off). */
+  function selectionMarkers(): string[] {
+    return selection.get().flatMap((el) => selection.marker(el) ?? []);
+  }
+
   function defaultHeader(): HTMLElement {
     const close = h(
       'button',
@@ -258,7 +266,19 @@ export function createChatUi(options: ChatUiOptions): ChatUi {
       mode === 'panel' ? '⟩' : '×',
     );
     close.addEventListener('click', () => controller.close());
-    return h('div', { class: 'head' }, h('h2', { id: titleId }, strings.title), close);
+    const markers = selectionMarkers();
+    const shown = markers.slice(0, MAX_TITLE_MARKERS);
+    const more = markers.length - shown.length;
+    const title = markers.length
+      ? h(
+          'h2',
+          { id: titleId },
+          strings.titleMarkers,
+          ...shown.flatMap((m) => [' ', h('span', { class: 'marker' }, m)]),
+          more > 0 ? ` +${more}` : null,
+        )
+      : h('h2', { id: titleId }, strings.title);
+    return h('div', { class: 'head' }, title, close);
   }
 
   function defaultBreadcrumb(): HTMLElement | null {
@@ -626,6 +646,7 @@ export function createChatUi(options: ChatUiOptions): ChatUi {
   // ── render loop ───────────────────────────────────────────────────────
   let last: ChatState | null = null;
   let lastPrimary: Element | null = null;
+  let lastMarkers = '';
 
   function renderAll() {
     last = null;
@@ -641,7 +662,10 @@ export function createChatUi(options: ChatUiOptions): ChatUi {
     const prev = last;
     last = state;
     const primary = selection.primary();
-    if (!prev) fill(header, render.header?.(state, api) ?? defaultHeader());
+    const markers = selectionMarkers().join(' ');
+    if (!prev || markers !== lastMarkers)
+      fill(header, render.header?.(state, api) ?? defaultHeader());
+    lastMarkers = markers;
     if (!prev || primary !== lastPrimary)
       fill(crumbs, render.breadcrumb?.(state, api) ?? defaultBreadcrumb());
     lastPrimary = primary;

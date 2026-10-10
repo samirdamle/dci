@@ -75,11 +75,12 @@ button:disabled { cursor: default; opacity: 0.55; }
 .chip .name { max-width: 20ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chip small { color: var(--dci-muted); margin-left: 4px; }
 .chip[data-marker] > button:first-child { display: inline-flex; align-items: center; padding-left: 3px; }
-.chip .marker {
-  min-width: 16px; height: 16px; padding: 0 3px; margin-right: 6px; border-radius: 3px;
-  font-size: 10px; font-weight: 700; line-height: 16px; text-align: center;
+.chat .marker {
+  display: inline-block; min-width: 16px; height: 16px; padding: 0 3px; border-radius: 3px;
+  font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; vertical-align: 1px;
   color: var(--dci-on-selected); background: var(--dci-selected);
 }
+.chip .marker { margin-right: 6px; }
 .chip > button.x { padding: 2px 8px 2px 2px; color: var(--dci-muted); }
 .chip > button.x:hover { color: var(--dci-fg); }
 .more { border: 1px dashed var(--dci-border); border-radius: 999px; background: transparent; padding: 2px 8px; }
