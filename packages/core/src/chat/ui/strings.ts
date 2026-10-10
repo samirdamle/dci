@@ -1,6 +1,9 @@
 /** Every piece of text the default chat UI shows. Override any key for i18n. */
 export interface ChatStrings {
+  /** The header without markers (nothing selected, or markers off). */
   title: string;
+  /** The header's text before the selection's markers: "Ask about [A] [B]". */
+  titleMarkers: string;
   placeholder: string;
   send: string;
   stop: string;
@@ -36,6 +39,7 @@ export interface ChatStrings {
 
 export const DEFAULT_STRINGS: ChatStrings = {
   title: 'Ask about this',
+  titleMarkers: 'Ask about',
   placeholder: 'Ask about the selection…',
   send: 'Send',
   stop: 'Stop',

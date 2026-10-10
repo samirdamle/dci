@@ -62,14 +62,14 @@ export const OVERLAY_CSS = `
 .box.hover .label { background: var(--dci-hover); }
 .label.inside { top: 0; bottom: auto; left: 0; border-radius: 0 0 4px 0; }
 .label.inside.beside { left: auto; right: 0; border-radius: 0 0 0 4px; }
-.marker {
+.box > .marker {
   position: absolute; left: -2px; top: -2px;
   min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box;
   border-radius: var(--dci-radius) 0 4px 0; text-align: center;
   font: 700 11px/18px var(--dci-font, system-ui, sans-serif);
   color: var(--dci-on-selected); background: var(--dci-selected);
 }
-.box.primary .marker { left: -3px; top: -3px; }
+.box.primary > .marker { left: -3px; top: -3px; }
 .edge {
   position: fixed; left: 0; top: 0; display: none; width: 10px; height: 10px;
   margin: -5px 0 0 -5px; border-radius: 50%;
