@@ -107,6 +107,43 @@ Bindings can be changed at runtime with `dci.update({ bindings })`; the selectio
 Related options: `clearOnEmptyClick: false` keeps the selection when clicking empty space, and
 `maxSelection` (default 50) caps the selection with a notice in the chat.
 
+## Markers
+
+Each selected node gets a **marker**: a small badge on the top-left corner of its box, and the
+same badge on its chip in the chat. Users can then refer to items by marker: "Compare A and B",
+"Why is C lower than A?". Each node's marker is also sent with the request (`marker` on the
+context node), so the model knows which item is which. `formatContextForPrompt` from
+`@samirdamle/dci-server` includes the markers, with a note that explains them to the model.
+
+- **Order:** markers follow selection order. Nodes added in one gesture (window select,
+  Alt+Double-click) are numbered in page order.
+- **Removing:** a node keeps its marker while it stays selected. Removing B from A, B, C leaves A
+  and C, and the next node added gets D.
+- **Starting over:** a new selection (a plain Alt+Click) or clearing it starts again from A.
+
+```ts
+import { createDci } from '@samirdamle/dci-core';
+
+createDci({ endpoint: '/api/dci', markers: 'numbers' }); // 1, 2, 3 …
+createDci({ endpoint: '/api/dci', markers: (i) => `R${i + 1}` }); // custom: R1, R2, R3 …
+createDci({ endpoint: '/api/dci', markers: false }); // no badges, nothing sent
+```
+
+| Value          | Markers                                           |
+| -------------- | ------------------------------------------------- |
+| `'letters'`    | A, B … Z, AA, AB … (the default)                  |
+| `'numbers'`    | 1, 2, 3 …                                         |
+| `(index) => …` | Your own series, from the 0-based selection index |
+| `false`        | None                                              |
+
+A custom series can follow your users' language (Cyrillic А, Б, В; Japanese あ, い, う) or your
+domain (`P1`, `P2` for products). Keep markers short (1–3 characters) so they fit the badge, and
+unique: DCI warns in development when two selected nodes get the same one.
+
+Badges use `--dci-selected` with `--dci-on-selected` for the text (see
+[theming](configuration.md)). With `overlay: { mode: 'outline' }`, no boxes are drawn, so there
+are no badges on the page, but the chips still show markers.
+
 ## Custom gestures
 
 Gestures are plain functions: `(ctx) => cleanup`. Pass `gestures` to replace the built-in list

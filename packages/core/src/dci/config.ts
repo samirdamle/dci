@@ -9,6 +9,7 @@ import type { ActionsConfig } from '../chat/suggested-actions';
 import type { Gesture } from '../interactions';
 import type { ModifierKey } from '../keys';
 import type { InferAnnotation } from '../parse';
+import type { MarkerSeries } from '../markers';
 import type { LabelMode, OverlayMode } from '../overlay';
 import type { SessionOptions } from '../session';
 import type { Transport } from '../transport';
@@ -97,6 +98,14 @@ export interface DciConfig {
   bindings?: BindingsConfig;
   /** Cap on selected nodes; extra ones fire `selectionlimit`. Default `50`. */
   maxSelection?: number;
+  /**
+   * Short names for selected nodes, so users can say "Compare A and B": shown
+   * as a badge on each selection box and chip, and sent as `marker` on each
+   * context node. Assigned in selection order; a new selection starts over.
+   * `'letters'` (default: A, B … Z, AA …), `'numbers'` (1, 2, 3 …), a function
+   * from the 0-based index to a short unique label, or `false` for none.
+   */
+  markers?: MarkerSeries | false;
   /** Include each node's ancestor chain in payloads. Default `true`. */
   includeAncestors?: boolean;
   /** `'compact'` ancestors (id/type/label) or `'full'` (with data). Default `'compact'`. */
@@ -145,6 +154,7 @@ export const DEFAULTS = {
   attribute: 'data-dci',
   modifier: 'Alt',
   maxSelection: 50,
+  markers: 'letters',
   includeAncestors: true,
   ancestorData: 'compact',
   fallback: true,
@@ -209,6 +219,7 @@ const TOP_KEYS: Array<keyof DciConfig> = [
   'modifier',
   'bindings',
   'maxSelection',
+  'markers',
   'includeAncestors',
   'ancestorData',
   'fallback',
@@ -308,6 +319,12 @@ export function validateConfig(config: DciConfig): ConfigProblems {
     errors.push('`infer` must be a function `(el) => annotation | null`.');
   oneOf(config.modifier, ['Alt', 'Shift', 'Control', 'Meta'], 'modifier', errors);
   count(config.maxSelection, 'maxSelection', errors, 1);
+  if (
+    config.markers !== undefined &&
+    config.markers !== false &&
+    typeof config.markers !== 'function'
+  )
+    oneOf(config.markers, ['letters', 'numbers'], 'markers', errors);
   count(config.maxTextLength, 'maxTextLength', errors, 1);
   oneOf(config.ancestorData, ['compact', 'full'], 'ancestorData', errors);
   oneOf(config.windowSelectLevel, ['leaf', 'top'], 'windowSelectLevel', errors);

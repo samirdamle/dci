@@ -44,6 +44,11 @@ function CustomChatPanel({ chat }: { chat: UseChatResult }) {
           {chat.pendingContext.length ? (
             chat.pendingContext.map((node, i) => (
               <Badge key={`${node.id ?? i}`} variant="secondary" className="gap-1">
+                {node.marker && (
+                  <span className="rounded-sm bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                    {node.marker}
+                  </span>
+                )}
                 {node.label ?? node.type ?? 'element'}
                 <button
                   type="button"

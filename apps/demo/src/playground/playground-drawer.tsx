@@ -191,6 +191,18 @@ export function PlaygroundDrawer() {
                 onChange={set('overlayMode')}
               />
             </Row>
+            <Row label="Markers" htmlFor="pg-markers">
+              <Choice
+                id="pg-markers"
+                value={settings.markers}
+                options={[
+                  ['letters', 'A, B, C'],
+                  ['numbers', '1, 2, 3'],
+                  ['off', 'Off'],
+                ]}
+                onChange={set('markers')}
+              />
+            </Row>
             <Row label="Dark theme" htmlFor="pg-theme">
               <Switch
                 id="pg-theme"

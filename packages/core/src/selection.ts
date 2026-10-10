@@ -1,8 +1,11 @@
 import { toContextNode, type ContextOptions, type DciContextNode } from './context';
+import { formatMarker, type MarkerSeries } from './markers';
 
 export interface SelectionOptions extends ContextOptions {
   /** Maximum number of selected nodes. Default `50`. */
   maxSelection?: number;
+  /** Marker series for selected nodes, or `false` for none. Default `'letters'`. */
+  markers?: MarkerSeries | false;
 }
 
 export interface SelectionChange {
@@ -40,6 +43,12 @@ export interface SelectionStore {
   has(el: Element): boolean;
   /** Last-interacted node (breadcrumb, keyboard navigation), or `null`. */
   primary(): Element | null;
+  /**
+   * The node's marker (`"A"`, `"B"`…): assigned in selection order, kept while
+   * the node stays selected, restarted when the selection is replaced or
+   * cleared. `null` when not selected or markers are off.
+   */
+  marker(el: Element): string | null;
   /** Make an already-selected element the primary node. */
   setPrimary(el: Element): void;
   /** Listen for `selectionchange`; returns an unsubscribe function. */
@@ -76,6 +85,9 @@ export function createSelectionStore(options: SelectionOptions = {}): SelectionS
   let scheduled = false;
   let observer: MutationObserver | null = null;
   let destroyed = false;
+  /** Each selected element's 0-based marker index; never reused within a selection. */
+  const markerIndex = new Map<Element, number>();
+  let nextMarker = 0;
 
   function emit<K extends keyof SelectionEvents>(type: K, event: SelectionEvents[K]) {
     for (const fn of listeners[type]) fn(event);
@@ -110,6 +122,10 @@ export function createSelectionStore(options: SelectionOptions = {}): SelectionS
   /** Apply a new selection and schedule one batched event. */
   function commit(next: Element[], nextPrimary: Element | null) {
     selected = next;
+    const keep = new Set(next);
+    for (const el of markerIndex.keys()) if (!keep.has(el)) markerIndex.delete(el);
+    if (!next.length) nextMarker = 0;
+    for (const el of next) if (!markerIndex.has(el)) markerIndex.set(el, nextMarker++);
     primaryEl = nextPrimary && next.includes(nextPrimary) ? nextPrimary : last(next);
     syncObserver();
     if (!scheduled) {
@@ -137,6 +153,12 @@ export function createSelectionStore(options: SelectionOptions = {}): SelectionS
     commit([...selected, ...accepted], last(accepted) ?? primaryEl);
   }
 
+  function marker(el: Element): string | null {
+    const index = markerIndex.get(el);
+    const series = options.markers ?? 'letters';
+    return index === undefined || series === false ? null : formatMarker(index, series);
+  }
+
   function remove(els: Iterable<Element> | Element) {
     const gone = new Set(toArray(els));
     const next = selected.filter((el) => !gone.has(el));
@@ -147,6 +169,9 @@ export function createSelectionStore(options: SelectionOptions = {}): SelectionS
     get: () => selected.slice(),
     set(els) {
       const accepted = limit([...new Set(els)], max);
+      // A new selection starts again from the first marker.
+      markerIndex.clear();
+      nextMarker = 0;
       commit(accepted, last(accepted));
     },
     add,
@@ -160,6 +185,7 @@ export function createSelectionStore(options: SelectionOptions = {}): SelectionS
     },
     has: (el) => selected.includes(el),
     primary: () => primaryEl,
+    marker,
     setPrimary(el) {
       if (el !== primaryEl && selected.includes(el)) commit(selected, el);
     },
@@ -171,10 +197,13 @@ export function createSelectionStore(options: SelectionOptions = {}): SelectionS
       listeners[type].add(fn);
       return () => listeners[type].delete(fn);
     },
-    toContext: () =>
-      selected
-        .map((el) => toContextNode(el, options))
-        .filter((node): node is DciContextNode => node !== null),
+    toContext() {
+      return selected.flatMap((el) => {
+        const node = toContextNode(el, options);
+        const m = marker(el);
+        return node ? [m ? { ...node, marker: m } : node] : [];
+      });
+    },
     destroy() {
       destroyed = true;
       observer?.disconnect();

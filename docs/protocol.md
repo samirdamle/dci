@@ -31,6 +31,7 @@ The client sends `POST {endpoint}` with `Content-Type: application/json` and
       "id": "inv_123",
       "type": "invoice",
       "label": "Invoice #123",
+      "marker": "A",
       "data": { "amount": 420, "status": "overdue" },
       "ancestors": [{ "id": "invoices", "type": "table", "label": "Invoices" }],
       "source": "annotated"
@@ -51,15 +52,16 @@ The client sends `POST {endpoint}` with `Content-Type: application/json` and
 
 Each context node:
 
-| Field       | Type                          | Meaning                                                                                  |
-| ----------- | ----------------------------- | ---------------------------------------------------------------------------------------- |
-| `id`        | string, optional              | From the annotation                                                                      |
-| `type`      | string, optional              | From the annotation                                                                      |
-| `label`     | string, optional              | From the annotation                                                                      |
-| `data`      | object                        | The annotation minus `id`, `type`, `label`, `private` (`{}` for fallback nodes)          |
-| `ancestors` | array, optional               | Annotated ancestors, root first: `{ id?, type?, label?, data? }`, or `{ private: true }` |
-| `source`    | `"annotated"` \| `"fallback"` | Whether the element had an annotation                                                    |
-| `fallback`  | object, only for fallback     | `{ tagName, text?, ariaLabel?, alt?, title?, href?, value?, path }`                      |
+| Field       | Type                          | Meaning                                                                                     |
+| ----------- | ----------------------------- | ------------------------------------------------------------------------------------------- |
+| `id`        | string, optional              | From the annotation                                                                         |
+| `type`      | string, optional              | From the annotation                                                                         |
+| `label`     | string, optional              | From the annotation                                                                         |
+| `marker`    | string, optional              | The node's badge in the selection (`"A"`, `"B"`… or `"1"`…): "compare A and B" refers to it |
+| `data`      | object                        | The annotation minus `id`, `type`, `label`, `private` (`{}` for fallback nodes)             |
+| `ancestors` | array, optional               | Annotated ancestors, root first: `{ id?, type?, label?, data? }`, or `{ private: true }`    |
+| `source`    | `"annotated"` \| `"fallback"` | Whether the element had an annotation                                                       |
+| `fallback`  | object, only for fallback     | `{ tagName, text?, ariaLabel?, alt?, title?, href?, value?, path }`                         |
 
 See the [annotation guide](annotations.md#what-gets-sent) for how these are built. Servers should
 accept unknown extra fields: they may be added within a version.

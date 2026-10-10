@@ -39,6 +39,7 @@ export const BASE_CSS = `
   --dci-accent: #2563eb;
   --dci-hover: #2563eb;
   --dci-selected: #2563eb;
+  --dci-on-selected: #ffffff;
   --dci-preview: #7c3aed;
   --dci-bg: #ffffff;
   --dci-fg: #0f172a;
@@ -55,6 +56,7 @@ export const BASE_CSS = `
   --dci-accent: #60a5fa;
   --dci-hover: #60a5fa;
   --dci-selected: #60a5fa;
+  --dci-on-selected: #0f172a;
   --dci-preview: #a78bfa;
   --dci-bg: #0f172a;
   --dci-fg: #f1f5f9;
@@ -71,16 +73,17 @@ export const BASE_CSS = `
     --dci-accent: #60a5fa;
     --dci-hover: #60a5fa;
     --dci-selected: #60a5fa;
+    --dci-on-selected: #0f172a;
     --dci-preview: #a78bfa;
     --dci-bg: #0f172a;
     --dci-fg: #f1f5f9;
     --dci-muted: #94a3b8;
     --dci-border: #334155;
     --dci-shadow: 0 4px 16px rgb(0 0 0 / 0.5);
-  --dci-on-accent: #0f172a;
-  --dci-surface: #1e293b;
-  --dci-danger: #fca5a5;
-  --dci-success: #86efac;
+    --dci-on-accent: #0f172a;
+    --dci-surface: #1e293b;
+    --dci-danger: #fca5a5;
+    --dci-success: #86efac;
   }
 }
 *, *::before, *::after { box-sizing: border-box; }

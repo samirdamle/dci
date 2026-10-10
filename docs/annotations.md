@@ -151,6 +151,7 @@ Each selected node becomes a `DciContextNode`:
   "id": "inv_123",
   "type": "invoice",
   "label": "Invoice #123",
+  "marker": "A",
   "data": { "amount": 420, "status": "overdue" },
   "ancestors": [
     { "id": "page", "type": "page", "label": "Billing" },
@@ -161,6 +162,8 @@ Each selected node becomes a `DciContextNode`:
 ```
 
 - `data` is the annotation minus the reserved keys.
+- `marker` is the node's badge in the selection (A, B…), so "compare A and B" can be resolved.
+  See [markers](interactions.md#markers).
 - `ancestors` runs from the root down to the node's parent. It's on by default
   (`includeAncestors: true`). Ancestors are compact (`id`, `type`, `label`); set
   `ancestorData: 'full'` to include their data too.

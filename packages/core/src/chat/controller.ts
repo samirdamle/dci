@@ -6,6 +6,7 @@ import {
 } from '@samirdamle/dci-protocol';
 import type { ActionRegistry } from '../actions';
 import { toContextNode, type ContextOptions } from '../context';
+import { checkMarkers } from '../markers';
 import { isDev } from '../env';
 import { DEFAULT_ATTRIBUTE, readDci, refreshInferred } from '../parse';
 import type { SelectionStore } from '../selection';
@@ -115,11 +116,15 @@ export function createChatController(options: ChatControllerOptions): ChatContro
     for (const fn of [...listeners]) fn(state);
   }
 
-  const toNodes = (els: Element[]) =>
-    els.flatMap((el) => {
+  const toNodes = (els: Element[]) => {
+    const nodes = els.flatMap((el) => {
       const node = toContextNode(el, contextOptions);
-      return node ? [{ el, node }] : [];
+      const marker = selection.marker(el);
+      return node ? [{ el, node: marker ? { ...node, marker } : node }] : [];
     });
+    checkMarkers(nodes.map((n) => n.node.marker));
+    return nodes;
+  };
 
   function refreshPending() {
     set({ pendingContext: toNodes(pendingEls).map((p) => p.node) });

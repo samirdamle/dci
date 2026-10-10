@@ -16,6 +16,8 @@ export interface Settings {
   chatMode: 'popover' | 'panel';
   chatSide: 'left' | 'right';
   maxSelection: number;
+  /** Badges on selected items, so the user can say "Compare A and B". */
+  markers: 'letters' | 'numbers' | 'off';
   backend: BackendKind;
   /** A DCI endpoint (the protocol in docs/protocol.md), for `backend: 'endpoint'`. */
   endpointUrl: string;
@@ -29,6 +31,7 @@ export const DEFAULT_SETTINGS: Settings = {
   chatMode: 'popover',
   chatSide: 'right',
   maxSelection: 50,
+  markers: 'letters',
   backend: 'offline',
   endpointUrl: '',
   claudeModel: CLAUDE_MODELS[0],
@@ -67,6 +70,7 @@ export function readSettings(stored: unknown): Settings {
     chatMode: pick('chatMode', (v) => v === 'popover' || v === 'panel'),
     chatSide: pick('chatSide', (v) => v === 'left' || v === 'right'),
     maxSelection: pick('maxSelection', (v) => Number.isInteger(v) && (v as number) > 0),
+    markers: pick('markers', (v) => v === 'letters' || v === 'numbers' || v === 'off'),
     backend: pick('backend', (v) => v === 'offline' || v === 'endpoint' || v === 'claude'),
     endpointUrl: pick('endpointUrl', (v) => v === '' || isHttpUrl(v)),
     claudeModel: pick('claudeModel', (v) => typeof v === 'string' && /^claude-[\w.-]+$/.test(v)),
@@ -79,6 +83,7 @@ export function settingsToConfig(settings: Settings): Partial<DciConfig> {
   return {
     modifier: settings.modifier,
     maxSelection: settings.maxSelection,
+    markers: settings.markers === 'off' ? false : settings.markers,
     chat: { mode: settings.chatMode, side: settings.chatSide },
   };
 }

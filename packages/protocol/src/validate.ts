@@ -17,7 +17,7 @@ function contextIssues(context: unknown, issues: string[]) {
     if (node.source !== 'annotated' && node.source !== 'fallback') {
       issues.push(`context[${i}].source must be 'annotated' or 'fallback'`);
     }
-    for (const key of ['id', 'type', 'label'] as const) {
+    for (const key of ['id', 'type', 'label', 'marker'] as const) {
       if (node[key] !== undefined && !isString(node[key])) {
         issues.push(`context[${i}].${key} must be a string`);
       }

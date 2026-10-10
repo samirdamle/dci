@@ -281,6 +281,23 @@ describe('formatContextForPrompt', () => {
     expect(JSON.parse(formatContextForPrompt(context, { style: 'json' }))).toEqual(context);
     expect(formatContextForPrompt([], { style: 'json' })).toBe('[]');
   });
+
+  it('includes markers and explains them, so "compare A and B" makes sense', () => {
+    const marked: DciContextNode[] = [
+      { label: 'Ada', type: 'row', marker: 'A', data: {}, source: 'annotated' },
+      { label: 'Alan', type: 'row', marker: 'B', data: {}, source: 'annotated' },
+    ];
+    const xml = formatContextForPrompt(marked);
+    expect(xml).toContain('<node index="1" marker="A" type="row" source="annotated">');
+    expect(xml).toContain('<note>Each item has a marker');
+    const md = formatContextForPrompt(marked, { style: 'markdown' });
+    expect(md).toContain('1. [A] **Ada** (row)');
+    expect(md).toContain('2. [B] **Alan** (row)');
+    // No markers, no note.
+    expect(formatContextForPrompt([{ label: 'Ada', data: {}, source: 'annotated' }])).not.toContain(
+      '<note>',
+    );
+  });
 });
 
 describe('encodeEvent compatibility', () => {

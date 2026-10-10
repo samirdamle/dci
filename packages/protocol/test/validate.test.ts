@@ -11,6 +11,7 @@ const valid = {
       id: 'inv_1',
       type: 'invoice',
       label: 'Invoice 1',
+      marker: 'A',
       data: { amount: 5 },
       source: 'annotated',
       ancestors: [],
@@ -33,7 +34,10 @@ describe('validateRequest', () => {
       sessionId: '',
       prompt: 3,
       action: 4,
-      context: [null, { data: [], source: 'x', id: 1, type: 2, label: 3, ancestors: {} }],
+      context: [
+        null,
+        { data: [], source: 'x', id: 1, type: 2, label: 3, marker: 4, ancestors: {} },
+      ],
       page: { url: 'u' },
     });
     expect(result.ok).toBe(false);
@@ -48,6 +52,7 @@ describe('validateRequest', () => {
       'context[1].id must be a string',
       'context[1].type must be a string',
       'context[1].label must be a string',
+      'context[1].marker must be a string',
       'context[1].ancestors must be an array',
       'page must be { url: string, title: string }',
     ]);

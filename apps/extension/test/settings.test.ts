@@ -19,8 +19,16 @@ describe('settings', () => {
         chatMode: 'panel',
         chatSide: 'left',
         maxSelection: 5,
+        markers: 'off',
       }),
-    ).toEqual({ modifier: 'Shift', maxSelection: 5, chat: { mode: 'panel', side: 'left' } });
+    ).toEqual({
+      modifier: 'Shift',
+      maxSelection: 5,
+      markers: false,
+      chat: { mode: 'panel', side: 'left' },
+    });
+    expect(settingsToConfig(DEFAULT_SETTINGS).markers).toBe('letters');
+    expect(readSettings({ markers: 'roman' }).markers).toBe('letters');
   });
 });
 

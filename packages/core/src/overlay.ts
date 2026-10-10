@@ -16,6 +16,8 @@ export interface OverlayOptions {
   infer?: InferAnnotation;
   /** Observed for layout changes while boxes are shown. Default `document.body`. */
   root?: Element;
+  /** Badge text for a selected node (`"A"`), or `null` for none. Boxes mode only. */
+  marker?: (el: Element) => string | null;
 }
 
 export interface Overlay {
@@ -59,6 +61,15 @@ export const OVERLAY_CSS = `
 }
 .box.hover .label { background: var(--dci-hover); }
 .label.inside { top: 0; bottom: auto; left: 0; border-radius: 0 0 4px 0; }
+.label.inside.beside { left: auto; right: 0; border-radius: 0 0 0 4px; }
+.marker {
+  position: absolute; left: -2px; top: -2px;
+  min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box;
+  border-radius: var(--dci-radius) 0 4px 0; text-align: center;
+  font: 700 11px/18px var(--dci-font, system-ui, sans-serif);
+  color: var(--dci-on-selected); background: var(--dci-selected);
+}
+.box.primary .marker { left: -3px; top: -3px; }
 .edge {
   position: fixed; left: 0; top: 0; display: none; width: 10px; height: 10px;
   margin: -5px 0 0 -5px; border-radius: 50%;
@@ -86,6 +97,22 @@ export const OVERLAY_CSS = `
 
 const LABEL_HEIGHT = 18;
 const EDGE_INSET = 8;
+
+/** The box's `.${className}` child showing `text`, created or removed as needed. */
+function child(box: HTMLElement, className: string, text: string | null): HTMLElement | null {
+  let el = box.querySelector<HTMLElement>(`:scope > .${className}`);
+  if (text === null) {
+    el?.remove();
+    return null;
+  }
+  if (!el) {
+    el = document.createElement('span');
+    box.appendChild(el);
+  }
+  el.className = className;
+  el.textContent = text;
+  return el;
+}
 
 /** Name shown in labels: `label ?? type ?? tagName`. */
 export function labelFor(el: Element, source?: string | AnnotationSource): string {
@@ -132,6 +159,7 @@ interface Target {
   el: Element;
   roles: Role[];
   label: string | null;
+  marker: string | null;
 }
 
 /**
@@ -183,13 +211,14 @@ export function createOverlay(host: UiHost, options: OverlayOptions = {}): Overl
     const byEl = new Map<Element, Target>();
     const add = (el: Element, role: Role) => {
       let t = byEl.get(el);
-      if (!t) byEl.set(el, (t = { el, roles: [], label: null }));
+      if (!t) byEl.set(el, (t = { el, roles: [], label: null, marker: null }));
       t.roles.push(role);
     };
     for (const el of preview) add(el, 'preview');
     for (const el of selected) {
       add(el, 'selected');
       if (el === primary) add(el, 'primary');
+      byEl.get(el)!.marker = options.marker?.(el) ?? null;
     }
     for (const el of flashing) add(el, 'flash');
     if (hover) add(hover, 'hover');
@@ -272,15 +301,11 @@ export function createOverlay(host: UiHost, options: OverlayOptions = {}): Overl
       box.style.width = `${right - left}px`;
       box.style.height = `${bottom - top}px`;
       box.style.transform = `translate(${left}px, ${top}px)`;
-      let label = box.firstElementChild as HTMLElement | null;
-      if (t.label) {
-        if (!label) {
-          label = document.createElement('span');
-          box.appendChild(label);
-        }
-        label.className = top < LABEL_HEIGHT ? 'label inside' : 'label';
-        label.textContent = t.label;
-      } else label?.remove();
+      const marker = child(box, 'marker', t.marker);
+      const label = child(box, 'label', t.label);
+      // Near the top of the viewport the tag moves inside, beside the marker.
+      if (label && top < LABEL_HEIGHT)
+        label.className = marker ? 'label inside beside' : 'label inside';
     });
     for (let i = boxes; i < boxPool.length; i++) boxPool[i]!.style.display = 'none';
     for (let i = edges; i < edgePool.length; i++) edgePool[i]!.style.display = 'none';
