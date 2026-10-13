@@ -85,6 +85,9 @@ export interface PlaygroundState {
   setDrawerOpen(open: boolean): void;
   cheatSheetOpen: boolean;
   setCheatSheetOpen(open: boolean): void;
+  /** The hands-on onboarding tour. */
+  tourOpen: boolean;
+  setTourOpen(open: boolean): void;
 }
 
 export const PlaygroundContext = createContext<PlaygroundState>({
@@ -94,6 +97,8 @@ export const PlaygroundContext = createContext<PlaygroundState>({
   setDrawerOpen: () => {},
   cheatSheetOpen: false,
   setCheatSheetOpen: () => {},
+  tourOpen: false,
+  setTourOpen: () => {},
 });
 
 export const usePlayground = () => useContext(PlaygroundContext);

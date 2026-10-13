@@ -1,4 +1,4 @@
-import { CircleHelp, Moon, Search, SlidersHorizontal, Sun } from 'lucide-react';
+import { CircleHelp, GraduationCap, Moon, Search, SlidersHorizontal, Sun } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Badge } from '@/components/ui/badge';
@@ -85,6 +85,15 @@ export function TopBar() {
         >
           <SlidersHorizontal className="size-4" />
           Playground
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Take the tour"
+          title="Take the tour"
+          onClick={() => playground.setTourOpen(true)}
+        >
+          <GraduationCap className="size-4" />
         </Button>
         <Button
           variant="ghost"
