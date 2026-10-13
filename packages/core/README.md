@@ -1,6 +1,6 @@
 # @samirdamle/dci-core
 
-**Point, don't describe.** DCI lets people select parts of your web app with **Alt+Click** (or a
+**Point and select. Don’t describe.** DCI lets people select parts of your web app with **Alt+Click** (or a
 drag, or the keyboard) and ask an AI about exactly those things. Your backend receives structured
 context (ids, types, data, where it sits on the page) instead of a description.
 

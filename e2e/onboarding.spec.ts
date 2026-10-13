@@ -13,7 +13,9 @@ test.describe('onboarding tour', () => {
   }) => {
     await app.open('/sales', { tour: 'on' });
     const tour = page.getByTestId('tour');
-    await expect(tour.getByRole('heading', { name: 'Point, don’t describe' })).toBeVisible();
+    await expect(
+      tour.getByRole('heading', { name: 'Point and select. Don’t describe.' }),
+    ).toBeVisible();
     await expect(tour.getByTestId('tour-intro').getByRole('heading')).toHaveText([
       'What is DCI?',
       'The problem',
