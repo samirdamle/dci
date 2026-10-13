@@ -2,6 +2,7 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ThemeProvider } from '@/lib/theme';
+import { OnboardingTour } from '@/onboarding/onboarding-tour';
 import { CheatSheet } from '@/playground/cheat-sheet';
 import { PlaygroundProvider } from '@/playground/settings';
 import { AppSidebar } from './app/app-sidebar';
@@ -56,6 +57,7 @@ export function App() {
             </SidebarProvider>
           </HashRouter>
           <CheatSheet />
+          <OnboardingTour />
         </TooltipProvider>
       </PlaygroundProvider>
     </ThemeProvider>
