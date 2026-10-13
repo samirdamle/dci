@@ -19,11 +19,31 @@ import { StepProgress } from './step-progress';
 import { useCoarsePointer } from '@/hooks/use-coarse-pointer';
 import { stepPrompt, TOUR_STEPS, type TourKeys } from './steps';
 import { SAMPLE_COUNT, TOUR_CHAT_WIDTH } from './tour-data';
+import { TourIntro } from './tour-intro';
 import { TourPlayground } from './tour-playground';
 import { markTourSeen } from './tour-storage';
 
-/** The open tour. Mounted per opening, so it always starts at step 1. */
-function TourBody({ onFinish, onShowAll }: { onFinish: () => void; onShowAll: () => void }) {
+interface TourActions {
+  onFinish: () => void;
+  onShowAll: () => void;
+}
+
+/** The open tour: the intro, then the steps. Mounted per opening, so it always starts at the intro. */
+function TourFlow(actions: TourActions) {
+  const [started, setStarted] = useState(false);
+  return started ? (
+    <TourBody {...actions} onBackToIntro={() => setStarted(false)} />
+  ) : (
+    <TourIntro onStart={() => setStarted(true)} onSkip={actions.onFinish} />
+  );
+}
+
+/** The hands-on steps, from step 1. */
+function TourBody({
+  onFinish,
+  onShowAll,
+  onBackToIntro,
+}: TourActions & { onBackToIntro: () => void }) {
   const { settings } = usePlayground();
   const [index, setIndex] = useState(0);
   const [done, setDone] = useState<readonly boolean[]>(() => TOUR_STEPS.map(() => false));
@@ -97,11 +117,9 @@ function TourBody({ onFinish, onShowAll }: { onFinish: () => void; onShowAll: ()
           Skip tour
         </Button>
         <div className="flex gap-2">
-          {index > 0 && (
-            <Button variant="outline" onClick={() => setIndex(index - 1)}>
-              Back
-            </Button>
-          )}
+          <Button variant="outline" onClick={index > 0 ? () => setIndex(index - 1) : onBackToIntro}>
+            Back
+          </Button>
           <Button
             variant={stepDone ? 'default' : 'outline'}
             onClick={isLast ? onFinish : () => setIndex(index + 1)}
@@ -115,7 +133,7 @@ function TourBody({ onFinish, onShowAll }: { onFinish: () => void; onShowAll: ()
 }
 
 /**
- * A three-step, hands-on tour of the selection gestures. It is non-modal so
+ * A short intro to DCI, then a three-step, hands-on tour of the selection gestures. It is non-modal so
  * the tour's own chat (outside the dialog, in DCI's shadow root) stays
  * usable; a backdrop keeps the page behind out of reach. Closing it in any
  * way remembers it as seen.
@@ -147,7 +165,7 @@ export function OnboardingTour() {
             e.preventDefault();
         }}
       >
-        <TourBody
+        <TourFlow
           onFinish={close}
           onShowAll={() => {
             close();

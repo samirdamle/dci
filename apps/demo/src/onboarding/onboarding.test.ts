@@ -1,6 +1,19 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { INTRO_SECTIONS } from './intro';
 import { stepPrompt, TOUR_STEPS } from './steps';
 import { markTourSeen, shouldAutoOpenTour } from './tour-storage';
+
+describe('tour intro', () => {
+  it('says what DCI is, the problem, and how DCI fixes it, briefly', () => {
+    expect(INTRO_SECTIONS.map((s) => s.title)).toEqual([
+      'What is DCI?',
+      'The problem',
+      'How DCI fixes it',
+    ]);
+    // About two lines each in the dialog.
+    for (const s of INTRO_SECTIONS) expect(s.body.length).toBeLessThanOrEqual(130);
+  });
+});
 
 describe('tour steps', () => {
   const keys = { mod: 'Alt (⌥)', toggle: 'Shift' };

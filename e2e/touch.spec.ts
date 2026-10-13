@@ -23,6 +23,7 @@ test.describe('touch screens', () => {
     const status = page.getByTestId('tour-status');
     const bar = tour.getByTestId('select-mode-bar');
 
+    await tour.getByRole('button', { name: 'Show me how' }).tap();
     await expect(tour.locator('kbd')).toHaveText(['Select', 'Tap']);
     await bar.getByRole('button', { name: 'Select' }).tap();
     await deals.nth(0).tap();
