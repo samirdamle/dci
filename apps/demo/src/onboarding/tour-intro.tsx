@@ -8,7 +8,7 @@ export function TourIntro({ onStart, onSkip }: { onStart: () => void; onSkip: ()
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Point, don’t describe</DialogTitle>
+        <DialogTitle>Point and select. Don’t describe.</DialogTitle>
         <DialogDescription>DCI in three short ideas.</DialogDescription>
       </DialogHeader>
       <ul className="grid gap-4" data-testid="tour-intro">

@@ -1,6 +1,6 @@
 # DCI: Direct Contextual Intelligence
 
-**Point, don't describe.** DCI lets people select parts of a web app with **Alt+Click** and use
+**Point and select. Don’t describe.** DCI lets people select parts of a web app with **Alt+Click** and use
 exactly those things as context for an AI conversation, instead of describing them in words.
 
 [![CI](https://github.com/samirdamle/dci/actions/workflows/ci.yml/badge.svg)](https://github.com/samirdamle/dci/actions/workflows/ci.yml)
