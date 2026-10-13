@@ -55,6 +55,8 @@ export interface DciEvents {
   message: ChatMessage;
   actionerror: ActionError;
   sessionchange: SessionChange;
+  /** Select mode turned on (`true`) or off (`false`). */
+  selectmodechange: boolean;
 }
 
 export interface DciSelectionApi {
@@ -99,6 +101,12 @@ export interface DciInstance {
   on<K extends keyof DciEvents>(type: K, fn: (event: DciEvents[K]) => void): () => void;
   /** Change options at runtime; only the affected parts are rebuilt. */
   update(patch: DciConfig): void;
+  /**
+   * Turn Select mode on or off: the gestures work without holding the
+   * modifier, and taps add to the selection. The way in on touch screens.
+   */
+  setSelectMode(on: boolean): void;
+  isSelectMode(): boolean;
   /** Detach gestures and the chat UI (the selection and conversation are kept). */
   disable(): void;
   enable(): void;
@@ -162,6 +170,14 @@ export function createDci(input: DciConfig): DciInstance {
   const events = createEmitter<DciEvents>();
   const bus = createEmitter<InteractionEvents>();
   const offHover = bus.on('hover', (e) => events.emit('hover', e));
+  let selectMode = false;
+  function setSelectMode(on: boolean) {
+    if (on === selectMode) return;
+    selectMode = on;
+    events.emit('selectmodechange', on);
+  }
+  // A long press turns it on from inside the gestures.
+  const offSelectMode = bus.on('selectmode', (on) => setSelectMode(on));
   const session = createSession(config.session);
   const offSession = session.onChange((c) => events.emit('sessionchange', c));
   /** Chat subscribers live here, so they survive a controller rebuild. */
@@ -343,6 +359,8 @@ export function createDci(input: DciConfig): DciInstance {
       // The first Esc closes the chat; the next clears the selection.
       onEscape: () => chatUi?.escape() ?? false,
     });
+    // A rebuild keeps Select mode on.
+    if (selectMode) interactions.input.setLocked(true);
     buildChatUi();
   }
 
@@ -484,10 +502,17 @@ export function createDci(input: DciConfig): DciInstance {
     },
     on: (type, fn) => events.on(type, fn),
     update,
+    setSelectMode(on) {
+      if (destroyed || (on && !interactions)) return;
+      if (interactions) interactions.input.setLocked(on);
+      else setSelectMode(on);
+    },
+    isSelectMode: () => selectMode,
     disable() {
       if (!enabled || destroyed) return;
       enabled = false;
       destroyInteractions();
+      setSelectMode(false);
     },
     enable() {
       if (enabled || destroyed) return;
@@ -503,6 +528,7 @@ export function createDci(input: DciConfig): DciInstance {
       cleanups.controller.forEach((off) => off());
       cleanups.selection.forEach((off) => off());
       offHover();
+      offSelectMode();
       offSession();
       bus.clear();
       events.clear();

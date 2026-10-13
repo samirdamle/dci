@@ -23,8 +23,10 @@ export interface Bindings {
   wheelTraverse: boolean;
   /** Mod+Drag window select. */
   windowSelect: boolean;
-  /** Mod+Double-click selects same-type siblings. */
+  /** Mod+Double-click selects same-type siblings (double-tap in Select mode). */
   selectSameType: boolean;
+  /** Long-pressing a node on a touch screen turns Select mode on and selects it. */
+  longPress: boolean;
   keyboard: KeyboardBindings | false;
 }
 
@@ -48,6 +50,7 @@ export const DEFAULT_BINDINGS: Bindings = {
   wheelTraverse: true,
   windowSelect: true,
   selectSameType: true,
+  longPress: true,
   keyboard: DEFAULT_KEYBOARD_BINDINGS,
 };
 

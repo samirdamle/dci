@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { TOUR_STEPS } from './steps';
+import { stepPrompt, TOUR_STEPS } from './steps';
 import { markTourSeen, shouldAutoOpenTour } from './tour-storage';
 
 describe('tour steps', () => {
@@ -11,6 +11,15 @@ describe('tour steps', () => {
       ['Alt (⌥)', 'Shift', 'Click'],
       ['Alt (⌥)', 'Double-click'],
     ]);
+  });
+
+  it('teach the same steps with taps on touch screens', () => {
+    expect(TOUR_STEPS.map((s) => stepPrompt(s, keys, true).gesture)).toEqual([
+      ['Select', 'Tap'],
+      ['Tap another'],
+      ['Double-tap'],
+    ]);
+    expect(stepPrompt(TOUR_STEPS[0]!, keys, false).hint).toBe(TOUR_STEPS[0]!.hint);
   });
 
   it('are done by selection size', () => {

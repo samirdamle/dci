@@ -1,6 +1,7 @@
 import { MousePointerClick, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useCoarsePointer } from '@/hooks/use-coarse-pointer';
 import { keyLabel } from './cheat-sheet-rows';
 import { usePlayground } from './settings-context';
 
@@ -18,6 +19,7 @@ function dismissedBefore(): boolean {
 export function FirstRunHint() {
   const { settings, setCheatSheetOpen, setTourOpen } = usePlayground();
   const [hidden, setHidden] = useState(dismissedBefore);
+  const touch = useCoarsePointer();
   if (hidden) return null;
   const dismiss = () => {
     setHidden(true);
@@ -35,8 +37,18 @@ export function FirstRunHint() {
     >
       <MousePointerClick className="size-4 shrink-0 text-primary" />
       <p className="flex-1">
-        Hold <kbd className="rounded border bg-background px-1">{keyLabel(settings.modifier)}</kbd>{' '}
-        and click any record, tile or chart bar, then ask about it.{' '}
+        {touch ? (
+          <>
+            Tap Select below (or long-press a record), then tap any record, tile or chart bar and
+            ask about it.
+          </>
+        ) : (
+          <>
+            Hold{' '}
+            <kbd className="rounded border bg-background px-1">{keyLabel(settings.modifier)}</kbd>{' '}
+            and click any record, tile or chart bar, then ask about it.
+          </>
+        )}{' '}
         <button type="button" className="text-primary underline" onClick={() => setTourOpen(true)}>
           Take the tour
         </button>

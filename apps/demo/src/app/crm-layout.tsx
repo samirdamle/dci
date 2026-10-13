@@ -1,10 +1,12 @@
 import { DciProvider } from '@samirdamle/dci-react';
 import { useMemo, useRef } from 'react';
 import { Outlet } from 'react-router';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useTheme } from '@/lib/theme-context';
 import { CustomChat } from '@/playground/custom-chat';
 import { FirstRunHint } from '@/playground/first-run-hint';
 import { PlaygroundDrawer } from '@/playground/playground-drawer';
+import { SelectModeBar } from '@/playground/select-mode-bar';
 import { settingsToConfig, usePlayground } from '@/playground/settings-context';
 import { CrmClientActions } from './client-actions';
 import { DCI_CONFIG } from './dci-config';
@@ -17,11 +19,18 @@ import { DCI_CONFIG } from './dci-config';
 export function CrmLayout() {
   const main = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
-  const { settings } = usePlayground();
+  const { settings, tourOpen } = usePlayground();
+  // On a phone the chat covers the page: it opens from the Select bar's Ask instead.
+  const narrow = useIsMobile();
   const config = useMemo(() => {
     const live = settingsToConfig(settings);
-    return { ...DCI_CONFIG, ...live, theme, chat: { ...DCI_CONFIG.chat, ...live.chat } };
-  }, [theme, settings]);
+    const chat = {
+      ...DCI_CONFIG.chat,
+      ...live.chat,
+      ...(narrow ? { autoOpen: false as const } : {}),
+    };
+    return { ...DCI_CONFIG, ...live, theme, chat };
+  }, [theme, settings, narrow]);
   return (
     <DciProvider config={config} root={main}>
       <CrmClientActions />
@@ -30,6 +39,7 @@ export function CrmLayout() {
         <Outlet />
       </div>
       {settings.chatUi === 'custom' && <CustomChat />}
+      {!tourOpen && <SelectModeBar floating />}
       <PlaygroundDrawer />
     </DciProvider>
   );

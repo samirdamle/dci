@@ -55,6 +55,14 @@ declare function useChat(): UseChatResult;
  * The latest `handler` is always called, so it can close over fresh props.
  */
 declare function useDciAction(name: string, handler: ActionHandler): void;
+interface UseSelectModeResult {
+    /** Whether Select mode is on (taps select, no modifier needed). */
+    on: boolean;
+    setOn(on: boolean): void;
+    toggle(): void;
+}
+/** Select mode, the touch-screen way into the gestures. Off until the provider mounts. */
+declare function useSelectMode(): UseSelectModeResult;
 
 interface DciChatProps {
     /** Render your own chat from the live chat state and actions. */
@@ -85,4 +93,4 @@ declare const dci: (value: DciAttrValue) => {
     "data-dci": string;
 };
 
-export { DciChat, type DciChatProps, DciProvider, type DciProviderProps, IDLE_CHAT_STATE, type SelectionSnapshot, type UseChatResult, type UseSelectionResult, VERSION, dci, useChat, useDci, useDciAction, useSelection };
+export { DciChat, type DciChatProps, DciProvider, type DciProviderProps, IDLE_CHAT_STATE, type SelectionSnapshot, type UseChatResult, type UseSelectModeResult, type UseSelectionResult, VERSION, dci, useChat, useDci, useDciAction, useSelectMode, useSelection };

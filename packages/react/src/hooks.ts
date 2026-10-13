@@ -142,3 +142,32 @@ export function useDciAction(name: string, handler: ActionHandler): void {
     return dci.onAction(name, (args, ctx) => latest.current(args, ctx));
   }, [dci, name]);
 }
+
+export interface UseSelectModeResult {
+  /** Whether Select mode is on (taps select, no modifier needed). */
+  on: boolean;
+  setOn(on: boolean): void;
+  toggle(): void;
+}
+
+/** Select mode, the touch-screen way into the gestures. Off until the provider mounts. */
+export function useSelectMode(): UseSelectModeResult {
+  const dci = useDci();
+  const subscribe = useCallback(
+    (fn: () => void) => (dci ? dci.on('selectmodechange', fn) : noop),
+    [dci],
+  );
+  const on = useSyncExternalStore(
+    subscribe,
+    () => dci?.isSelectMode() ?? false,
+    () => false,
+  );
+  return useMemo(
+    () => ({
+      on,
+      setOn: (next: boolean) => dci?.setSelectMode(next),
+      toggle: () => dci?.setSelectMode(!on),
+    }),
+    [dci, on],
+  );
+}

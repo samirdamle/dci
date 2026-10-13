@@ -16,9 +16,11 @@ export {
   useChat,
   useDciAction,
   useSelection,
+  useSelectMode,
   type SelectionSnapshot,
   type UseChatResult,
   type UseSelectionResult,
+  type UseSelectModeResult,
 } from './hooks';
 export { DciChat, type DciChatProps } from './dci-chat';
 

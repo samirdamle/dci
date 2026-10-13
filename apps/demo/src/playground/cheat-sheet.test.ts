@@ -1,6 +1,6 @@
 import { resolveBindings } from '@samirdamle/dci-core';
 import { describe, expect, it } from 'vitest';
-import { cheatSheetRows } from './cheat-sheet-rows';
+import { cheatSheetRows, touchCheatSheetRows } from './cheat-sheet-rows';
 
 describe('cheatSheetRows', () => {
   it('follows the modifier and the default bindings', () => {
@@ -21,5 +21,14 @@ describe('cheatSheetRows', () => {
     expect(keys).toContain('k / j');
     expect(keys.some((k) => k.includes('Wheel'))).toBe(false);
     expect(keys.some((k) => k.includes('Alt (⌥)+Click'))).toBe(false);
+  });
+});
+
+describe('touchCheatSheetRows', () => {
+  it('lists the Select mode gestures and leaves disabled ones out', () => {
+    const all = touchCheatSheetRows(resolveBindings()).map(([k]) => k);
+    expect(all).toEqual(['Select', 'Long-press', 'Tap', 'Drag', 'Double-tap']);
+    const some = touchCheatSheetRows(resolveBindings({ longPress: false, windowSelect: false }));
+    expect(some.map(([k]) => k)).toEqual(['Select', 'Tap', 'Double-tap']);
   });
 });

@@ -10,6 +10,7 @@ import { keyboardGesture } from './keyboard';
 import { marqueeGesture } from './marquee';
 import type { LabelMode, OverlayMode } from './overlay';
 import { overlayGesture } from './overlay-gesture';
+import { longPressGesture, selectModeGesture } from './touch';
 import { sameTypeGesture, selectSameType, type SelectSameTypeOptions } from './same-type';
 import { wheelGesture } from './wheel';
 import { createSelectionStore, type SelectionOptions, type SelectionStore } from './selection';
@@ -27,6 +28,8 @@ export interface Rect {
 export interface InteractionEvents {
   /** Modifier pressed (`true`) or released (`false`). */
   arm: boolean;
+  /** Select mode turned on (`true`) or off (`false`). */
+  selectmode: boolean;
   /** Hover preview target; `depth` is how many levels Mod+Wheel moved above the leaf. */
   hover: { node: Element | null; depth: number };
   /** Window-select rectangle in viewport coordinates, or `null` when the drag ends. */
@@ -102,10 +105,13 @@ export interface Interactions extends GestureContext {
 /** Built-in gestures and the overlay that draws their state. */
 export const DEFAULT_GESTURES: Gesture[] = [
   hoverGesture,
+  // Before the click gesture, so a double tap's second tap isn't a toggle.
+  selectModeGesture,
   clickGesture,
   wheelGesture,
   marqueeGesture,
   sameTypeGesture,
+  longPressGesture,
   keyboardGesture,
   announceGesture,
   overlayGesture,

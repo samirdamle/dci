@@ -241,8 +241,10 @@ interface Bindings {
     wheelTraverse: boolean;
     /** Mod+Drag window select. */
     windowSelect: boolean;
-    /** Mod+Double-click selects same-type siblings. */
+    /** Mod+Double-click selects same-type siblings (double-tap in Select mode). */
     selectSameType: boolean;
+    /** Long-pressing a node on a touch screen turns Select mode on and selects it. */
+    longPress: boolean;
     keyboard: KeyboardBindings | false;
 }
 type BindingsConfig = Partial<Omit<Bindings, 'keyboard'>> & {
@@ -276,8 +278,17 @@ interface InputOptions {
 }
 interface InputManager {
     readonly modifier: ModifierKey;
-    /** Whether the modifier is currently held. */
+    /** Whether the modifier is currently held (or Select mode is on). */
     isArmed(): boolean;
+    /**
+     * Select mode: stay armed without the modifier, until turned off. This is
+     * how touch screens (no keyboard) reach the gestures.
+     */
+    setLocked(locked: boolean): void;
+    /** Whether Select mode is on. */
+    isLocked(): boolean;
+    /** Called with `true` when Select mode turns on and `false` when it turns off. */
+    onLockChange(fn: (locked: boolean) => void): () => void;
     /** Handle an event type that is only listened to while armed. */
     on<K extends ArmedEventType>(type: K, fn: (e: ArmedEventMap[K]) => GestureResult): () => void;
     /**
@@ -287,8 +298,11 @@ interface InputManager {
     onKeyDown(fn: (e: KeyboardEvent) => GestureResult): () => void;
     /** Called with `true` on arm and `false` on disarm. */
     onArmChange(fn: (armed: boolean) => void): () => void;
-    /** Swallow the click a browser fires right after a drag gesture. */
-    suppressNextClick(): void;
+    /**
+     * Swallow the click a browser fires right after a drag gesture. `within`
+     * (ms) waits longer for it: touch browsers send it a task or two later.
+     */
+    suppressNextClick(within?: number): void;
     /** Detach every listener. */
     destroy(): void;
 }
@@ -299,7 +313,8 @@ interface InputManager {
  * modifier arms DCI, which attaches the pointer, click and wheel listeners
  * (capture phase) until the modifier is released, the window blurs, or the
  * page is hidden. Events from DCI's own UI are ignored, and events are only
- * swallowed when a handler reports a DCI gesture.
+ * swallowed when a handler reports a DCI gesture. While locked (Select mode)
+ * it stays armed with no modifier held.
  */
 declare function createInputManager(options?: InputOptions): InputManager;
 
@@ -435,6 +450,8 @@ interface Rect {
 interface InteractionEvents {
     /** Modifier pressed (`true`) or released (`false`). */
     arm: boolean;
+    /** Select mode turned on (`true`) or off (`false`). */
+    selectmode: boolean;
     /** Hover preview target; `depth` is how many levels Mod+Wheel moved above the leaf. */
     hover: {
         node: Element | null;
@@ -519,6 +536,8 @@ declare function createInteractions(options?: InteractionOptions): Interactions;
 
 /** The element an event really hit, looking through open shadow roots. */
 declare function eventTarget(e: Event): Element | null;
+/** Whether `el` sits inside the instance's root (through shadow roots). */
+declare const inRoot: (ctx: Pick<GestureContext, "options">, el: Element | null) => boolean;
 /**
  * The DCI node for a pointer target: the nearest annotated node, or with
  * `fallback` on, the raw element itself (when inside the root).
@@ -528,6 +547,7 @@ declare function resolveTarget(ctx: GestureContext, target: Element | null): Ele
 declare const hoverGesture: Gesture;
 /**
  * Mod+Click selects (replacing the selection); Mod+<toggle>+Click toggles.
+ * In Select mode every click (tap) toggles, so taps build up a selection.
  * When Mod+Wheel moved the hover target up, the click uses that target.
  */
 declare const clickGesture: Gesture;
@@ -576,11 +596,33 @@ declare const AUTOSCROLL_SPEED = 20;
 declare function collectCandidates(tree: DciTree, root: Element): Candidate[];
 /**
  * Mod+Drag window select. Left→right selects nodes fully inside the box;
- * right→left selects nodes it touches. Shift adds, Ctrl/Cmd subtracts
- * (whichever isn't the DCI modifier), Esc cancels. Rects are measured once at
+ * right→left selects nodes it touches. Shift (or Select mode) adds, Ctrl/Cmd
+ * subtracts (whichever isn't the DCI modifier), Esc cancels. Rects are measured once at
  * drag start (and after scrolling), so each frame is a plain rectangle test.
  */
 declare const marqueeGesture: Gesture;
+
+/** How long (ms) a touch must rest on a node to become a long press. */
+declare const LONG_PRESS_MS = 500;
+/** Finger travel (px) that turns a press into a scroll instead of a long press. */
+declare const LONG_PRESS_SLOP = 10;
+/** Two taps within this time (ms) and distance (px) are a double tap. */
+declare const DOUBLE_TAP_MS = 350;
+declare const DOUBLE_TAP_SLOP = 30;
+/** Class on the root while Select mode is on. */
+declare const SELECT_MODE_CLASS = "dci-select-mode";
+/**
+ * Select mode: while `input.setLocked(true)` holds DCI armed, the root gets
+ * touch-friendly CSS (drag selects instead of scrolling), the change is
+ * announced, and a double tap selects every node of the same type.
+ */
+declare const selectModeGesture: Gesture;
+/**
+ * Long-pressing an annotated node on a touch screen turns Select mode on and
+ * selects that node. Only annotated nodes take part, so the host app keeps
+ * its own long press (text selection, context menu) everywhere else.
+ */
+declare const longPressGesture: Gesture;
 
 /** Human-readable name: label, then id, then tag name. */
 declare function nodeName(el: Element, source?: string | AnnotationSource): string;
@@ -1233,6 +1275,8 @@ interface DciEvents {
     message: ChatMessage;
     actionerror: ActionError;
     sessionchange: SessionChange;
+    /** Select mode turned on (`true`) or off (`false`). */
+    selectmodechange: boolean;
 }
 interface DciSelectionApi {
     /** The selection as payloads, in selection order. */
@@ -1274,6 +1318,12 @@ interface DciInstance {
     on<K extends keyof DciEvents>(type: K, fn: (event: DciEvents[K]) => void): () => void;
     /** Change options at runtime; only the affected parts are rebuilt. */
     update(patch: DciConfig): void;
+    /**
+     * Turn Select mode on or off: the gestures work without holding the
+     * modifier, and taps add to the selection. The way in on touch screens.
+     */
+    setSelectMode(on: boolean): void;
+    isSelectMode(): boolean;
     /** Detach gestures and the chat UI (the selection and conversation are kept). */
     disable(): void;
     enable(): void;
@@ -1299,4 +1349,4 @@ declare function createDci(input: DciConfig): DciInstance;
 /** Package version. */
 declare const VERSION: string;
 
-export { AUTOSCROLL_EDGE, AUTOSCROLL_SPEED, type ActionContext, type ActionError, type ActionHandler, type ActionRegistry, type ActionRegistryOptions, type ActionsConfig, type AnchorTo, type Anchoring, type AnnotationSource, type ArmedEventMap, type ArmedEventType, BASE_CSS, BUILTIN_ACTIONS, type Bindings, type BindingsConfig, type BuiltinAction, CHAT_CSS, type Candidate, type ChatController, type ChatControllerOptions, type ChatMessage, type ChatMode, type ChatRenderers, type ChatState, type ChatStatus, type ChatStrings, type ChatUi, type ChatUiApi, type ChatUiOptions, type ConfigProblems, type ContextOptions, DCI_UI_ATTRIBUTE, DEFAULTS, DEFAULT_ATTRIBUTE, DEFAULT_BINDINGS, DEFAULT_GESTURES, DEFAULT_KEYBOARD_BINDINGS, DEFAULT_STRINGS, DRAG_THRESHOLD, type DciAttrValue, type DciChatApi, type DciChatConfig, type DciConfig, type DciEvents, type DciInstance, type DciOverlayConfig, type DciSelectionApi, type DciSelectionChange, type DciTarget, type DciTree, type Emitter, type Gesture, type GestureContext, type GestureResult, HOST_TAG, type HoverState, type InferAnnotation, type InputManager, type InputOptions, type InteractionEvents, type InteractionOptions, type Interactions, type KeyboardBindings, type LabelMode, type LayerName, type MarkdownOptions, type MarkerSeries, type MarqueeMode, type ModifierKey, OVERLAY_CSS, type Overlay, type OverlayConfig, type OverlayMode, type OverlayOptions, type ParseOptions, type ParsedDci, type Rect, type RenderMarkdown, type SSETransportOptions, type SelectSameTypeOptions, type SelectionChange, type SelectionEvents, type SelectionLimit, type SelectionOptions, type SelectionStore, type SendOptions, type Session, type SessionChange, type SessionOptions, type SuggestedAction, type Theme, type ToolStatus, type Transport, type TreeOptions, type UiHost, type UiHostOptions, VERSION, WHEEL_STEP, type Warn, acquireUiHost, anchorFloating, announceGesture, clickGesture, collectCandidates, contains, createActionRegistry, createAnnouncer, createChatController, createChatUi, createDci, createDciTree, createEmitter, createHoverState, createInputManager, createInteractions, createOutlineOverlay, createOverlay, createSSETransport, createSelectionStore, createSession, cssPath, dciAttr, describeNode, eventTarget, formatMarker, hasModifier, hitTest, hoverGesture, intersects, isDciElement, isEditable, isFromDciUi, keyboardGesture, labelFor, letterMarker, marqueeGesture, marqueeMode, matchesCombo, mergeConfig, nodeName, offsetRect, overlayGesture, parseDciAttribute, randomId, readDci, rectFromPoints, refreshInferred, renderInline, renderMarkdown, resolveActions, resolveBindings, resolveStrings, resolveTarget, safeUrl, sameTypeGesture, sameTypeNodes, selectSameType, stableStringify, toContextNode, truncateText, unionRect, validateConfig, wheelGesture, wheelPixels };
+export { AUTOSCROLL_EDGE, AUTOSCROLL_SPEED, type ActionContext, type ActionError, type ActionHandler, type ActionRegistry, type ActionRegistryOptions, type ActionsConfig, type AnchorTo, type Anchoring, type AnnotationSource, type ArmedEventMap, type ArmedEventType, BASE_CSS, BUILTIN_ACTIONS, type Bindings, type BindingsConfig, type BuiltinAction, CHAT_CSS, type Candidate, type ChatController, type ChatControllerOptions, type ChatMessage, type ChatMode, type ChatRenderers, type ChatState, type ChatStatus, type ChatStrings, type ChatUi, type ChatUiApi, type ChatUiOptions, type ConfigProblems, type ContextOptions, DCI_UI_ATTRIBUTE, DEFAULTS, DEFAULT_ATTRIBUTE, DEFAULT_BINDINGS, DEFAULT_GESTURES, DEFAULT_KEYBOARD_BINDINGS, DEFAULT_STRINGS, DOUBLE_TAP_MS, DOUBLE_TAP_SLOP, DRAG_THRESHOLD, type DciAttrValue, type DciChatApi, type DciChatConfig, type DciConfig, type DciEvents, type DciInstance, type DciOverlayConfig, type DciSelectionApi, type DciSelectionChange, type DciTarget, type DciTree, type Emitter, type Gesture, type GestureContext, type GestureResult, HOST_TAG, type HoverState, type InferAnnotation, type InputManager, type InputOptions, type InteractionEvents, type InteractionOptions, type Interactions, type KeyboardBindings, LONG_PRESS_MS, LONG_PRESS_SLOP, type LabelMode, type LayerName, type MarkdownOptions, type MarkerSeries, type MarqueeMode, type ModifierKey, OVERLAY_CSS, type Overlay, type OverlayConfig, type OverlayMode, type OverlayOptions, type ParseOptions, type ParsedDci, type Rect, type RenderMarkdown, SELECT_MODE_CLASS, type SSETransportOptions, type SelectSameTypeOptions, type SelectionChange, type SelectionEvents, type SelectionLimit, type SelectionOptions, type SelectionStore, type SendOptions, type Session, type SessionChange, type SessionOptions, type SuggestedAction, type Theme, type ToolStatus, type Transport, type TreeOptions, type UiHost, type UiHostOptions, VERSION, WHEEL_STEP, type Warn, acquireUiHost, anchorFloating, announceGesture, clickGesture, collectCandidates, contains, createActionRegistry, createAnnouncer, createChatController, createChatUi, createDci, createDciTree, createEmitter, createHoverState, createInputManager, createInteractions, createOutlineOverlay, createOverlay, createSSETransport, createSelectionStore, createSession, cssPath, dciAttr, describeNode, eventTarget, formatMarker, hasModifier, hitTest, hoverGesture, inRoot, intersects, isDciElement, isEditable, isFromDciUi, keyboardGesture, labelFor, letterMarker, longPressGesture, marqueeGesture, marqueeMode, matchesCombo, mergeConfig, nodeName, offsetRect, overlayGesture, parseDciAttribute, randomId, readDci, rectFromPoints, refreshInferred, renderInline, renderMarkdown, resolveActions, resolveBindings, resolveStrings, resolveTarget, safeUrl, sameTypeGesture, sameTypeNodes, selectModeGesture, selectSameType, stableStringify, toContextNode, truncateText, unionRect, validateConfig, wheelGesture, wheelPixels };

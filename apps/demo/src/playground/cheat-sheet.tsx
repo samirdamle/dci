@@ -7,13 +7,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { DCI_CONFIG } from '@/app/dci-config';
-import { cheatSheetRows } from './cheat-sheet-rows';
+import { useCoarsePointer } from '@/hooks/use-coarse-pointer';
+import { cheatSheetRows, touchCheatSheetRows } from './cheat-sheet-rows';
 import { usePlayground } from './settings-context';
 
 /** `?` in the top bar: every gesture and key, as currently configured. */
 export function CheatSheet() {
   const { settings, cheatSheetOpen, setCheatSheetOpen, setTourOpen } = usePlayground();
-  const rows = cheatSheetRows(resolveBindings(DCI_CONFIG.bindings), settings.modifier);
+  const bindings = resolveBindings(DCI_CONFIG.bindings);
+  const touch = useCoarsePointer();
+  const rows = touch ? touchCheatSheetRows(bindings) : cheatSheetRows(bindings, settings.modifier);
   return (
     <Dialog open={cheatSheetOpen} onOpenChange={setCheatSheetOpen}>
       <DialogContent className="max-w-lg">
