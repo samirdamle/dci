@@ -7,6 +7,7 @@ import {
   type MarqueeMode,
 } from './geometry';
 import type { Gesture } from './interactions';
+import { inRoot } from './pointer';
 import type { DciTree } from './tree';
 
 /** Pointer travel (px) before a press becomes a drag instead of a click. */
@@ -63,15 +64,16 @@ interface Drag {
 
 /**
  * Mod+Drag window select. Left→right selects nodes fully inside the box;
- * right→left selects nodes it touches. Shift adds, Ctrl/Cmd subtracts
- * (whichever isn't the DCI modifier), Esc cancels. Rects are measured once at
+ * right→left selects nodes it touches. Shift (or Select mode) adds, Ctrl/Cmd
+ * subtracts (whichever isn't the DCI modifier), Esc cancels. Rects are measured once at
  * drag start (and after scrolling), so each frame is a plain rectangle test.
  */
 export const marqueeGesture: Gesture = (ctx) => {
   let drag: Drag | null = null;
   // The DCI modifier itself is held throughout, so it can't also mean add or subtract.
   const mod = ctx.input.modifier;
-  const adds = (e: PointerEvent) => e.shiftKey && mod !== 'Shift';
+  // In Select mode taps add, so a drag adds too.
+  const adds = (e: PointerEvent) => ctx.input.isLocked() || (e.shiftKey && mod !== 'Shift');
   const subtracts = (e: PointerEvent) =>
     (e.ctrlKey && mod !== 'Control') || (e.metaKey && mod !== 'Meta');
 
@@ -211,6 +213,9 @@ export const marqueeGesture: Gesture = (ctx) => {
     if (!ctx.bindings.windowSelect || e.button !== 0 || drag) return;
     const target = e.target instanceof Element ? e.target : null;
     if (!target) return;
+    // Select mode stays on while people use the rest of the page: only
+    // drags that start inside the root are ours.
+    if (ctx.input.isLocked() && !inRoot(ctx, target)) return;
     drag = {
       pointerId: e.pointerId,
       target,

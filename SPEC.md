@@ -68,6 +68,8 @@ Alt+Click selects the **nearest ancestor-or-self carrying `data-dci`**. The DCI 
 
 **Implementation:** window select picks the innermost matches by default, or the outermost with `windowSelectLevel: 'top'` (whole rows rather than their cells). In touch mode, a node that encloses the whole box counts only when nothing inside it is hit, so dragging inside a table selects rows, not the table. Mod+Click on empty space inside the root clears the selection (`clearOnEmptyClick`).
 
+**Touch (Select mode):** with no modifier key, `setSelectMode(true)` (or a long press on an annotated node) keeps DCI armed until it is turned off. In Select mode a tap toggles a node, a drag window-selects and adds, and a double tap selects all siblings of the same `type`.
+
 ### 4.3 Keyboard (while a selection is active)
 
 | Key | Action |

@@ -7,12 +7,35 @@ test.describe('onboarding tour', () => {
     await page.setViewportSize({ width: 1400, height: 1000 });
   });
 
+  test('opens on a short intro to DCI, and Back from step 1 returns to it', async ({
+    app,
+    page,
+  }) => {
+    await app.open('/sales', { tour: 'on' });
+    const tour = page.getByTestId('tour');
+    await expect(tour.getByRole('heading', { name: 'Point, don’t describe' })).toBeVisible();
+    await expect(tour.getByTestId('tour-intro').getByRole('heading')).toHaveText([
+      'What is DCI?',
+      'The problem',
+      'How DCI fixes it',
+    ]);
+    expect(await new AxeBuilder({ page }).include('[role=dialog]').analyze()).toHaveProperty(
+      'violations',
+      [],
+    );
+    await tour.getByRole('button', { name: 'Show me how' }).click();
+    await expect(tour.getByText('Step 1 of 3')).toBeVisible();
+    await tour.getByRole('button', { name: 'Back' }).click();
+    await expect(tour.getByTestId('tour-intro')).toBeVisible();
+  });
+
   test('walks through select, add and select same type, then stays closed', async ({
     app,
     page,
   }) => {
     await app.open('/sales', { tour: 'on' });
     const tour = page.getByTestId('tour');
+    await tour.getByRole('button', { name: 'Show me how' }).click();
     const deals = page.getByTestId('tour-deals').locator('[data-dci]');
     const status = page.getByTestId('tour-status');
     const chat = page.locator('dci-root .chat').filter({ visible: true });
@@ -51,7 +74,7 @@ test.describe('onboarding tour', () => {
     await page.getByRole('button', { name: 'Skip tour' }).click();
     await expect(page.getByTestId('tour')).toHaveCount(0);
     await page.getByLabel('Take the tour').click();
-    await expect(page.getByTestId('tour').getByText('Step 1 of 3')).toBeVisible();
+    await expect(page.getByTestId('tour-intro')).toBeVisible();
   });
 
   test('does not open by itself for automated browsers', async ({ app, page }) => {
