@@ -261,6 +261,38 @@ describe('update', () => {
   });
 });
 
+describe('select mode', () => {
+  it('lets plain clicks build a selection and reports changes', () => {
+    const { f, dci } = setup();
+    const changes: boolean[] = [];
+    dci.on('selectmodechange', (on) => changes.push(on));
+    dci.setSelectMode(true);
+    expect(dci.isSelectMode()).toBe(true);
+    fakePointer(f.get('#a'));
+    fakePointer(f.get('#b'));
+    expect(dci.selection.get().map((n) => n.id)).toEqual(['inv_1', 'inv_2']);
+    dci.setSelectMode(false);
+    fakePointer(f.get('#a'));
+    expect(dci.selection.get().map((n) => n.id)).toEqual(['inv_1', 'inv_2']);
+    expect(changes).toEqual([true, false]);
+  });
+
+  it('survives a rebuild and ends on disable', () => {
+    const { f, dci } = setup();
+    const changes: boolean[] = [];
+    dci.on('selectmodechange', (on) => changes.push(on));
+    dci.setSelectMode(true);
+    dci.update({ modifier: 'Control' });
+    fakePointer(f.get('#a'));
+    expect(dci.selection.get().map((n) => n.id)).toEqual(['inv_1']);
+    dci.disable();
+    expect(dci.isSelectMode()).toBe(false);
+    dci.setSelectMode(true);
+    expect(dci.isSelectMode()).toBe(false);
+    expect(changes).toEqual([true, false]);
+  });
+});
+
 describe('lifecycle', () => {
   it('disable detaches gestures and the chat; enable restores them', () => {
     const { f, dci } = setup();

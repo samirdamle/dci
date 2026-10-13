@@ -16,7 +16,8 @@ function withinRoot(el: Element, root: Element): boolean {
   return false;
 }
 
-const inRoot = (ctx: GestureContext, el: Element | null) =>
+/** Whether `el` sits inside the instance's root (through shadow roots). */
+export const inRoot = (ctx: Pick<GestureContext, 'options'>, el: Element | null): boolean =>
   !!el && withinRoot(el, ctx.options.root ?? document.body);
 
 /**
@@ -64,6 +65,7 @@ export const hoverGesture: Gesture = (ctx) => {
 
 /**
  * Mod+Click selects (replacing the selection); Mod+<toggle>+Click toggles.
+ * In Select mode every click (tap) toggles, so taps build up a selection.
  * When Mod+Wheel moved the hover target up, the click uses that target.
  */
 export const clickGesture: Gesture = (ctx) =>
@@ -72,15 +74,16 @@ export const clickGesture: Gesture = (ctx) =>
     const { bindings, selection, hover, options } = ctx;
     const leaf = resolveTarget(ctx, eventTarget(e));
     const node = leaf && leaf === hover.leaf() ? hover.node() : leaf;
-    const toggle = bindings.toggle !== false && hasModifier(e, bindings.toggle);
+    const selectMode = ctx.input.isLocked();
+    const toggle = selectMode || (bindings.toggle !== false && hasModifier(e, bindings.toggle));
     const result = options.passthroughClicks ? 'handled' : 'consume';
 
-    if (toggle) {
-      if (!node) return;
+    if (toggle && node) {
       selection.toggle(node);
       return result;
     }
-    if (!bindings.select) return;
+    if (toggle && !selectMode) return;
+    if (!bindings.select && !selectMode) return;
     if (node) selection.set([node]);
     // Only empty space inside our root clears: outside it belongs to the page
     // (or to another DCI instance with its own root).

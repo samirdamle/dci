@@ -28,8 +28,17 @@ export interface InputOptions {
 
 export interface InputManager {
   readonly modifier: ModifierKey;
-  /** Whether the modifier is currently held. */
+  /** Whether the modifier is currently held (or Select mode is on). */
   isArmed(): boolean;
+  /**
+   * Select mode: stay armed without the modifier, until turned off. This is
+   * how touch screens (no keyboard) reach the gestures.
+   */
+  setLocked(locked: boolean): void;
+  /** Whether Select mode is on. */
+  isLocked(): boolean;
+  /** Called with `true` when Select mode turns on and `false` when it turns off. */
+  onLockChange(fn: (locked: boolean) => void): () => void;
   /** Handle an event type that is only listened to while armed. */
   on<K extends ArmedEventType>(type: K, fn: (e: ArmedEventMap[K]) => GestureResult): () => void;
   /**
@@ -39,8 +48,11 @@ export interface InputManager {
   onKeyDown(fn: (e: KeyboardEvent) => GestureResult): () => void;
   /** Called with `true` on arm and `false` on disarm. */
   onArmChange(fn: (armed: boolean) => void): () => void;
-  /** Swallow the click a browser fires right after a drag gesture. */
-  suppressNextClick(): void;
+  /**
+   * Swallow the click a browser fires right after a drag gesture. `within`
+   * (ms) waits longer for it: touch browsers send it a task or two later.
+   */
+  suppressNextClick(within?: number): void;
   /** Detach every listener. */
   destroy(): void;
 }
@@ -52,7 +64,8 @@ export interface InputManager {
  * modifier arms DCI, which attaches the pointer, click and wheel listeners
  * (capture phase) until the modifier is released, the window blurs, or the
  * page is hidden. Events from DCI's own UI are ignored, and events are only
- * swallowed when a handler reports a DCI gesture.
+ * swallowed when a handler reports a DCI gesture. While locked (Select mode)
+ * it stays armed with no modifier held.
  */
 export function createInputManager(options: InputOptions = {}): InputManager {
   const modifier = options.modifier ?? 'Alt';
@@ -62,7 +75,9 @@ export function createInputManager(options: InputOptions = {}): InputManager {
   const handlers = new Map<ArmedEventType, Set<(e: Event) => GestureResult>>();
   const keyHandlers = new Set<(e: KeyboardEvent) => GestureResult>();
   const armListeners = new Set<(armed: boolean) => void>();
+  const lockListeners = new Set<(locked: boolean) => void>();
   let armed = false;
+  let locked = false;
   /** A DCI gesture happened during the current press of the modifier. */
   let gestured = false;
 
@@ -102,7 +117,7 @@ export function createInputManager(options: InputOptions = {}): InputManager {
     }
     if (isFromDciUi(e)) return;
     // The modifier was released without a keyup reaching us (e.g. focus moved).
-    if (!hasModifier(e as MouseEvent, modifier)) return disarm();
+    if (!locked && !hasModifier(e as MouseEvent, modifier)) return disarm();
     run(handlers.get(e.type as ArmedEventType) ?? [], e);
   };
 
@@ -118,7 +133,7 @@ export function createInputManager(options: InputOptions = {}): InputManager {
   }
 
   function disarm() {
-    setArmed(false);
+    if (!locked) setArmed(false);
   }
 
   const onKeyDown = (e: KeyboardEvent) => {
@@ -150,6 +165,17 @@ export function createInputManager(options: InputOptions = {}): InputManager {
   return {
     modifier,
     isArmed: () => armed,
+    setLocked(next) {
+      if (locked === next) return;
+      locked = next;
+      setArmed(next);
+      for (const fn of [...lockListeners]) fn(next);
+    },
+    isLocked: () => locked,
+    onLockChange(fn) {
+      lockListeners.add(fn);
+      return () => lockListeners.delete(fn);
+    },
     on(type, fn) {
       let set = handlers.get(type);
       if (!set) handlers.set(type, (set = new Set()));
@@ -165,21 +191,28 @@ export function createInputManager(options: InputOptions = {}): InputManager {
       armListeners.add(fn);
       return () => armListeners.delete(fn);
     },
-    suppressNextClick() {
+    suppressNextClick(within = 0) {
       clickSuppressed = true;
+      const stop = () => {
+        clickSuppressed = false;
+        clearTimeout(timer);
+        win.removeEventListener('click', swallow, true);
+        win.removeEventListener('pointerdown', stop, true);
+      };
       // Also covers a click that arrives after the modifier was released.
       win.addEventListener('click', swallow, { capture: true, once: true });
-      setTimeout(() => {
-        clickSuppressed = false;
-        win.removeEventListener('click', swallow, true);
-      }, 0);
+      // A new press starts a new gesture: its click is a real one.
+      win.addEventListener('pointerdown', stop, { capture: true, once: true });
+      const timer = setTimeout(stop, within);
     },
     destroy() {
+      locked = false;
       disarm();
       for (const [type, fn] of idle) win.removeEventListener(type, fn as EventListener, true);
       handlers.clear();
       keyHandlers.clear();
       armListeners.clear();
+      lockListeners.clear();
     },
   };
 }

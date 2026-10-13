@@ -31,6 +31,36 @@ Notes:
 - DCI only swallows an event when a gesture actually used it. Set `passthroughClicks: true` if your
   app's own click handlers should run for DCI clicks too.
 
+## Touch screens
+
+Touch screens have no modifier key, so DCI has a **Select mode** instead: while it's on, the
+gestures work without holding anything. Turn it on from your own button with
+`dci.setSelectMode(true)` (or `useSelectMode()` in React), or with a long press on a node.
+
+| Gesture                         | What it does                                                         |
+| ------------------------------- | -------------------------------------------------------------------- |
+| **Long-press** a node           | Turn Select mode on and select that node                             |
+| **Tap** (in Select mode)        | Toggle that node in or out, so taps build up a selection             |
+| **Tap** on empty space          | Clear the selection (inside DCI's `root` only)                       |
+| **Drag** (in Select mode)       | Window select, adding to the selection (left → right / right → left) |
+| **Double-tap** (in Select mode) | Select every sibling with the same `type`                            |
+
+```ts
+const dci = createDci({ endpoint: '/api/dci' });
+selectButton.onclick = () => dci.setSelectMode(!dci.isSelectMode());
+dci.on('selectmodechange', (on) => selectButton.classList.toggle('active', on));
+```
+
+- **Long press** only applies to annotated nodes (never text fields), so the page keeps its own
+  long press (text selection, the context menu) everywhere else. Turn it off with
+  `bindings: { longPress: false }`.
+- While Select mode is on, the root gets the `dci-select-mode` class: a drag draws the selection
+  box instead of scrolling (it auto-scrolls at the screen edge), text can't be selected, and pinch
+  zoom still works. Taps and drags outside the root are left alone.
+- Select mode works with a mouse too: plain clicks then add to the selection, no keys needed.
+- Mod+Wheel has no touch gesture; the arrow keys, or `dci.selection` from your own buttons, move
+  up and down the tree.
+
 ## Keyboard
 
 These keys work **while something is selected** and focus isn't in a text field or a dialog:
@@ -92,6 +122,7 @@ createDci({
 | `wheelTraverse`           | `true`         | Mod+Wheel moves up and down the tree        |
 | `windowSelect`            | `true`         | Mod+Drag window select                      |
 | `selectSameType`          | `true`         | Mod+Double-click selects same-type siblings |
+| `longPress`               | `true`         | Long press turns Select mode on (touch)     |
 | `keyboard`                | see below      | `false` turns off all selection keys        |
 | `keyboard.parent`         | `'ArrowUp'`    | Parent                                      |
 | `keyboard.child`          | `'ArrowDown'`  | First child                                 |

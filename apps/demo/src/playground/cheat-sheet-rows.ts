@@ -53,3 +53,13 @@ export function cheatSheetRows(b: Bindings, modifier: ModifierKey): Array<[strin
   }
   return rows;
 }
+
+/** The same gestures on a touch screen, in Select mode. Disabled bindings are left out. */
+export function touchCheatSheetRows(b: Bindings): Array<[string, string]> {
+  const rows: Array<[string, string]> = [['Select', 'Turn Select mode on (Done turns it off)']];
+  if (b.longPress) rows.push(['Long-press', 'Turn Select mode on and select it']);
+  rows.push(['Tap', 'Add or remove it']);
+  if (b.windowSelect) rows.push(['Drag', 'Add everything the box covers']);
+  if (b.selectSameType) rows.push(['Double-tap', 'Select all siblings of the same type']);
+  return rows;
+}

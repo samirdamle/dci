@@ -76,7 +76,7 @@ export {
   type Rect,
 } from './interactions';
 export { createHoverState, type HoverState } from './hover';
-export { clickGesture, eventTarget, hoverGesture, resolveTarget } from './pointer';
+export { clickGesture, eventTarget, hoverGesture, inRoot, resolveTarget } from './pointer';
 export { WHEEL_STEP, wheelGesture, wheelPixels } from './wheel';
 export {
   contains,
@@ -101,6 +101,15 @@ export {
   selectSameType,
   type SelectSameTypeOptions,
 } from './same-type';
+export {
+  DOUBLE_TAP_MS,
+  DOUBLE_TAP_SLOP,
+  LONG_PRESS_MS,
+  LONG_PRESS_SLOP,
+  longPressGesture,
+  SELECT_MODE_CLASS,
+  selectModeGesture,
+} from './touch';
 export { announceGesture, createAnnouncer, describeNode, nodeName } from './announce';
 export { keyboardGesture } from './keyboard';
 export {

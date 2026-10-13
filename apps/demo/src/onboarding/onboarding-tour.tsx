@@ -16,7 +16,8 @@ import { keyLabel } from '@/playground/cheat-sheet-rows';
 import { usePlayground } from '@/playground/settings-context';
 import { KeyCombo } from './key-combo';
 import { StepProgress } from './step-progress';
-import { TOUR_STEPS, type TourKeys } from './steps';
+import { useCoarsePointer } from '@/hooks/use-coarse-pointer';
+import { stepPrompt, TOUR_STEPS, type TourKeys } from './steps';
 import { SAMPLE_COUNT, TOUR_CHAT_WIDTH } from './tour-data';
 import { TourPlayground } from './tour-playground';
 import { markTourSeen } from './tour-storage';
@@ -32,6 +33,8 @@ function TourBody({ onFinish, onShowAll }: { onFinish: () => void; onShowAll: ()
 
   const toggle = resolveBindings(DCI_CONFIG.bindings).toggle || 'Shift';
   const keys: TourKeys = { mod: keyLabel(settings.modifier), toggle: keyLabel(toggle) };
+  const touch = useCoarsePointer();
+  const prompt = stepPrompt(step, keys, touch);
 
   // Done stays done, even if the selection changes afterwards.
   const onCount = useCallback(
@@ -48,12 +51,16 @@ function TourBody({ onFinish, onShowAll }: { onFinish: () => void; onShowAll: ()
         <StepProgress current={index} done={done} />
         <DialogTitle>{step.title}</DialogTitle>
         <DialogDescription className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <KeyCombo keys={step.gesture(keys)} />
-          <span>{step.hint}</span>
+          <KeyCombo keys={prompt.gesture} />
+          <span>{prompt.hint}</span>
         </DialogDescription>
       </DialogHeader>
 
-      <TourPlayground resetKey={step.resetOnEnter ? step.id : null} onCount={onCount} />
+      <TourPlayground
+        resetKey={step.resetOnEnter ? step.id : null}
+        onCount={onCount}
+        selectBar={touch}
+      />
 
       <p
         role="status"
