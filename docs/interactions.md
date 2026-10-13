@@ -46,6 +46,9 @@ gestures work without holding anything. Turn it on from your own button with
 | **Double-tap** (in Select mode) | Select every sibling with the same `type`                            |
 
 ```ts
+import { createDci } from '@samirdamle/dci-core';
+
+const selectButton = document.querySelector<HTMLButtonElement>('#select')!;
 const dci = createDci({ endpoint: '/api/dci' });
 selectButton.onclick = () => dci.setSelectMode(!dci.isSelectMode());
 dci.on('selectmodechange', (on) => selectButton.classList.toggle('active', on));
