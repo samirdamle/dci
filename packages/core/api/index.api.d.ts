@@ -298,8 +298,11 @@ interface InputManager {
     onKeyDown(fn: (e: KeyboardEvent) => GestureResult): () => void;
     /** Called with `true` on arm and `false` on disarm. */
     onArmChange(fn: (armed: boolean) => void): () => void;
-    /** Swallow the click a browser fires right after a drag gesture. */
-    suppressNextClick(): void;
+    /**
+     * Swallow the click a browser fires right after a drag gesture. `within`
+     * (ms) waits longer for it: touch browsers send it a task or two later.
+     */
+    suppressNextClick(within?: number): void;
     /** Detach every listener. */
     destroy(): void;
 }
