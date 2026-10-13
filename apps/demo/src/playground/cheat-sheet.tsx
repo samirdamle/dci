@@ -12,7 +12,7 @@ import { usePlayground } from './settings-context';
 
 /** `?` in the top bar: every gesture and key, as currently configured. */
 export function CheatSheet() {
-  const { settings, cheatSheetOpen, setCheatSheetOpen } = usePlayground();
+  const { settings, cheatSheetOpen, setCheatSheetOpen, setTourOpen } = usePlayground();
   const rows = cheatSheetRows(resolveBindings(DCI_CONFIG.bindings), settings.modifier);
   return (
     <Dialog open={cheatSheetOpen} onOpenChange={setCheatSheetOpen}>
@@ -34,6 +34,19 @@ export function CheatSheet() {
             </div>
           ))}
         </dl>
+        <p className="text-sm text-muted-foreground">
+          New to this?{' '}
+          <button
+            type="button"
+            className="text-primary underline"
+            onClick={() => {
+              setCheatSheetOpen(false);
+              setTourOpen(true);
+            }}
+          >
+            Take the 30-second tour
+          </button>
+        </p>
       </DialogContent>
     </Dialog>
   );

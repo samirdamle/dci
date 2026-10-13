@@ -16,7 +16,7 @@ function dismissedBefore(): boolean {
 
 /** A one-time "how to start" hint, remembered once dismissed. */
 export function FirstRunHint() {
-  const { settings, setCheatSheetOpen } = usePlayground();
+  const { settings, setCheatSheetOpen, setTourOpen } = usePlayground();
   const [hidden, setHidden] = useState(dismissedBefore);
   if (hidden) return null;
   const dismiss = () => {
@@ -37,6 +37,10 @@ export function FirstRunHint() {
       <p className="flex-1">
         Hold <kbd className="rounded border bg-background px-1">{keyLabel(settings.modifier)}</kbd>{' '}
         and click any record, tile or chart bar, then ask about it.{' '}
+        <button type="button" className="text-primary underline" onClick={() => setTourOpen(true)}>
+          Take the tour
+        </button>
+        {' · '}
         <button
           type="button"
           className="text-primary underline"

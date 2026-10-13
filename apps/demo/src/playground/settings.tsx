@@ -5,6 +5,7 @@ import {
   settingsFromSearch,
   type DemoSettings,
 } from './settings-context';
+import { shouldAutoOpenTour } from '@/onboarding/tour-storage';
 
 /** Playground state: the DCI options being tried, and which panels are open. */
 export function PlaygroundProvider({ children }: { children: ReactNode }) {
@@ -14,6 +15,7 @@ export function PlaygroundProvider({ children }: { children: ReactNode }) {
   }));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [cheatSheetOpen, setCheatSheetOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(() => shouldAutoOpenTour(window.location.search));
   const value = useMemo(
     () => ({
       settings,
@@ -22,8 +24,10 @@ export function PlaygroundProvider({ children }: { children: ReactNode }) {
       setDrawerOpen,
       cheatSheetOpen,
       setCheatSheetOpen,
+      tourOpen,
+      setTourOpen,
     }),
-    [settings, drawerOpen, cheatSheetOpen],
+    [settings, drawerOpen, cheatSheetOpen, tourOpen],
   );
   return <PlaygroundContext.Provider value={value}>{children}</PlaygroundContext.Provider>;
 }
