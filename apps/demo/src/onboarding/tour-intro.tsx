@@ -9,7 +9,7 @@ export function TourIntro({ onStart, onSkip }: { onStart: () => void; onSkip: ()
     <>
       <DialogHeader>
         <DialogTitle>Point and select. Don’t describe.</DialogTitle>
-        <DialogDescription>DCI in three short ideas.</DialogDescription>
+        <DialogDescription className="text-foreground">DCI in three short ideas.</DialogDescription>
       </DialogHeader>
       <ul className="grid gap-4" data-testid="tour-intro">
         {INTRO_SECTIONS.map(({ icon: Icon, title, body }) => (
@@ -19,7 +19,7 @@ export function TourIntro({ onStart, onSkip }: { onStart: () => void; onSkip: ()
             </span>
             <div className="space-y-0.5">
               <h3 className="text-sm font-medium">{title}</h3>
-              <p className="text-sm text-muted-foreground">{body}</p>
+              <p className="text-sm">{body}</p>
             </div>
           </li>
         ))}
