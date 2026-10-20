@@ -70,7 +70,7 @@ function TourBody({
       <DialogHeader>
         <StepProgress current={index} done={done} />
         <DialogTitle>{step.title}</DialogTitle>
-        <DialogDescription className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <DialogDescription className="flex flex-wrap items-center gap-x-2 gap-y-1 text-foreground">
           <KeyCombo keys={prompt.gesture} />
           <span>{prompt.hint}</span>
         </DialogDescription>
@@ -107,7 +107,7 @@ function TourBody({
         ) : (
           <>
             <MousePointerClick className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-            <span className="text-muted-foreground">Your turn.</span>
+            <span>Your turn.</span>
           </>
         )}
       </p>
@@ -153,8 +153,9 @@ export function OnboardingTour() {
       {tourOpen &&
         createPortal(<div className="fixed inset-0 z-50 bg-black/50" aria-hidden />, document.body)}
       <DialogContent
-        // Centred in the space the docked tour chat leaves on wide screens.
-        className="max-w-md lg:left-[calc((100%-var(--tour-chat-width))/2)]"
+        // Centred in the space the docked tour chat leaves on wide screens. The
+        // foreground-coloured border keeps it distinct from the dimmed page in both themes.
+        className="max-w-md border-2 border-foreground lg:left-[calc((100%-var(--tour-chat-width))/2)]"
         style={{ ['--tour-chat-width' as string]: `${TOUR_CHAT_WIDTH}px` }}
         data-testid="tour"
         // Clicks and focus in the tour's chat land outside the dialog: keep it open.
