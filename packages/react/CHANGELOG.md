@@ -1,5 +1,18 @@
 # @samirdamle/dci-react
 
+## 1.1.0
+
+### Minor Changes
+
+- [#106](https://github.com/samirdamle/dci/pull/106) [`558231f`](https://github.com/samirdamle/dci/commit/558231fae4886334ee3fbcb5a9eb85afa9fdf6bc) Thanks [@samirdamle](https://github.com/samirdamle)! - Select mode for touch screens. `dci.setSelectMode(true)` keeps the gestures armed without the modifier: a tap toggles a node, a drag window-selects (adding), and a double tap selects all of the same type. A long press on an annotated node turns it on and selects that node (`bindings.longPress`, default `true`). New: `dci.isSelectMode()`, the `selectmodechange` event, `InputManager.setLocked()`, and `useSelectMode()` in React.
+
+### Patch Changes
+
+- [#84](https://github.com/samirdamle/dci/pull/84) [`111922f`](https://github.com/samirdamle/dci/commit/111922fdafa60520df12a3b18aa3bb0497693879) Thanks [@samirdamle](https://github.com/samirdamle)! - `VERSION` is typed as `string` instead of a literal type, so it no longer changes the type
+  declarations on every release.
+- Updated dependencies [[`181d297`](https://github.com/samirdamle/dci/commit/181d297ca120a250c2fdc9299a29d3fc11f0f9fd), [`cd6bea9`](https://github.com/samirdamle/dci/commit/cd6bea93cdb3160fe23311df7917f3c1e3da49fc), [`851c47c`](https://github.com/samirdamle/dci/commit/851c47c167d2ff97d6bfceb413e8ad1361f642da), [`650a24e`](https://github.com/samirdamle/dci/commit/650a24e0f4e3a8714f98748805106824a0451450), [`161687f`](https://github.com/samirdamle/dci/commit/161687fd422075d1cb5800cb60c62c8ea232edc0), [`879f4a3`](https://github.com/samirdamle/dci/commit/879f4a313ccefafba29680fc791e2fb6283d6bcb), [`558231f`](https://github.com/samirdamle/dci/commit/558231fae4886334ee3fbcb5a9eb85afa9fdf6bc), [`111922f`](https://github.com/samirdamle/dci/commit/111922fdafa60520df12a3b18aa3bb0497693879)]:
+  - @samirdamle/dci-core@1.1.0
+
 ## 1.0.0
 
 ### Major Changes
