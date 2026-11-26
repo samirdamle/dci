@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { RecordTable } from './pages/crm';
-import { expect, test, type Locator, type Page } from './pages/fixtures';
+import type { Locator, Page } from '@playwright/test';
+import { expect, test } from './pages/fixtures';
 
 /**
  * Text selection (spec §13.2) against the CRM demo in deterministic mock

@@ -1,5 +1,5 @@
-import { DciContextNode, DciRequest, DciEvent } from '@samirdamle/dci-protocol';
-export { DciAncestor, DciContextNode, DciEvent, DciFallbackInfo, DciRequest } from '@samirdamle/dci-protocol';
+import { DciContextNode, DciTextEndpoint, DciRequest, DciEvent } from '@samirdamle/dci-protocol';
+export { DciAncestor, DciContextNode, DciEvent, DciFallbackInfo, DciRequest, DciTextEndpoint, DciTextInfo } from '@samirdamle/dci-protocol';
 
 type Warn = (message: string) => void;
 
@@ -129,6 +129,85 @@ declare function letterMarker(index: number): string;
 /** The marker for the `index`-th selected node (0-based). */
 declare function formatMarker(index: number, series: MarkerSeries): string;
 
+/** Options for capturing and (de)serializing text ranges. */
+interface TextSelectionOptions extends ContextOptions {
+    /** Characters of selected text sent per item. Default `2000`. */
+    maxTextSelectionLength?: number;
+}
+/** A text range reduced to its endpoints plus the text it covered. */
+interface SerializedTextRange {
+    /** Serialized start endpoint. */
+    start: DciTextEndpoint;
+    /** Serialized end endpoint. */
+    end: DciTextEndpoint;
+    /**
+     * The selected text, whitespace-collapsed, at full length (not capped at
+     * `maxTextSelectionLength`): deserialization compares the resolved text
+     * against this, so a capped excerpt could never match.
+     */
+    excerpt: string;
+    /**
+     * When `true`, `excerpt` is a capped prefix of the selected text (as
+     * stored on a `DciContextNode`'s `text` object), and deserialization
+     * matches when the resolved text merely starts with it. `serializeRange`
+     * always sets this to `false`.
+     */
+    truncated?: boolean;
+}
+/** One captured text selection, as held by the selection store. */
+interface TextSelectionItem {
+    kind: 'text';
+    /** The node as sent to the backend (marker assigned by the store). */
+    node: DciContextNode;
+    /** The live range (the highlight covers its full extent). */
+    range: Range;
+    /** Stable identity: `textNodeKey(node)`. */
+    key: string;
+}
+/**
+ * Serialize a range to its endpoints plus the full collapsed text it covers.
+ * Returns `null` when either endpoint cannot be serialized.
+ */
+declare function serializeRange(range: Range, options?: TextSelectionOptions): SerializedTextRange | null;
+/**
+ * Resolve a short CSS path (as produced by `cssPath`) to an element within
+ * `root`. An empty path is the root itself. Returns `null` when nothing
+ * under `root` matches.
+ */
+declare function resolveCssPath(path: string, root?: Element): Element | null;
+/**
+ * Rebuild a range from `serializeRange` output. Returns `null` when either
+ * endpoint cannot be resolved, or when the resolved text does not match the
+ * stored excerpt (after collapsing whitespace) — a range that resolves to a
+ * nearby but different span must never be sent as if it were exact. A
+ * `DciTextInfo` (whose excerpt is capped at `maxTextSelectionLength`) is
+ * accepted as the serialized form: when its `truncated` flag is set, the
+ * resolved text only needs to start with the excerpt, since the full text
+ * was never stored.
+ */
+declare function deserializeRange(serialized: SerializedTextRange, root?: Element): Range | null;
+/**
+ * Check whether a range may be captured (spec §4.1, §10.1). Returns `null`
+ * when the range is valid, otherwise the reason it was refused — the private
+ * reason is worded for showing to the user.
+ */
+declare function validateTextRange(range: Range, options?: TextSelectionOptions): string | null;
+/**
+ * Capture a range as a text context node (`source: 'text'`), or `null` when
+ * the range is not valid (see `validateTextRange`). The excerpt is capped at
+ * `maxTextSelectionLength` (default `2000`); the stored range itself is the
+ * full range, so the highlight covers all of it. Ancestors are the annotated
+ * ancestors of the range's common ancestor container, root first.
+ */
+declare function captureTextRange(range: Range, options?: TextSelectionOptions): DciContextNode | null;
+/**
+ * Node identity for de-duplication: `text:<start.path>@<start.offset>-<end.path>@<end.offset>`.
+ * A node with no `text` object has no range identity.
+ */
+declare function textNodeKey(node: DciContextNode): string;
+/** Wrap a captured node and its live range as a selection-store item. */
+declare function toTextSelectionItem(node: DciContextNode, range: Range): TextSelectionItem;
+
 interface SelectionOptions extends ContextOptions {
     /** Maximum number of selected nodes. Default `50`. */
     maxSelection?: number;
@@ -138,8 +217,14 @@ interface SelectionOptions extends ContextOptions {
 interface SelectionChange {
     /** The full selection, in selection order. */
     elements: Element[];
+    /** The selected text items, in selection order. */
+    textItems: TextSelectionItem[];
     added: Element[];
     removed: Element[];
+    /** Text items added since the previous event, in selection order. */
+    addedText: TextSelectionItem[];
+    /** Text items removed since the previous event, in selection order. */
+    removedText: TextSelectionItem[];
     primary: Element | null;
 }
 interface SelectionLimit {
@@ -152,16 +237,34 @@ interface SelectionEvents {
     selectionlimit: SelectionLimit;
 }
 type Listener$1<T> = (event: T) => void;
+/** One item of the unified selection: an element, or a captured text range. */
+type SelectionItem = Element | TextSelectionItem;
+/** Whether a selection item is a text item. */
+declare const isTextItem: (item: SelectionItem) => item is TextSelectionItem;
 interface SelectionStore {
     /** Selected elements, in selection order. */
     get(): Element[];
-    /** Replace the selection. */
+    /** Selected text items, in selection order. */
+    textItems(): TextSelectionItem[];
+    /** Every selected item (elements and text), in selection order. */
+    items(): SelectionItem[];
+    /** Replace the selection (elements and text). */
     set(els: Iterable<Element>): void;
     /** Append, skipping elements already selected. */
     add(els: Iterable<Element> | Element): void;
     remove(els: Iterable<Element> | Element): void;
     /** Add `el` if absent, otherwise remove it. */
     toggle(el: Element): void;
+    /**
+     * Append a captured text item, skipping an identical range. Returns `false`
+     * when the range is already selected or the selection is full (the latter
+     * fires `selectionlimit`, as for elements).
+     */
+    addText(item: TextSelectionItem): boolean;
+    /** Remove a text item, matched by its range key. */
+    removeText(item: TextSelectionItem): void;
+    /** Whether a text item with the same range key is selected. */
+    hasText(item: TextSelectionItem): boolean;
     clear(): void;
     has(el: Element): boolean;
     /** Last-interacted node (breadcrumb, keyboard navigation), or `null`. */
@@ -172,6 +275,8 @@ interface SelectionStore {
      * cleared. `null` when not selected or markers are off.
      */
     marker(el: Element): string | null;
+    /** A text item's marker, assigned in the same order as element markers. */
+    markerForText(item: TextSelectionItem): string | null;
     /** Make an already-selected element the primary node. */
     setPrimary(el: Element): void;
     /** Listen for `selectionchange`; returns an unsubscribe function. */
@@ -185,7 +290,8 @@ interface SelectionStore {
 /**
  * Framework-agnostic selection store. State updates synchronously; change
  * events are batched per microtask, so a burst of mutations (e.g. a window
- * select) emits a single `selectionchange`.
+ * select) emits a single `selectionchange`. Elements and text items share
+ * one selection order and one marker series.
  */
 declare function createSelectionStore(options?: SelectionOptions): SelectionStore;
 
@@ -245,6 +351,8 @@ interface Bindings {
     selectSameType: boolean;
     /** Long-pressing a node on a touch screen turns Select mode on and selects it. */
     longPress: boolean;
+    /** Capture a live text range (when one exists); `false` disables the keyboard path only. Default `'Alt+Enter'`. */
+    textSelect: string | false;
     keyboard: KeyboardBindings | false;
 }
 type BindingsConfig = Partial<Omit<Bindings, 'keyboard'>> & {
@@ -336,6 +444,82 @@ interface HoverState {
     setDepth(depth: number): void;
 }
 declare function createHoverState(tree: DciTree, bus: Emitter<InteractionEvents>): HoverState;
+
+/**
+ * The text-selection plumbing `createDci()` builds from agent A's
+ * `captureTextRange` / selection store / highlight module and hands to the
+ * gestures through `GestureContext.textSelection`. Every method reads the
+ * live native selection at call time — never on a delay (spec §4.3).
+ */
+interface TextSelectionPlumbing {
+    /** `false` when `textSelection: false` — every gesture becomes a no-op. */
+    enabled: boolean;
+    /** `maxTextSelectionLength` (default 2000). */
+    maxLength: number;
+    /** Pill label when the chat is closed (config `textSelectionAction`). */
+    actionLabel: string;
+    /** The live native selection as a text item, or `null` when invalid. */
+    getLiveItem(): TextSelectionItem | null;
+    /** Whether a live valid text range exists right now. */
+    hasLiveRange(): boolean;
+    /** Capture the live range now; `null` when there is none / it is invalid. */
+    captureLive(): TextSelectionItem | null;
+    /** Add an already-captured item (the Alt+Click pointerdown snapshot). */
+    addItem(item: TextSelectionItem): boolean;
+    /** Whether the chat popover/panel is currently open. */
+    isChatOpen(): boolean;
+    /** Open the chat (focus moves to its input, as `controller.open()` does). */
+    openChat(): void;
+}
+interface TextPillOptions {
+    /** The plumbing built by `createDci()`; `undefined` disables the pill. */
+    plumbing?: TextSelectionPlumbing;
+    /** Emit a polite announcement (the interaction bus). */
+    announce?: (text: string) => void;
+    /** Where the `<dci-root>` host lives. Default `document.body`. */
+    container?: Element;
+}
+interface TextPill {
+    /** Whether the pill is currently shown. */
+    readonly visible: boolean;
+    /** Re-check the live selection and show/hide the pill accordingly. */
+    refresh(): void;
+    /** Hide the pill now. Returns whether it was visible. */
+    hide(): boolean;
+    destroy(): void;
+}
+declare const TEXT_PILL_CSS = "\n.text-pill {\n  position: fixed; z-index: 1; display: none;\n  padding: 6px 12px; border-radius: 999px;\n  border: 1px solid var(--dci-border);\n  background: var(--dci-accent); color: var(--dci-on-accent);\n  box-shadow: var(--dci-shadow);\n  font: 600 13px/1.4 var(--dci-font, system-ui, sans-serif);\n  cursor: pointer; white-space: nowrap;\n}\n.text-pill[data-visible='true'] { display: block; }\n.text-pill:hover { filter: brightness(1.08); }\n";
+/** Whether `node` sits inside an editable field or DCI's own UI. */
+declare function isTextSelectionTarget(node: Node | null): boolean;
+/**
+ * Whether an event target counts as inside `range` when there is no layout
+ * to test against: the target is the range's container element, or inside
+ * it. (An ancestor of the container, such as `<body>`, does not count —
+ * every click on the page would otherwise be "inside the selection".)
+ */
+declare function rangeContainsTarget(range: Range, target: Node): boolean;
+/**
+ * Whether a point (viewport coordinates) lies inside `range`. Uses the
+ * range's client rects when layout exists; without layout (happy-dom) falls
+ * back to whether the event target sits inside the range's common ancestor.
+ */
+declare function rangeContainsPoint(range: Range, x: number, y: number, target?: EventTarget | null): boolean;
+/**
+ * The floating pill: a real `<button>` in the Shadow DOM chat layer, shown
+ * on selection settle next to a valid text range. Tapping it captures the
+ * range; if no chat is open the chat opens with focus on the input, if one
+ * is open the item is added silently. It never auto-sends.
+ */
+declare function createTextPill(options: TextPillOptions): TextPill;
+/**
+ * Gesture wiring for the pill. It never appears during an Alt-armed drag
+ * (Alt+Drag window select) or in Select mode, and it never appears for
+ * selections inside DCI's own UI or editable fields. Esc is coordinated
+ * through the existing `onEscape` chain: the pill wraps it, so the first
+ * Esc dismisses a visible pill before the chat closes or the selection
+ * clears (spec §4.4).
+ */
+declare const textPillGesture: Gesture;
 
 type Theme = 'light' | 'dark' | 'auto';
 type LayerName = 'overlay' | 'chat' | 'live-region';
@@ -500,6 +684,14 @@ interface InteractionOptions extends SelectionOptions {
     onEscape?: () => boolean;
     /** Window select picks the innermost (`'leaf'`, default) or outermost (`'top'`) matches. */
     windowSelectLevel?: 'leaf' | 'top';
+    /**
+     * Text-selection plumbing (see `text-pill.ts`), built by `createDci()`
+     * from `captureTextRange` / the selection store / the highlight module.
+     * `false` disables the pill, Alt+Click-on-range and Alt+Enter capture;
+     * element selection is untouched. Absent in headless / custom setups
+     * that do not wire text selection.
+     */
+    textSelection?: TextSelectionPlumbing | false;
     /** Gesture modules to attach. Defaults to every built-in gesture. */
     gestures?: Gesture[];
     /**
@@ -518,6 +710,8 @@ interface GestureContext {
     selection: SelectionStore;
     bus: Emitter<InteractionEvents>;
     hover: HoverState;
+    /** Text-selection plumbing, when wired (see `InteractionOptions.textSelection`). */
+    textSelection?: TextSelectionPlumbing;
 }
 /** A gesture wires itself to the context and returns its cleanup. */
 type Gesture = (ctx: GestureContext) => () => void;
@@ -545,6 +739,20 @@ declare const inRoot: (ctx: Pick<GestureContext, "options">, el: Element | null)
 declare function resolveTarget(ctx: GestureContext, target: Element | null): Element | null;
 /** Hover preview: while armed, track the node under the pointer once per frame. */
 declare const hoverGesture: Gesture;
+/**
+ * Alt+Click on a live text range (spec §3.2, §4.3). Capture-on-pointerdown:
+ * the Phase 0 spike proved the native range is intact at pointerdown in
+ * Chromium, Firefox and WebKit, and that the marquee gesture's pointerdown
+ * `preventDefault()` is what keeps it alive past the click — so the range
+ * is read here, at pointerdown, never on a delay, and the snapshot is held
+ * until the click that follows. The click handler runs before
+ * `clickGesture` (this gesture is registered before it in
+ * `DEFAULT_GESTURES`): when a pending snapshot exists it adds the text
+ * item instead of selecting the node, and consumes the click so the node
+ * is never selected. An Alt+Click outside the live range leaves `pending`
+ * empty and behaves exactly as today.
+ */
+declare const textPointerGesture: Gesture;
 /**
  * Mod+Click selects (replacing the selection); Mod+<toggle>+Click toggles.
  * In Select mode every click (tap) toggles, so taps build up a selection.
@@ -651,6 +859,79 @@ declare const announceGesture: Gesture;
  * and never while focus is inside a dialog (the host app's Esc must work).
  */
 declare const keyboardGesture: Gesture;
+
+/** The named highlight registered in `CSS.highlights` for captured text. */
+declare const TEXT_HIGHLIGHT_NAME = "dci-text";
+/** A second, stronger highlight used briefly by `flash()`. */
+declare const TEXT_FLASH_HIGHLIGHT_NAME = "dci-text-flash";
+/**
+ * Deviation from spec §7 (recorded here and in the implementation report):
+ * `::highlight()` rules only apply to text inside the tree that owns the
+ * stylesheet, so the rule cannot live in the Shadow DOM stylesheet the spec
+ * names — a shadow stylesheet can only highlight text inside that shadow
+ * root, never the host page's text. The rule therefore lives in a
+ * document-level adopted stylesheet (with an injected `<style>` fallback,
+ * mirroring `ui-host.ts`'s `adopt()`), in the theme accent colour.
+ */
+declare const TEXT_HIGHLIGHT_CSS = "\n::highlight(dci-text) {\n  background-color: rgb(37 99 235 / 0.35);\n  color: inherit;\n}\n::highlight(dci-text-flash) {\n  background-color: rgb(37 99 235 / 0.65);\n  color: inherit;\n}\n@media (prefers-color-scheme: dark) {\n  ::highlight(dci-text) { background-color: rgb(96 165 250 / 0.45); }\n  ::highlight(dci-text-flash) { background-color: rgb(96 165 250 / 0.75); }\n}\n";
+/** How long `flash()` keeps the intensified highlight (ms). */
+declare const TEXT_FLASH_MS = 1400;
+interface TextHighlightOptions {
+    /**
+     * Re-resolve a node's range after the DOM changes (A's `deserializeRange`).
+     * Without it, `refresh()` re-registers the stored ranges as they are.
+     */
+    resolve?: (node: DciContextNode) => Range | null;
+    /**
+     * The highlight registry to use. Defaults to the global `CSS.highlights`;
+     * injectable so tests can run where the Highlight API is absent.
+     */
+    registry?: {
+        set(name: string, highlight: {
+            add(range: Range): void;
+        }): void;
+        delete(name: string): void;
+        has(name: string): boolean;
+    } | null;
+    /** Highlight constructor. Defaults to the global `Highlight`. */
+    HighlightCtor?: new (...ranges: Range[]) => {
+        add(range: Range): void;
+    };
+    /** Document the stylesheet is installed in. Default `document`. */
+    doc?: Document;
+}
+interface TextHighlight {
+    /** Whether the CSS Custom Highlight API is available (or was injected). */
+    readonly supported: boolean;
+    /** Register (or re-register) one item's highlight. */
+    register(item: TextSelectionItem): void;
+    /** Remove one item's highlight, by item, node or key. */
+    remove(item: TextSelectionItem | DciContextNode | string): void;
+    /** Remove the highlight for a context node (chip removal path). */
+    removeForNode(node: DciContextNode): void;
+    /** Remove every highlight. */
+    clear(): void;
+    /** Re-register every stored item (after DOM changes), resolving ranges first. */
+    refresh(): void;
+    /**
+     * Scroll a range into view (nearest) and briefly intensify its highlight,
+     * mirroring the overlay's `flash` for elements.
+     */
+    flash(item: TextSelectionItem): void;
+    /** Number of items currently tracked. */
+    readonly size: number;
+    destroy(): void;
+}
+/** Whether the CSS Custom Highlight API exists in this environment. */
+declare function highlightSupported(): boolean;
+/**
+ * CSS Custom Highlight management for captured text items: one named
+ * highlight per item in `CSS.highlights`, removed on chip removal / clear,
+ * re-registered after DOM changes where the range still resolves. Every
+ * method is a no-op (never throws) when the Highlight API is absent — the
+ * chip and its context item remain valid regardless (spec §7 fallback).
+ */
+declare function createTextHighlight(options?: TextHighlightOptions): TextHighlight;
 
 /** Draws M2 state (hover, selection, marquee, boundaries) with the overlay. */
 declare const overlayGesture: Gesture;
@@ -833,6 +1114,18 @@ interface ChatControllerOptions {
     };
     /** Receives custom `x-…` events. */
     onCustomEvent?: (event: DciEvent) => void;
+    /**
+     * Clear the persistent highlight for a removed text item (the highlight
+     * module, wired by `createDci()`). Without it, removing a text chip
+     * still drops the context item; only its highlight lingers.
+     */
+    clearTextHighlight?: (node: DciContextNode) => void;
+    /**
+     * Extra privacy check for a text item before sending: return `true` when
+     * the item must be stripped (e.g. its range intersects a private node).
+     * `createDci()` supplies this from the deserialized range.
+     */
+    textPrivacy?: (node: DciContextNode) => boolean;
 }
 interface SendOptions {
     action?: string;
@@ -1043,6 +1336,14 @@ interface ChatUiOptions {
     theme?: Theme;
     /** Where the `<dci-root>` host lives. Default `document.body`. */
     container?: Element;
+    /**
+     * Text-selection support, wired by `createDci()`: `flash` scrolls a text
+     * item's range into view and flashes its highlight (chip click, spec §3.5).
+     */
+    textSelection?: {
+        /** Scroll the text item's range into view and flash its highlight. */
+        flash(node: DciContextNode): void;
+    };
 }
 interface ChatUi extends ChatUiApi {
     /** The chat element inside the shadow root. */
@@ -1174,6 +1475,12 @@ interface DciConfig {
     fallback?: boolean;
     /** Max fallback text length. Default `500`. */
     maxTextLength?: number;
+    /** Enable text selection (drag → pill, Alt+Click on a range, Alt+Enter). Default `true`. */
+    textSelection?: boolean;
+    /** Characters of selected text sent per item. Default `2000`. */
+    maxTextSelectionLength?: number;
+    /** Label for the floating pill that captures a text selection. Default `'Ask about this'`. */
+    textSelectionAction?: string;
     /** Drag selects innermost (`'leaf'`) or outermost (`'top'`) nodes. Default `'leaf'`. */
     windowSelectLevel?: 'leaf' | 'top';
     /** Mod+Click on empty space clears the selection. Default `true`. */
@@ -1219,6 +1526,9 @@ declare const DEFAULTS: {
     readonly ancestorData: "compact";
     readonly fallback: true;
     readonly maxTextLength: 500;
+    readonly textSelection: true;
+    readonly maxTextSelectionLength: 2000;
+    readonly textSelectionAction: "Ask about this";
     readonly windowSelectLevel: "leaf";
     readonly clearOnEmptyClick: true;
     readonly passthroughClicks: false;
@@ -1278,6 +1588,16 @@ interface DciEvents {
     /** Select mode turned on (`true`) or off (`false`). */
     selectmodechange: boolean;
 }
+interface DciTextSelectionApi {
+    /** The live native selection as a text context node, or `null` when there is none. */
+    get(): DciContextNode | null;
+    /** Capture the live range as a context item. Returns `false` when there is none. */
+    capture(): boolean;
+    /** The text items currently selected. */
+    items(): DciContextNode[];
+    /** Remove one text item (clears its highlight). */
+    remove(node: DciContextNode): void;
+}
 interface DciSelectionApi {
     /** The selection as payloads, in selection order. */
     get(): DciContextNode[];
@@ -1309,6 +1629,8 @@ interface DciChatApi {
 interface DciInstance {
     readonly selection: DciSelectionApi;
     readonly chat: DciChatApi;
+    /** Text-selection API (spec §9): the live range, capture, items, remove. */
+    readonly textSelection: DciTextSelectionApi;
     readonly session: Session;
     /** The resolved config (defaults merged in). */
     readonly config: Readonly<DciConfig>;
@@ -1349,4 +1671,4 @@ declare function createDci(input: DciConfig): DciInstance;
 /** Package version. */
 declare const VERSION: string;
 
-export { AUTOSCROLL_EDGE, AUTOSCROLL_SPEED, type ActionContext, type ActionError, type ActionHandler, type ActionRegistry, type ActionRegistryOptions, type ActionsConfig, type AnchorTo, type Anchoring, type AnnotationSource, type ArmedEventMap, type ArmedEventType, BASE_CSS, BUILTIN_ACTIONS, type Bindings, type BindingsConfig, type BuiltinAction, CHAT_CSS, type Candidate, type ChatController, type ChatControllerOptions, type ChatMessage, type ChatMode, type ChatRenderers, type ChatState, type ChatStatus, type ChatStrings, type ChatUi, type ChatUiApi, type ChatUiOptions, type ConfigProblems, type ContextOptions, DCI_UI_ATTRIBUTE, DEFAULTS, DEFAULT_ATTRIBUTE, DEFAULT_BINDINGS, DEFAULT_GESTURES, DEFAULT_KEYBOARD_BINDINGS, DEFAULT_STRINGS, DOUBLE_TAP_MS, DOUBLE_TAP_SLOP, DRAG_THRESHOLD, type DciAttrValue, type DciChatApi, type DciChatConfig, type DciConfig, type DciEvents, type DciInstance, type DciOverlayConfig, type DciSelectionApi, type DciSelectionChange, type DciTarget, type DciTree, type Emitter, type Gesture, type GestureContext, type GestureResult, HOST_TAG, type HoverState, type InferAnnotation, type InputManager, type InputOptions, type InteractionEvents, type InteractionOptions, type Interactions, type KeyboardBindings, LONG_PRESS_MS, LONG_PRESS_SLOP, type LabelMode, type LayerName, type MarkdownOptions, type MarkerSeries, type MarqueeMode, type ModifierKey, OVERLAY_CSS, type Overlay, type OverlayConfig, type OverlayMode, type OverlayOptions, type ParseOptions, type ParsedDci, type Rect, type RenderMarkdown, SELECT_MODE_CLASS, type SSETransportOptions, type SelectSameTypeOptions, type SelectionChange, type SelectionEvents, type SelectionLimit, type SelectionOptions, type SelectionStore, type SendOptions, type Session, type SessionChange, type SessionOptions, type SuggestedAction, type Theme, type ToolStatus, type Transport, type TreeOptions, type UiHost, type UiHostOptions, VERSION, WHEEL_STEP, type Warn, acquireUiHost, anchorFloating, announceGesture, clickGesture, collectCandidates, contains, createActionRegistry, createAnnouncer, createChatController, createChatUi, createDci, createDciTree, createEmitter, createHoverState, createInputManager, createInteractions, createOutlineOverlay, createOverlay, createSSETransport, createSelectionStore, createSession, cssPath, dciAttr, describeNode, eventTarget, formatMarker, hasModifier, hitTest, hoverGesture, inRoot, intersects, isDciElement, isEditable, isFromDciUi, keyboardGesture, labelFor, letterMarker, longPressGesture, marqueeGesture, marqueeMode, matchesCombo, mergeConfig, nodeName, offsetRect, overlayGesture, parseDciAttribute, randomId, readDci, rectFromPoints, refreshInferred, renderInline, renderMarkdown, resolveActions, resolveBindings, resolveStrings, resolveTarget, safeUrl, sameTypeGesture, sameTypeNodes, selectModeGesture, selectSameType, stableStringify, toContextNode, truncateText, unionRect, validateConfig, wheelGesture, wheelPixels };
+export { AUTOSCROLL_EDGE, AUTOSCROLL_SPEED, type ActionContext, type ActionError, type ActionHandler, type ActionRegistry, type ActionRegistryOptions, type ActionsConfig, type AnchorTo, type Anchoring, type AnnotationSource, type ArmedEventMap, type ArmedEventType, BASE_CSS, BUILTIN_ACTIONS, type Bindings, type BindingsConfig, type BuiltinAction, CHAT_CSS, type Candidate, type ChatController, type ChatControllerOptions, type ChatMessage, type ChatMode, type ChatRenderers, type ChatState, type ChatStatus, type ChatStrings, type ChatUi, type ChatUiApi, type ChatUiOptions, type ConfigProblems, type ContextOptions, DCI_UI_ATTRIBUTE, DEFAULTS, DEFAULT_ATTRIBUTE, DEFAULT_BINDINGS, DEFAULT_GESTURES, DEFAULT_KEYBOARD_BINDINGS, DEFAULT_STRINGS, DOUBLE_TAP_MS, DOUBLE_TAP_SLOP, DRAG_THRESHOLD, type DciAttrValue, type DciChatApi, type DciChatConfig, type DciConfig, type DciEvents, type DciInstance, type DciOverlayConfig, type DciSelectionApi, type DciSelectionChange, type DciTarget, type DciTextSelectionApi, type DciTree, type Emitter, type Gesture, type GestureContext, type GestureResult, HOST_TAG, type HoverState, type InferAnnotation, type InputManager, type InputOptions, type InteractionEvents, type InteractionOptions, type Interactions, type KeyboardBindings, LONG_PRESS_MS, LONG_PRESS_SLOP, type LabelMode, type LayerName, type MarkdownOptions, type MarkerSeries, type MarqueeMode, type ModifierKey, OVERLAY_CSS, type Overlay, type OverlayConfig, type OverlayMode, type OverlayOptions, type ParseOptions, type ParsedDci, type Rect, type RenderMarkdown, SELECT_MODE_CLASS, type SSETransportOptions, type SelectSameTypeOptions, type SelectionChange, type SelectionEvents, type SelectionItem, type SelectionLimit, type SelectionOptions, type SelectionStore, type SendOptions, type SerializedTextRange, type Session, type SessionChange, type SessionOptions, type SuggestedAction, TEXT_FLASH_HIGHLIGHT_NAME, TEXT_FLASH_MS, TEXT_HIGHLIGHT_CSS, TEXT_HIGHLIGHT_NAME, TEXT_PILL_CSS, type TextHighlight, type TextHighlightOptions, type TextPill, type TextPillOptions, type TextSelectionItem, type TextSelectionOptions, type TextSelectionPlumbing, type Theme, type ToolStatus, type Transport, type TreeOptions, type UiHost, type UiHostOptions, VERSION, WHEEL_STEP, type Warn, acquireUiHost, anchorFloating, announceGesture, captureTextRange, clickGesture, collectCandidates, contains, createActionRegistry, createAnnouncer, createChatController, createChatUi, createDci, createDciTree, createEmitter, createHoverState, createInputManager, createInteractions, createOutlineOverlay, createOverlay, createSSETransport, createSelectionStore, createSession, createTextHighlight, createTextPill, cssPath, dciAttr, describeNode, deserializeRange, eventTarget, formatMarker, hasModifier, highlightSupported, hitTest, hoverGesture, inRoot, intersects, isDciElement, isEditable, isFromDciUi, isTextItem, isTextSelectionTarget, keyboardGesture, labelFor, letterMarker, longPressGesture, marqueeGesture, marqueeMode, matchesCombo, mergeConfig, nodeName, offsetRect, overlayGesture, parseDciAttribute, randomId, rangeContainsPoint, rangeContainsTarget, readDci, rectFromPoints, refreshInferred, renderInline, renderMarkdown, resolveActions, resolveBindings, resolveCssPath, resolveStrings, resolveTarget, safeUrl, sameTypeGesture, sameTypeNodes, selectModeGesture, selectSameType, serializeRange, stableStringify, textNodeKey, textPillGesture, textPointerGesture, toContextNode, toTextSelectionItem, truncateText, unionRect, validateConfig, validateTextRange, wheelGesture, wheelPixels };
