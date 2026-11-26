@@ -13,6 +13,7 @@ with Claude in three steps.
 | [Recipes](recipes.md)                     | Custom transports, a headless React chat, redaction, agent frameworks     |
 | [Compatibility](compatibility.md)         | Check browser, OS, CSP and shadow DOM support, and the perf budgets       |
 | [Browser extension](extension.md)         | Use DCI on any website, choose a backend, or read the privacy review      |
+| [Text selection](text-selection.md)       | Specification: select text by drag and add it to chat context             |
 
 The **API reference** for every export is generated from the TSDoc comments with TypeDoc
 (`pnpm docs:api`) and published at <https://samirdamle.github.io/dci/api/>.
