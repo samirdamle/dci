@@ -254,6 +254,8 @@ The demo shows:
 5. Exposing host tools over MCP.
 6. A benchmark comparing DCI context with typed descriptions (accuracy, keystrokes, tokens).
 7. AI-assisted expansion of a selection ("also include related items").
+8. Text selection: select text by drag and add it to chat context — see
+   [`docs/text-selection.md`](docs/text-selection.md) (issue #112).
 
 ## 12. Non-functional requirements
 
