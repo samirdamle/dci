@@ -10,6 +10,7 @@ import { checkMarkers } from '../markers';
 import { isDev } from '../env';
 import { DEFAULT_ATTRIBUTE, readDci, refreshInferred } from '../parse';
 import type { SelectionStore } from '../selection';
+import { isTextItem, type SelectionItem, type TextSelectionItem } from '../selection';
 import { createSession, type Session } from '../session';
 import type { Transport } from '../transport';
 import type { ChatMessage, ChatState, ToolStatus } from './types';
@@ -40,6 +41,18 @@ export interface ChatControllerOptions {
   page?: () => { url: string; title: string };
   /** Receives custom `x-…` events. */
   onCustomEvent?: (event: DciEvent) => void;
+  /**
+   * Clear the persistent highlight for a removed text item (the highlight
+   * module, wired by `createDci()`). Without it, removing a text chip
+   * still drops the context item; only its highlight lingers.
+   */
+  clearTextHighlight?: (node: DciContextNode) => void;
+  /**
+   * Extra privacy check for a text item before sending: return `true` when
+   * the item must be stripped (e.g. its range intersects a private node).
+   * `createDci()` supplies this from the deserialized range.
+   */
+  textPrivacy?: (node: DciContextNode) => boolean;
 }
 
 export interface SendOptions {
@@ -82,8 +95,14 @@ const INITIAL: ChatState = {
   limit: null,
 };
 
-const nodeKey = (n: DciContextNode) =>
-  n.id !== undefined ? `id:${n.id}` : `el:${n.fallback?.path ?? JSON.stringify(n)}`;
+const nodeKey = (n: DciContextNode) => {
+  // Text identity is its serialized range (spec §6; agent A's `textNodeKey`).
+  if (n.source === 'text') {
+    if (!n.text) return 'text:missing';
+    return `text:${n.text.start.path}@${n.text.start.offset}-${n.text.end.path}@${n.text.end.offset}`;
+  }
+  return n.id !== undefined ? `id:${n.id}` : `el:${n.fallback?.path ?? JSON.stringify(n)}`;
+};
 
 /**
  * Framework-agnostic chat state machine. It snapshots the selection into
@@ -108,12 +127,36 @@ export function createChatController(options: ChatControllerOptions): ChatContro
   const queue: Array<[string | undefined, SendOptions | undefined]> = [];
   /** Elements selected since the last send (turn mode). */
   let pendingEls: Element[] = selection.get();
+  /** Text items selected since the last send (turn mode). */
+  let pendingText: TextSelectionItem[] = selection.textItems();
   /** Everything sent so far (cumulative mode). */
   let sentContext: DciContextNode[] = [];
 
   function set(patch: Partial<ChatState>) {
     state = { ...state, ...patch };
     for (const fn of [...listeners]) fn(state);
+  }
+
+  /** All selection items in selection order, elements and text mixed. */
+  function allItems(): SelectionItem[] {
+    return selection.items();
+  }
+
+  function toTextNode(item: TextSelectionItem): DciContextNode {
+    const marker = selection.markerForText(item) ?? item.node.marker;
+    return marker ? { ...item.node, marker } : item.node;
+  }
+
+  /** Pending items (elements + text) as nodes, in selection order. */
+  function pendingNodes(): DciContextNode[] {
+    const pendingElSet = new Set(pendingEls);
+    const pendingTextKeys = new Set(pendingText.map((t) => t.key));
+    return allItems().flatMap((item) => {
+      if (isTextItem(item)) {
+        return pendingTextKeys.has(item.key) ? [toTextNode(item)] : [];
+      }
+      return pendingElSet.has(item) ? toNodes([item]).map((p) => p.node) : [];
+    });
   }
 
   const toNodes = (els: Element[]) => {
@@ -127,18 +170,24 @@ export function createChatController(options: ChatControllerOptions): ChatContro
   };
 
   function refreshPending() {
-    set({ pendingContext: toNodes(pendingEls).map((p) => p.node) });
+    set({ pendingContext: pendingNodes() });
   }
   refreshPending();
 
   // The store flushes `selectionlimit` just before `selectionchange`, so the
   // change handler keeps a limit reported in the same flush and clears stale ones.
   let freshLimit: ChatState['limit'] = null;
-  const offChange = selection.subscribe(({ elements, added }) => {
+  const offChange = selection.subscribe((change) => {
+    const { elements, added, textItems, addedText } = change;
     const current = new Set(elements);
     pendingEls = [
       ...pendingEls.filter((el) => current.has(el)),
       ...added.filter((el) => !pendingEls.includes(el)),
+    ];
+    const currentText = new Set(textItems.map((t) => t.key));
+    pendingText = [
+      ...pendingText.filter((t) => currentText.has(t.key)),
+      ...addedText.filter((t) => !pendingText.some((p) => p.key === t.key)),
     ];
     set({ limit: freshLimit });
     freshLimit = null;
@@ -176,7 +225,7 @@ export function createChatController(options: ChatControllerOptions): ChatContro
   }
 
   function nextContext(): DciContextNode[] {
-    const fresh = toNodes(pendingEls).map((p) => p.node);
+    const fresh = pendingNodes();
     if (mode() === 'turn') return fresh;
     const byKey = new Map(sentContext.map((n) => [nodeKey(n), n]));
     for (const n of fresh) byKey.set(nodeKey(n), n);
@@ -198,12 +247,22 @@ export function createChatController(options: ChatControllerOptions): ChatContro
    * Defense in depth: the parser, tree and extractor already exclude private
    * nodes. If one still reaches the outgoing payload (e.g. added by
    * `beforeSend`), fail loudly in development and strip it in production.
+   * Text items are checked too (spec §10.1): a text node is stripped when
+   * it has no `text` object, when its ancestors leak a private node, or
+   * when the supplied `textPrivacy` check (range vs. private nodes) says so.
    */
   function enforcePrivacy(request: DciRequest): DciRequest {
     const ids = privateIds();
     const leaks = (n: { id?: string; private?: true }) =>
       (n.id !== undefined && ids.has(n.id)) || (n.private === true && Object.keys(n).length > 1);
-    const bad = request.context.filter((n) => leaks(n) || (n.ancestors ?? []).some(leaks));
+    const textLeaks = (n: DciContextNode): boolean => {
+      if (n.source !== 'text') return false;
+      if (!n.text) return true;
+      return options.textPrivacy?.(n) ?? false;
+    };
+    const bad = request.context.filter(
+      (n) => leaks(n) || (n.ancestors ?? []).some(leaks) || textLeaks(n),
+    );
     if (!bad.length) return request;
     if (isDev()) throw new Error('[dci] A private node reached the outgoing request.');
     return { ...request, context: request.context.filter((n) => !bad.includes(n)) };
@@ -336,6 +395,7 @@ export function createChatController(options: ChatControllerOptions): ChatContro
     };
     sentContext = mode() === 'cumulative' ? request.context : sentContext;
     pendingEls = [];
+    pendingText = [];
     set({
       messages: [...state.messages, user],
       draft: prompt === undefined ? '' : state.draft,
@@ -378,14 +438,27 @@ export function createChatController(options: ChatControllerOptions): ChatContro
       return true;
     },
     removeContext(node) {
+      // Text first: a text item has no element, so `elementFor` returns
+      // `null` for it and removal must clear its highlight as well.
+      if (node.source === 'text') {
+        const item = pendingText.find((t) => nodeKey(toTextNode(t)) === nodeKey(node));
+        if (!item) return;
+        pendingText = pendingText.filter((t) => t.key !== item.key);
+        selection.removeText(item);
+        options.clearTextHighlight?.(node);
+        refreshPending();
+        return;
+      }
       const match = toNodes(pendingEls).find((p) => nodeKey(p.node) === nodeKey(node));
       if (!match) return;
       pendingEls = pendingEls.filter((el) => el !== match.el);
       selection.remove(match.el);
       refreshPending();
     },
-    elementFor: (node) =>
-      toNodes(pendingEls).find((p) => nodeKey(p.node) === nodeKey(node))?.el ?? null,
+    elementFor: (node) => {
+      if (node.source === 'text') return null;
+      return toNodes(pendingEls).find((p) => nodeKey(p.node) === nodeKey(node))?.el ?? null;
+    },
     confirm(accept, { dontAskAgain = false } = {}) {
       if (accept && dontAskAgain) skipConfirm = true;
       resolveConfirm?.(accept);

@@ -1,4 +1,4 @@
-import type { DciRequest } from '@samirdamle/dci-protocol';
+import type { DciContextNode, DciRequest } from '@samirdamle/dci-protocol';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createActionRegistry } from '../src/actions';
 import { createChatController, type ChatControllerOptions } from '../src/chat/controller';
@@ -7,6 +7,7 @@ import { createSelectionStore } from '../src/selection';
 import { createSession } from '../src/session';
 import { fakeTransport, reply, tick } from './chat-utils';
 import { mountFixture } from './test-utils';
+import { createTextSelectionStore, makeTextItem } from './text-test-utils';
 
 const FIXTURE = `
   <section data-dci='{"id":"page","type":"page","label":"Dashboard"}'>
@@ -372,6 +373,146 @@ describe('privacy', () => {
     const preview = await chat.previewRequest(undefined, { action: 'explain' });
     await chat.send(undefined, { action: 'explain' });
     expect(preview).toEqual(requests[0]);
+  });
+});
+
+describe('text context (unified store stand-in)', () => {
+  const TEXT_FIXTURE = `
+    <section data-dci='{"id":"page","type":"page","label":"Dashboard"}'>
+      <div id="a" data-dci='{"id":"inv_1","type":"invoice","label":"Invoice 1"}'></div>
+      <p id="note">Q3 focus: convert Proposal-stage deals before winter.</p>
+    </section>`;
+
+  function textSetup(
+    options: Partial<ChatControllerOptions> = {},
+    script = (_r: DciRequest) => reply('Hello!'),
+  ) {
+    const f = mountFixture(TEXT_FIXTURE);
+    const selection = createTextSelectionStore({ root: f.root, includeAncestors: true });
+    const fake = fakeTransport(script);
+    const cleared: DciContextNode[] = [];
+    const chat = createChatController({
+      transport: fake.transport,
+      selection,
+      session: createSession({ scope: 'manual', id: 's1' }),
+      contextOptions: { root: f.root },
+      page: () => ({ url: 'https://x.test/', title: 'X' }),
+      clearTextHighlight: (node) => cleared.push(node),
+      ...options,
+    });
+    destroy = () => chat.destroy();
+    return { f, selection, chat, cleared, ...fake };
+  }
+
+  it("'turn' mode sends only text added since the last message", async () => {
+    const { f, selection, chat, requests } = textSetup();
+    const item = makeTextItem(f.get('#note'), 'convert Proposal-stage');
+    selection.set([f.get('#a')]);
+    expect(selection.addText(item)).toBe(true);
+    await tick();
+    expect(chat.getState().pendingContext.map((n) => n.source)).toEqual(['annotated', 'text']);
+    expect(chat.getState().pendingContext[1]!.marker).toBe('B');
+    await chat.send('first');
+    expect(requests[0]!.context.map((n) => n.source)).toEqual(['annotated', 'text']);
+    await chat.send('follow-up');
+    expect(requests[1]!.context).toEqual([]);
+    const item2 = makeTextItem(f.get('#note'), 'before winter');
+    selection.addText(item2);
+    await tick();
+    await chat.send('about the second quote');
+    expect(requests[2]!.context.map((n) => n.source)).toEqual(['text']);
+    expect((requests[2]!.context[0] as unknown as { text: { excerpt: string } }).text.excerpt).toBe(
+      'before winter',
+    );
+  });
+
+  it("'cumulative' mode resends text with everything else", async () => {
+    const { f, selection, chat, requests } = textSetup({ contextMode: 'cumulative' });
+    const item = makeTextItem(f.get('#note'), 'convert Proposal-stage');
+    selection.set([f.get('#a')]);
+    selection.addText(item);
+    await tick();
+    await chat.send('first');
+    // `set()` would replace both kinds; cumulative mode resends what was
+    // already sent even with no new selection.
+    await chat.send('second');
+    expect(requests.map((r) => r.context.map((n) => n.source))).toEqual([
+      ['annotated', 'text'],
+      ['annotated', 'text'],
+    ]);
+  });
+
+  it('removeContext drops a text chip, its store item and its highlight', async () => {
+    const { f, selection, chat, cleared } = textSetup();
+    const item = makeTextItem(f.get('#note'), 'convert Proposal-stage');
+    selection.set([f.get('#a')]);
+    selection.addText(item);
+    await tick();
+    const textNode = chat.getState().pendingContext.find((n) => n.source === 'text')!;
+    chat.removeContext(textNode);
+    expect(chat.getState().pendingContext.map((n) => n.id)).toEqual(['inv_1']);
+    expect(selection.textItems()).toEqual([]);
+    expect(cleared).toEqual([textNode]);
+  });
+
+  it('elementFor returns null for text items', async () => {
+    const { f, selection, chat } = textSetup();
+    const item = makeTextItem(f.get('#note'), 'convert Proposal-stage');
+    selection.addText(item);
+    await tick();
+    const textNode = chat.getState().pendingContext[0]!;
+    expect(chat.elementFor(textNode)).toBeNull();
+    selection.set([f.get('#a')]);
+    await tick();
+    expect(chat.elementFor(chat.getState().pendingContext[0]!)).toBe(f.get('#a'));
+  });
+
+  it('strips a text item with no text object, and one the privacy check flags', async () => {
+    // Production path: leaked items are stripped (in development this
+    // throws, as the existing private-node tests pin).
+    const env = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      const { chat, requests } = textSetup({
+        beforeSend: (req) => ({
+          ...req,
+          context: [
+            ...req.context,
+            {
+              label: 'leaked',
+              data: {},
+              source: 'text',
+            } as DciContextNode,
+            {
+              label: 'private quote',
+              data: {},
+              source: 'text',
+              text: {
+                excerpt: 'private quote',
+                truncated: false,
+                start: { path: 'p', offset: 0 },
+                end: { path: 'p', offset: 13 },
+              },
+            } as unknown as DciContextNode,
+          ],
+        }),
+        textPrivacy: (n) => (n.label ?? '').includes('private'),
+      });
+      await chat.send('hi');
+      expect(requests[0]!.context).toEqual([]);
+    } finally {
+      process.env.NODE_ENV = env;
+    }
+  });
+
+  it('capturing the identical range twice is a no-op (same marker kept)', async () => {
+    const { f, selection, chat } = textSetup();
+    const item = makeTextItem(f.get('#note'), 'convert Proposal-stage');
+    expect(selection.addText(item)).toBe(true);
+    expect(selection.addText(item)).toBe(false);
+    await tick();
+    expect(chat.getState().pendingContext).toHaveLength(1);
+    expect(chat.getState().pendingContext[0]!.marker).toBe('A');
   });
 });
 

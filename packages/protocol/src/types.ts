@@ -26,6 +26,23 @@ export interface DciFallbackInfo {
   path: string;
 }
 
+/** One end of a serialized text range: the CSS path of the endpoint's container element plus the character offset within that container's collapsed-whitespace text. */
+export interface DciTextEndpoint {
+  path: string;
+  offset: number;
+}
+
+/** The selected text carried by a `source: 'text'` context node. */
+export interface DciTextInfo {
+  /** The selected text, whitespace-collapsed, capped at `maxTextSelectionLength`. */
+  excerpt: string;
+  /** `true` when the selection was longer than the cap. */
+  truncated: boolean;
+  /** Serialized range endpoints (transport detail for the client's highlight). */
+  start: DciTextEndpoint;
+  end: DciTextEndpoint;
+}
+
 /** A selected node as sent to the backend. */
 export interface DciContextNode {
   id?: string;
@@ -40,9 +57,11 @@ export interface DciContextNode {
   /** Parsed `data-dci` payload with reserved keys removed (empty for fallback nodes). */
   data: Record<string, unknown>;
   ancestors?: DciAncestor[];
-  source: 'annotated' | 'fallback';
+  source: 'annotated' | 'fallback' | 'text';
   /** Present only when `source` is `'fallback'`. */
   fallback?: DciFallbackInfo;
+  /** Present only when `source` is `'text'`. */
+  text?: DciTextInfo;
 }
 
 /** Body of `POST {endpoint}`. */

@@ -20,6 +20,8 @@ export {
   type DciEventType,
   type DciFallbackInfo,
   type DciRequest,
+  type DciTextEndpoint,
+  type DciTextInfo,
   type DoneEvent,
   type ErrorEvent,
   type TextDeltaEvent,

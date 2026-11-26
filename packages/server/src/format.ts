@@ -47,6 +47,12 @@ function xml(context: DciContextNode[]): string {
     if (hasData(node.data)) children.push(`<data>${escapeText(JSON.stringify(node.data))}</data>`);
     if (node.fallback)
       children.push(`<element>${escapeText(JSON.stringify(node.fallback))}</element>`);
+    if (node.text) {
+      const note = node.text.truncated
+        ? ` (excerpt truncated to ${node.text.excerpt.length} characters)`
+        : '';
+      children.push(`<text>${escapeText(node.text.excerpt)}${note}</text>`);
+    }
     const open = `  <node ${attrs.join(' ')}`;
     return children.length
       ? [`${open}>`, ...children.map((c) => `    ${c}`), '  </node>'].join('\n')
@@ -58,6 +64,19 @@ function xml(context: DciContextNode[]): string {
 
 function markdown(context: DciContextNode[]): string {
   const items = context.map((node, i) => {
+    // A text item renders as a quoted block (spec §8.2): the marker, the
+    // short excerpt as its label, the ancestor path, then the excerpt itself.
+    // The serialized range endpoints are transport detail and never appear.
+    if (node.source === 'text' && node.text) {
+      const marker = node.marker ? ` ${node.marker}` : '';
+      const ancestorPath = (node.ancestors ?? []).map(ancestorName).join(' › ');
+      const label = node.label ?? node.text.excerpt;
+      const heading = `${i + 1}. Selected text${marker} ("${label}"${ancestorPath ? ` in ${ancestorPath}` : ''}):`;
+      const lines = [heading, `   > ${node.text.excerpt}`];
+      if (node.text.truncated)
+        lines.push(`   (excerpt truncated to ${node.text.excerpt.length} characters)`);
+      return lines.join('\n');
+    }
     const meta = [node.type, node.id && `id \`${node.id}\``].filter(Boolean).join(', ');
     const marker = node.marker ? `[${node.marker}] ` : '';
     const lines = [`${i + 1}. ${marker}**${nodeName(node)}**${meta ? ` (${meta})` : ''}`];

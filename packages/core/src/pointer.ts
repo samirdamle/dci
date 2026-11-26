@@ -1,5 +1,6 @@
 import { hasModifier } from './keys';
 import type { Gesture, GestureContext } from './interactions';
+import { rangeContainsPoint, type TextSelectionItem } from './text-pill';
 
 /** The element an event really hit, looking through open shadow roots. */
 export function eventTarget(e: Event): Element | null {
@@ -60,6 +61,63 @@ export const hoverGesture: Gesture = (ctx) => {
     offMove();
     offArm();
     if (frame) cancelAnimationFrame(frame);
+  };
+};
+
+/**
+ * Alt+Click on a live text range (spec §3.2, §4.3). Capture-on-pointerdown:
+ * the Phase 0 spike proved the native range is intact at pointerdown in
+ * Chromium, Firefox and WebKit, and that the marquee gesture's pointerdown
+ * `preventDefault()` is what keeps it alive past the click — so the range
+ * is read here, at pointerdown, never on a delay, and the snapshot is held
+ * until the click that follows. The click handler runs before
+ * `clickGesture` (this gesture is registered before it in
+ * `DEFAULT_GESTURES`): when a pending snapshot exists it adds the text
+ * item instead of selecting the node, and consumes the click so the node
+ * is never selected. An Alt+Click outside the live range leaves `pending`
+ * empty and behaves exactly as today.
+ */
+export const textPointerGesture: Gesture = (ctx) => {
+  let pending: TextSelectionItem | null = null;
+
+  const offDown = ctx.input.on('pointerdown', (e) => {
+    pending = null;
+    const plumbing = ctx.textSelection;
+    if (!plumbing?.enabled || e.button !== 0) return;
+    const item = plumbing.getLiveItem();
+    if (!item) return;
+    if (!rangeContainsPoint(item.range, e.clientX, e.clientY, e.target)) return;
+    // Snapshot now: by click time the range may have collapsed in some
+    // browsers, and the marquee handler's preventDefault() (which runs
+    // after this handler) is what preserves it in the meantime.
+    pending = item;
+    return 'handled';
+  });
+
+  const offClick = ctx.input.on('click', (e) => {
+    if (!pending || e.button !== 0) return;
+    const item = pending;
+    pending = null;
+    const plumbing = ctx.textSelection;
+    if (!plumbing?.enabled) return;
+    if (plumbing.addItem(item)) {
+      const marker = item.node.marker;
+      ctx.bus.emit(
+        'announce',
+        marker ? `Selected text added to chat, marker ${marker}` : 'Selected text added to chat',
+      );
+    }
+    return 'consume';
+  });
+
+  // A marquee drag produces no click (the input manager swallows it), so
+  // a snapshot can linger after a drag — but every pointerdown resets it
+  // before any click can run, so a stale snapshot can never be captured.
+  // (Do NOT clear it on pointerup: click fires after pointerup.)
+  return () => {
+    offDown();
+    offClick();
+    pending = null;
   };
 };
 

@@ -48,7 +48,7 @@ describe('validateRequest', () => {
       'action must be a string',
       'context[0] must be an object',
       'context[1].data must be an object',
-      "context[1].source must be 'annotated' or 'fallback'",
+      "context[1].source must be 'annotated', 'fallback' or 'text'",
       'context[1].id must be a string',
       'context[1].type must be a string',
       'context[1].label must be a string',
@@ -63,6 +63,79 @@ describe('validateRequest', () => {
     expect(validateRequest([])).toEqual({ ok: false, issues: ['request must be a JSON object'] });
     const r = validateRequest({ ...valid, context: {} });
     expect(!r.ok && r.issues).toEqual(['context must be an array']);
+  });
+});
+
+describe('validateRequest with text nodes', () => {
+  const textNode = {
+    label: 'Q3 focus: convert Proposal-stage tent deals before…',
+    marker: 'A',
+    data: {},
+    ancestors: [{ id: 'home', type: 'page', label: 'Sales Home' }],
+    source: 'text',
+    text: {
+      excerpt: 'Q3 focus: convert Proposal-stage tent deals before the winter catalog ships.',
+      truncated: false,
+      start: { path: 'main > div.card > p:nth-child(2)', offset: 0 },
+      end: { path: 'main > div.card > p:nth-child(2)', offset: 74 },
+    },
+  };
+
+  it('accepts a text node with a valid text object', () => {
+    const result = validateRequest({ ...valid, context: [textNode] });
+    expect(result).toEqual({ ok: true, value: { ...valid, context: [textNode] } });
+  });
+
+  it('rejects a text node with no text object', () => {
+    const withoutText: Record<string, unknown> = { ...textNode };
+    delete withoutText.text;
+    const result = validateRequest({ ...valid, context: [withoutText] });
+    expect(result).toEqual({ ok: false, issues: ['context[0].text must be an object'] });
+  });
+
+  it('rejects a text node with a malformed text object', () => {
+    const result = validateRequest({
+      ...valid,
+      context: [
+        {
+          ...textNode,
+          text: {
+            excerpt: 1,
+            truncated: 'no',
+            start: { path: 1, offset: -1 },
+            end: { path: 'main > p', offset: 1.5 },
+          },
+        },
+      ],
+    });
+    expect(result).toEqual({
+      ok: false,
+      issues: [
+        'context[0].text.excerpt must be a string',
+        'context[0].text.truncated must be a boolean',
+        'context[0].text.start.path must be a string',
+        'context[0].text.start.offset must be an integer ≥ 0',
+        'context[0].text.end.offset must be an integer ≥ 0',
+      ],
+    });
+  });
+
+  it('rejects a non-object text value and non-object endpoints', () => {
+    const result = validateRequest({
+      ...valid,
+      context: [
+        { ...textNode, text: 'excerpt' },
+        { ...textNode, text: { ...textNode.text, start: 'p', end: null } },
+      ],
+    });
+    expect(result).toEqual({
+      ok: false,
+      issues: [
+        'context[0].text must be an object',
+        'context[1].text.start must be an object',
+        'context[1].text.end must be an object',
+      ],
+    });
   });
 });
 

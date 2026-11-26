@@ -22,7 +22,7 @@ People already know how to **point**. With DCI:
 1. You mark meaningful elements with one attribute, `data-dci`.
 2. The user holds **Alt** (Option on macOS): annotated elements highlight under the pointer.
 3. **Alt+Click** selects a row, a card, a chart point. **Alt+Shift+Click** or **Alt+Drag** selects
-   several.
+   several. Drag over words to quote them exactly — a floating pill adds the sentence to the chat.
 4. They ask. Your backend receives the question **plus the exact records selected**: their IDs,
    types, data and where they sit on the page.
 

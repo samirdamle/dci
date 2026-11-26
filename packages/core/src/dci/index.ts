@@ -16,4 +16,5 @@ export {
   type DciSelectionApi,
   type DciSelectionChange,
   type DciTarget,
+  type DciTextSelectionApi,
 } from './create-dci';

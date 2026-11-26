@@ -35,6 +35,19 @@ The client sends `POST {endpoint}` with `Content-Type: application/json` and
       "data": { "amount": 420, "status": "overdue" },
       "ancestors": [{ "id": "invoices", "type": "table", "label": "Invoices" }],
       "source": "annotated"
+    },
+    {
+      "label": "Q3 focus: convert Proposal-stage tent deals before…",
+      "marker": "B",
+      "data": {},
+      "ancestors": [{ "id": "home", "type": "page", "label": "Sales Home" }],
+      "source": "text",
+      "text": {
+        "excerpt": "Q3 focus: convert Proposal-stage tent deals before the winter catalog ships.",
+        "truncated": false,
+        "start": { "path": "main > div.card > p:nth-child(2)", "offset": 0 },
+        "end": { "path": "main > div.card > p:nth-child(2)", "offset": 74 }
+      }
     }
   ],
   "page": { "url": "https://app.example.com/billing", "title": "Billing" }
@@ -52,16 +65,17 @@ The client sends `POST {endpoint}` with `Content-Type: application/json` and
 
 Each context node:
 
-| Field       | Type                          | Meaning                                                                                     |
-| ----------- | ----------------------------- | ------------------------------------------------------------------------------------------- |
-| `id`        | string, optional              | From the annotation                                                                         |
-| `type`      | string, optional              | From the annotation                                                                         |
-| `label`     | string, optional              | From the annotation                                                                         |
-| `marker`    | string, optional              | The node's badge in the selection (`"A"`, `"B"`… or `"1"`…): "compare A and B" refers to it |
-| `data`      | object                        | The annotation minus `id`, `type`, `label`, `private` (`{}` for fallback nodes)             |
-| `ancestors` | array, optional               | Annotated ancestors, root first: `{ id?, type?, label?, data? }`, or `{ private: true }`    |
-| `source`    | `"annotated"` \| `"fallback"` | Whether the element had an annotation                                                       |
-| `fallback`  | object, only for fallback     | `{ tagName, text?, ariaLabel?, alt?, title?, href?, value?, path }`                         |
+| Field       | Type                                      | Meaning                                                                                        |
+| ----------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `id`        | string, optional                          | From the annotation                                                                            |
+| `type`      | string, optional                          | From the annotation                                                                            |
+| `label`     | string, optional                          | From the annotation                                                                            |
+| `marker`    | string, optional                          | The node's badge in the selection (`"A"`, `"B"`… or `"1"`…): "compare A and B" refers to it    |
+| `data`      | object                                    | The annotation minus `id`, `type`, `label`, `private` (`{}` for fallback nodes)                |
+| `ancestors` | array, optional                           | Annotated ancestors, root first: `{ id?, type?, label?, data? }`, or `{ private: true }`       |
+| `source`    | `"annotated"` \| `"fallback"` \| `"text"` | Whether the element had an annotation, or the node is selected words                           |
+| `fallback`  | object, only for fallback                 | `{ tagName, text?, ariaLabel?, alt?, title?, href?, value?, path }`                            |
+| `text`      | object, only for text                     | `{ excerpt, truncated, start, end }` — the selected words and their serialized range endpoints |
 
 See the [annotation guide](annotations.md#what-gets-sent) for how these are built. Servers should
 accept unknown extra fields: they may be added within a version.
@@ -195,6 +209,16 @@ def describe(context: list[dict]) -> str:
     lines = []
     for node in context:
         path = " › ".join(a.get("label") or a.get("id") or "?" for a in node.get("ancestors", []))
+        if node.get("source") == "text":
+            # Selected words: quote the excerpt (never the serialized range
+            # endpoints — those are transport detail for the client's highlight).
+            excerpt = node.get("text", {}).get("excerpt", "")
+            marker = node.get("marker", "?")
+            note = " (excerpt truncated)" if node.get("text", {}).get("truncated") else ""
+            lines.append(
+                f"- Selected text {marker} ({node.get('label', '')!r} in {path or 'page'}){note}:\n  > {excerpt}"
+            )
+            continue
         name = node.get("label") or node.get("id") or node.get("fallback", {}).get("text", "")
         lines.append(f"- {node.get('type', 'item')} {name!r} in {path or 'page'}: {json.dumps(node['data'])}")
     return "Selected on screen:\n" + "\n".join(lines)

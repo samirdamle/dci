@@ -6,6 +6,26 @@ const isObject = (x: unknown): x is Record<string, unknown> =>
   typeof x === 'object' && x !== null && !Array.isArray(x);
 const isString = (x: unknown): x is string => typeof x === 'string';
 
+const isNonNegativeInteger = (x: unknown): x is number =>
+  typeof x === 'number' && Number.isInteger(x) && x >= 0;
+
+function endpointIssues(endpoint: unknown, name: string, issues: string[]) {
+  if (!isObject(endpoint)) return issues.push(`${name} must be an object`);
+  if (!isString(endpoint.path)) issues.push(`${name}.path must be a string`);
+  if (!isNonNegativeInteger(endpoint.offset)) issues.push(`${name}.offset must be an integer ≥ 0`);
+}
+
+/** A `source: 'text'` node must carry a well-formed `text` object. */
+function textIssues(node: Record<string, unknown>, i: number, issues: string[]) {
+  const text = node.text;
+  if (!isObject(text)) return issues.push(`context[${i}].text must be an object`);
+  if (!isString(text.excerpt)) issues.push(`context[${i}].text.excerpt must be a string`);
+  if (typeof text.truncated !== 'boolean')
+    issues.push(`context[${i}].text.truncated must be a boolean`);
+  endpointIssues(text.start, `context[${i}].text.start`, issues);
+  endpointIssues(text.end, `context[${i}].text.end`, issues);
+}
+
 function contextIssues(context: unknown, issues: string[]) {
   if (!Array.isArray(context)) {
     issues.push('context must be an array');
@@ -14,9 +34,10 @@ function contextIssues(context: unknown, issues: string[]) {
   context.forEach((node, i) => {
     if (!isObject(node)) return issues.push(`context[${i}] must be an object`);
     if (!isObject(node.data)) issues.push(`context[${i}].data must be an object`);
-    if (node.source !== 'annotated' && node.source !== 'fallback') {
-      issues.push(`context[${i}].source must be 'annotated' or 'fallback'`);
+    if (node.source !== 'annotated' && node.source !== 'fallback' && node.source !== 'text') {
+      issues.push(`context[${i}].source must be 'annotated', 'fallback' or 'text'`);
     }
+    if (node.source === 'text') textIssues(node, i, issues);
     for (const key of ['id', 'type', 'label', 'marker'] as const) {
       if (node[key] !== undefined && !isString(node[key])) {
         issues.push(`context[${i}].${key} must be a string`);
