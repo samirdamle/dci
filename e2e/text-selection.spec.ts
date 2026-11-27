@@ -61,6 +61,42 @@ test.describe('text selection', () => {
     await expect.poll(() => liveSelection(page)).not.toBe('');
   }
 
+  /**
+   * Drag across the *text* of `target`, not its whole box. The CreditLimit
+   * cell is far wider than its value, so a whole-cell drag starts and ends
+   * in empty padding — under Chromium 159 that produced no selection at
+   * all (#121). The tight range rect keeps the whole drag on the text.
+   * (Targeting the `<dd>` alone would not narrow it: a block `<dd>` is as
+   * wide as the cell, so the text rect comes from a Range, not the box.)
+   */
+  async function dragSelectText(page: Page, target: Locator) {
+    await target.scrollIntoViewIfNeeded();
+    const rect = await target.evaluate((el) => {
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      let node: Node | null;
+      while ((node = walker.nextNode())) {
+        if (node.textContent?.trim()) {
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          const r = range.getBoundingClientRect();
+          return { x: r.x, y: r.y, width: r.width, height: r.height };
+        }
+      }
+      return null;
+    });
+    expect(rect).not.toBeNull();
+    const { x, y, width, height } = rect!;
+    const midY = y + height / 2;
+    // Same sequence as dragSelect: collapse any live selection first, then
+    // drag left-to-right across the text.
+    await page.mouse.click(x + width - 4, midY);
+    await page.mouse.move(x + 4, midY);
+    await page.mouse.down();
+    await page.mouse.move(x + width - 4, midY, { steps: 12 });
+    await page.mouse.up();
+    await expect.poll(() => liveSelection(page)).not.toBe('');
+  }
+
   /** Drag-select the Org-notes paragraph and wait for the pill. */
   async function selectNotes(page: Page) {
     await dragSelect(page, notes(page));
@@ -241,8 +277,11 @@ test.describe('text selection', () => {
       .getByRole('link', { name: /Alpine/ })
       .first()
       .click();
-    const creditLimit = page.locator('[data-dci*="CreditLimit"]');
-    await dragSelect(page, creditLimit);
+    const creditLimitValue = page.locator('[data-dci*="CreditLimit"] dd');
+    // Drag across the value text itself, not the whole cell: the cell is
+    // far wider than "$250,000", and the whole-cell drag produced no
+    // selection under Chromium 159 (#121).
+    await dragSelectText(page, creditLimitValue);
     // The drag really did select the private value's text…
     expect(await liveSelection(page)).not.toBe('');
     // …but no pill appears for it, and Alt+Enter captures nothing.
