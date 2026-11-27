@@ -300,6 +300,62 @@ describe('formatContextForPrompt', () => {
   });
 });
 
+describe('formatContextForPrompt with text nodes', () => {
+  const textNode: DciContextNode = {
+    label: 'Q3 focus: convert Proposal-stage tent deals before…',
+    marker: 'A',
+    data: {},
+    ancestors: [{ id: 'home', type: 'page', label: 'Sales Home' }],
+    source: 'text',
+    text: {
+      excerpt: 'Q3 focus: convert Proposal-stage tent deals before the winter catalog ships.',
+      truncated: false,
+      start: { path: 'main > div.card > p:nth-child(2)', offset: 0 },
+      end: { path: 'main > div.card > p:nth-child(2)', offset: 74 },
+    },
+  };
+
+  it('renders XML with a <text> child and no serialized paths', () => {
+    const xml = formatContextForPrompt([textNode]);
+    expect(xml).toContain(
+      '<text>Q3 focus: convert Proposal-stage tent deals before the winter catalog ships.</text>',
+    );
+    expect(xml).toContain('marker="A"');
+    expect(xml).not.toContain('main > div.card');
+    expect(xml).not.toContain('nth-child');
+    expect(xml).not.toContain('"offset"');
+  });
+
+  it('renders markdown as a quoted block', () => {
+    const md = formatContextForPrompt([textNode], { style: 'markdown' });
+    expect(md).toContain(
+      '1. Selected text A ("Q3 focus: convert Proposal-stage tent deals before…" in Sales Home):',
+    );
+    expect(md).toContain(
+      '   > Q3 focus: convert Proposal-stage tent deals before the winter catalog ships.',
+    );
+    expect(md).not.toContain('main > div.card');
+    expect(md).not.toContain('"offset"');
+  });
+
+  it('marks truncation in both styles', () => {
+    const truncated: DciContextNode = {
+      ...textNode,
+      text: { ...textNode.text!, excerpt: 'Q3 focus: convert', truncated: true },
+    };
+    expect(formatContextForPrompt([truncated])).toContain(
+      '<text>Q3 focus: convert (excerpt truncated to 17 characters)</text>',
+    );
+    expect(formatContextForPrompt([truncated], { style: 'markdown' })).toContain(
+      '(excerpt truncated to 17 characters)',
+    );
+  });
+
+  it('leaves JSON unchanged', () => {
+    expect(JSON.parse(formatContextForPrompt([textNode], { style: 'json' }))).toEqual([textNode]);
+  });
+});
+
 describe('encodeEvent compatibility', () => {
   it('matches what the stream writes', async () => {
     const stream = createDciStream({ pingIntervalMs: 0 });

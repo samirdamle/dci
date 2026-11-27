@@ -142,7 +142,11 @@ export function createInputManager(options: InputOptions = {}): InputManager {
       setArmed(true);
       return;
     }
-    if (isFromDciUi(e)) return;
+    // Escape still reaches the gestures from inside DCI's own UI: WebKit
+    // can leave focus in the chat's (hidden) textarea after the chat
+    // closes, and the second Esc must then clear the selection (spec
+    // §4.4). Other keys typed in the chat input stay gesture-free.
+    if (e.key !== 'Escape' && isFromDciUi(e)) return;
     run(keyHandlers, e);
   };
 

@@ -33,12 +33,26 @@ export {
 } from './context';
 export {
   createSelectionStore,
+  isTextItem,
   type SelectionChange,
   type SelectionEvents,
+  type SelectionItem,
   type SelectionLimit,
   type SelectionOptions,
   type SelectionStore,
 } from './selection';
+export {
+  captureTextRange,
+  deserializeRange,
+  resolveCssPath,
+  serializeRange,
+  textNodeKey,
+  toTextSelectionItem,
+  validateTextRange,
+  type SerializedTextRange,
+  type TextSelectionItem,
+  type TextSelectionOptions,
+} from './text-selection';
 export { formatMarker, letterMarker, type MarkerSeries } from './markers';
 export { createEmitter, type Emitter } from './emitter';
 export {
@@ -76,7 +90,14 @@ export {
   type Rect,
 } from './interactions';
 export { createHoverState, type HoverState } from './hover';
-export { clickGesture, eventTarget, hoverGesture, inRoot, resolveTarget } from './pointer';
+export {
+  clickGesture,
+  eventTarget,
+  hoverGesture,
+  inRoot,
+  resolveTarget,
+  textPointerGesture,
+} from './pointer';
 export { WHEEL_STEP, wheelGesture, wheelPixels } from './wheel';
 export {
   contains,
@@ -112,6 +133,27 @@ export {
 } from './touch';
 export { announceGesture, createAnnouncer, describeNode, nodeName } from './announce';
 export { keyboardGesture } from './keyboard';
+export {
+  createTextHighlight,
+  highlightSupported,
+  TEXT_FLASH_HIGHLIGHT_NAME,
+  TEXT_FLASH_MS,
+  TEXT_HIGHLIGHT_CSS,
+  TEXT_HIGHLIGHT_NAME,
+  type TextHighlight,
+  type TextHighlightOptions,
+} from './highlight';
+export {
+  createTextPill,
+  isTextSelectionTarget,
+  rangeContainsPoint,
+  rangeContainsTarget,
+  TEXT_PILL_CSS,
+  textPillGesture,
+  type TextPill,
+  type TextPillOptions,
+  type TextSelectionPlumbing,
+} from './text-pill';
 export {
   acquireUiHost,
   BASE_CSS,
@@ -151,6 +193,6 @@ export {
   type SessionChange,
   type SessionOptions,
 } from './session';
-export type { DciEvent, DciRequest } from '@samirdamle/dci-protocol';
+export type { DciEvent, DciRequest, DciTextEndpoint, DciTextInfo } from '@samirdamle/dci-protocol';
 export * from './chat/index';
 export * from './dci/index';

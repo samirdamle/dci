@@ -114,6 +114,12 @@ export interface DciConfig {
   fallback?: boolean;
   /** Max fallback text length. Default `500`. */
   maxTextLength?: number;
+  /** Enable text selection (drag → pill, Alt+Click on a range, Alt+Enter). Default `true`. */
+  textSelection?: boolean;
+  /** Characters of selected text sent per item. Default `2000`. */
+  maxTextSelectionLength?: number;
+  /** Label for the floating pill that captures a text selection. Default `'Ask about this'`. */
+  textSelectionAction?: string;
   /** Drag selects innermost (`'leaf'`) or outermost (`'top'`) nodes. Default `'leaf'`. */
   windowSelectLevel?: 'leaf' | 'top';
   /** Mod+Click on empty space clears the selection. Default `true`. */
@@ -159,6 +165,9 @@ export const DEFAULTS = {
   ancestorData: 'compact',
   fallback: true,
   maxTextLength: 500,
+  textSelection: true,
+  maxTextSelectionLength: 2000,
+  textSelectionAction: 'Ask about this',
   windowSelectLevel: 'leaf',
   clearOnEmptyClick: true,
   passthroughClicks: false,
@@ -224,6 +233,9 @@ const TOP_KEYS: Array<keyof DciConfig> = [
   'ancestorData',
   'fallback',
   'maxTextLength',
+  'textSelection',
+  'maxTextSelectionLength',
+  'textSelectionAction',
   'windowSelectLevel',
   'clearOnEmptyClick',
   'passthroughClicks',
@@ -326,6 +338,14 @@ export function validateConfig(config: DciConfig): ConfigProblems {
   )
     oneOf(config.markers, ['letters', 'numbers'], 'markers', errors);
   count(config.maxTextLength, 'maxTextLength', errors, 1);
+  if (config.textSelection !== undefined && typeof config.textSelection !== 'boolean')
+    errors.push('`textSelection` must be a boolean.');
+  count(config.maxTextSelectionLength, 'maxTextSelectionLength', errors, 1);
+  if (
+    config.textSelectionAction !== undefined &&
+    (typeof config.textSelectionAction !== 'string' || !config.textSelectionAction)
+  )
+    errors.push('`textSelectionAction` must be a non-empty string.');
   oneOf(config.ancestorData, ['compact', 'full'], 'ancestorData', errors);
   oneOf(config.windowSelectLevel, ['leaf', 'top'], 'windowSelectLevel', errors);
   oneOf(config.theme, ['light', 'dark', 'auto'], 'theme', errors);

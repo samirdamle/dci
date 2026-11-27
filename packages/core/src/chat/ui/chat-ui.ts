@@ -5,6 +5,7 @@ import type { InteractionEvents } from '../../interactions';
 import { labelFor } from '../../overlay';
 import { readDci, type InferAnnotation } from '../../parse';
 import type { SelectionStore } from '../../selection';
+import { isTextItem } from '../../selection';
 import type { DciTree } from '../../tree';
 import { acquireUiHost, type Theme } from '../../ui-host';
 import type { ChatController } from '../controller';
@@ -92,6 +93,14 @@ export interface ChatUiOptions {
   theme?: Theme;
   /** Where the `<dci-root>` host lives. Default `document.body`. */
   container?: Element;
+  /**
+   * Text-selection support, wired by `createDci()`: `flash` scrolls a text
+   * item's range into view and flashes its highlight (chip click, spec §3.5).
+   */
+  textSelection?: {
+    /** Scroll the text item's range into view and flash its highlight. */
+    flash(node: DciContextNode): void;
+  };
 }
 
 export interface ChatUi extends ChatUiApi {
@@ -250,8 +259,17 @@ export function createChatUi(options: ChatUiOptions): ChatUi {
 
   /** The selected nodes' markers, in selection order (empty when markers are off). */
   function selectionMarkers(): string[] {
-    return selection.get().flatMap((el) => selection.marker(el) ?? []);
+    return selection
+      .items()
+      .flatMap((item) =>
+        isTextItem(item)
+          ? (selection.markerForText(item) ?? item.node.marker ?? [])
+          : (selection.marker(item) ?? []),
+      );
   }
+
+  /** A text node's fuller excerpt, for a chip tooltip. */
+  const textExcerpt = (n: DciContextNode): string => n.text?.excerpt ?? n.label ?? '';
 
   function defaultHeader(): HTMLElement {
     const close = h(
@@ -313,22 +331,46 @@ export function createChatUi(options: ChatUiOptions): ChatUi {
   }
 
   function chip(node: DciContextNode, i: number): HTMLElement {
-    const label = chipLabel(node);
+    const isText = node.source === 'text';
+    const label = isText ? (node.label ?? textExcerpt(node)) : chipLabel(node);
     const el = controller.elementFor(node);
     const name = h(
       'button',
-      { type: 'button', 'data-key': `chip-${i}`, title: node.id ? `${label} (${node.id})` : label },
+      {
+        type: 'button',
+        'data-key': `chip-${i}`,
+        ...(isText
+          ? {
+              title: textExcerpt(node),
+              'aria-label': `“${label}”`,
+            }
+          : { title: node.id ? `${label} (${node.id})` : label }),
+      },
       node.marker ? h('span', { class: 'marker' }, node.marker) : null,
       h('span', { class: 'name' }, label),
       node.id
         ? h('small', {}, `#${node.id}`)
-        : node.source === 'fallback'
-          ? h('small', {}, strings.unannotated)
-          : null,
+        : isText
+          ? h('small', {}, 'text')
+          : node.source === 'fallback'
+            ? h('small', {}, strings.unannotated)
+            : null,
     );
-    name.addEventListener('mouseenter', () => el && api.flash(el));
-    name.addEventListener('focus', () => el && api.flash(el));
+    name.addEventListener('mouseenter', () => {
+      if (el) api.flash(el);
+      else if (isText) options.textSelection?.flash(node);
+    });
+    name.addEventListener('focus', () => {
+      if (el) api.flash(el);
+      else if (isText) options.textSelection?.flash(node);
+    });
     name.addEventListener('click', () => {
+      // Text chips scroll their range into view and flash the highlight
+      // (spec §3.5); element chips keep the existing behaviour.
+      if (isText) {
+        options.textSelection?.flash(node);
+        return;
+      }
       if (!el) return;
       if (typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'nearest' });
       api.flash(el);
@@ -349,6 +391,7 @@ export function createChatUi(options: ChatUiOptions): ChatUi {
       {
         class: 'chip',
         'data-fallback': node.source === 'fallback' || undefined,
+        'data-text': isText || undefined,
         'data-marker': node.marker,
       },
       name,
@@ -818,15 +861,26 @@ export function createChatUi(options: ChatUiOptions): ChatUi {
     // Open/close and input changes render now (focus management); the rest per frame.
     if (last && (state.open !== last.open || state.confirm !== last.confirm)) renderNow();
     else schedule();
+    // Closing the chat cancels a pending auto-open: a capture opens the
+    // chat immediately (pill) and also arms the 250ms auto-open timer, so
+    // without this the chat pops back open if the user closes it inside
+    // that window (spec §4.4: Esc closes the chat first, then clears).
+    if (!state.open) clearTimeout(openTimer);
     if (state.messages.length > messageCount && !state.open && autoOpen !== false)
       controller.open();
     messageCount = state.messages.length;
   });
-  const offSelection = selection.subscribe(({ added, elements }) => {
+  const offSelection = selection.subscribe((change) => {
+    const { added, elements, addedText, textItems } = change;
     schedule();
     if (controller.getState().open && mode === 'popover') anchoring.setTargets(anchorTargets());
     clearTimeout(openTimer);
-    if (autoOpen === 'onSelect' && added.length && elements.length)
+    // Text-only selections auto-open too (their `added` is empty).
+    if (
+      autoOpen === 'onSelect' &&
+      (added.length || addedText.length) &&
+      (elements.length || textItems.length)
+    )
       openTimer = setTimeout(() => {
         // Keep focus where it is, so arrow-key navigation keeps working.
         quietOpen = true;

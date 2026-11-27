@@ -11,8 +11,18 @@ import type { ChatMessage, ChatState } from '../chat/types';
 import type { ContextOptions } from '../context';
 import { createEmitter } from '../emitter';
 import { devWarn, isDev } from '../env';
+import { createTextHighlight, type TextHighlight } from '../highlight';
 import { createInteractions, type InteractionEvents, type Interactions } from '../interactions';
 import { readDci } from '../parse';
+import type { TextSelectionPlumbing } from '../text-pill';
+import {
+  captureTextRange,
+  deserializeRange,
+  textNodeKey,
+  toTextSelectionItem,
+  validateTextRange,
+  type TextSelectionItem,
+} from '../text-selection';
 import { selectSameType, type SelectSameTypeOptions } from '../same-type';
 import {
   createSelectionStore,
@@ -59,6 +69,17 @@ export interface DciEvents {
   selectmodechange: boolean;
 }
 
+export interface DciTextSelectionApi {
+  /** The live native selection as a text context node, or `null` when there is none. */
+  get(): DciContextNode | null;
+  /** Capture the live range as a context item. Returns `false` when there is none. */
+  capture(): boolean;
+  /** The text items currently selected. */
+  items(): DciContextNode[];
+  /** Remove one text item (clears its highlight). */
+  remove(node: DciContextNode): void;
+}
+
 export interface DciSelectionApi {
   /** The selection as payloads, in selection order. */
   get(): DciContextNode[];
@@ -92,6 +113,8 @@ export interface DciChatApi {
 export interface DciInstance {
   readonly selection: DciSelectionApi;
   readonly chat: DciChatApi;
+  /** Text-selection API (spec §9): the live range, capture, items, remove. */
+  readonly textSelection: DciTextSelectionApi;
   readonly session: Session;
   /** The resolved config (defaults merged in). */
   readonly config: Readonly<DciConfig>;
@@ -146,6 +169,7 @@ const LIVE_CHAT_KEYS: Array<keyof DciChatConfig> = [
   'concurrency',
   'confirmBeforeSend',
 ];
+const TEXT_KEYS = ['textSelection', 'maxTextSelectionLength', 'textSelectionAction'] as const;
 
 function check(config: DciConfig) {
   if (!isDev()) return;
@@ -193,9 +217,121 @@ export function createDci(input: DciConfig): DciInstance {
   let interactions: Interactions | null = null;
   let chatUi: ChatUi | null = null;
   let tree!: DciTree;
+  /** Persistent CSS-highlight manager for captured text items. */
+  let textHighlight: TextHighlight | null = null;
   const cleanups = { selection: [] as Array<() => void>, controller: [] as Array<() => void> };
 
+  const textEnabled = () => config.textSelection !== false;
+  const textMaxLength = () => config.maxTextSelectionLength ?? 2000;
+  const textActionLabel = () => config.textSelectionAction ?? 'Ask about this';
+
   const chatConfig = () => config.chat ?? {};
+
+  /** Options for A's capture/validate helpers: the context options plus the length cap. */
+  const captureOptions = () => ({ ...contextOptions(), maxTextSelectionLength: textMaxLength() });
+
+  function buildTextHighlight() {
+    textHighlight?.destroy();
+    textHighlight = createTextHighlight({
+      resolve: (node) => {
+        if (!node.text) return null;
+        try {
+          return deserializeRange(node.text, config.root ?? document.body);
+        } catch {
+          return null;
+        }
+      },
+    });
+    // Re-register anything the store already holds (rebuilds carry it).
+    for (const item of selection.textItems()) textHighlight.register(item);
+  }
+
+  /** The text item for the live native selection, or `null`. Reads the selection now. */
+  function liveTextItem(): TextSelectionItem | null {
+    if (!textEnabled()) return null;
+    const sel = window.getSelection?.();
+    if (!sel || sel.rangeCount === 0) return null;
+    let range: Range;
+    try {
+      range = sel.getRangeAt(0).cloneRange();
+    } catch {
+      return null;
+    }
+    try {
+      // `captureTextRange` validates (§4.1/§10.1) and returns the node;
+      // `toTextSelectionItem` pairs it with the live range.
+      const node = captureTextRange(range, captureOptions());
+      return node ? toTextSelectionItem(node, range) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Capture the live range into the selection store + highlight. */
+  function captureLiveText(): TextSelectionItem | null {
+    const item = liveTextItem();
+    if (!item) return null;
+    if (!addTextItem(item)) return null;
+    return item;
+  }
+
+  function addTextItem(item: TextSelectionItem): boolean {
+    if (!textEnabled()) return false;
+    const added = selection.addText(item);
+    if (!added) return false;
+    const marker = selection.markerForText(item);
+    if (marker) item.node = { ...item.node, marker };
+    textHighlight?.register(item);
+    return true;
+  }
+
+  function removeTextItem(node: DciContextNode): void {
+    const item = selection.textItems().find((t) => textNodeKey(t.node) === textNodeKey(node));
+    if (!item) return;
+    selection.removeText(item);
+    textHighlight?.removeForNode(node);
+  }
+
+  /** Scroll a text item's range into view and flash its highlight (chip click). */
+  function flashTextNode(node: DciContextNode): void {
+    if (!node.text || !textHighlight) return;
+    let range: Range | null;
+    try {
+      range = deserializeRange(node.text, config.root ?? document.body);
+    } catch {
+      return;
+    }
+    if (!range) return;
+    textHighlight.flash({ kind: 'text', node, range, key: textNodeKey(node) });
+  }
+
+  /** The plumbing the gestures consume (see `text-pill.ts`). */
+  function makeTextPlumbing(): TextSelectionPlumbing {
+    return {
+      get enabled() {
+        return textEnabled();
+      },
+      get maxLength() {
+        return textMaxLength();
+      },
+      get actionLabel() {
+        return textActionLabel();
+      },
+      getLiveItem: () => liveTextItem(),
+      hasLiveRange: () => liveTextItem() !== null,
+      captureLive: () => captureLiveText(),
+      addItem: (item) => addTextItem(item),
+      isChatOpen: () => controller.getState().open,
+      openChat: () => controller.open(),
+    };
+  }
+
+  const textSelectionApi: DciTextSelectionApi = {
+    get: () => liveTextItem()?.node ?? null,
+    capture: () => captureLiveText() !== null,
+    items: () => selection.textItems().map((t) => t.node),
+    remove: (node) => removeTextItem(node),
+  };
 
   function contextOptions(): ContextOptions {
     const { root, attribute, infer, includeAncestors, ancestorData, fallback, maxTextLength } =
@@ -254,12 +390,17 @@ export function createDci(input: DciConfig): DciInstance {
     tree = createDciTree(contextOptions());
     const root = config.root ?? document.body;
     cleanups.selection = [
-      selection.subscribe((change) =>
-        events.emit('selectionchange', { ...change, nodes: selection.toContext() }),
-      ),
+      selection.subscribe((change) => {
+        events.emit('selectionchange', { ...change, nodes: selection.toContext() });
+        // Keep the persistent highlights in step with the store: a chip
+        // added elsewhere (or a prune) registers / removes its highlight.
+        for (const item of change.addedText) textHighlight?.register(item);
+        for (const item of change.removedText) textHighlight?.remove(item);
+      }),
       selection.on('selectionlimit', (e) => events.emit('selectionlimit', e)),
       () => selection.destroy(),
     ];
+    buildTextHighlight();
     const kept = carry.filter((el) => el.isConnected && root.contains(el) && tree.nearestNode(el));
     if (kept.length) selection.set(kept);
   }
@@ -302,6 +443,20 @@ export function createDci(input: DciConfig): DciInstance {
       beforeSend: (request) => (config.beforeSend ? config.beforeSend(request) : request),
       page: () => config.page?.() ?? { url: location.href, title: document.title },
       onCustomEvent: (e) => config.onCustomEvent?.(e),
+      clearTextHighlight: (node) => textHighlight?.removeForNode(node),
+      // Last line of defence (spec §10.1): re-validate the deserialized
+      // range with A's `validateTextRange` — it refuses ranges that now
+      // intersect a private node (or are otherwise invalid). An
+      // unresolvable range is stripped too.
+      textPrivacy: (node) => {
+        if (!node.text) return true;
+        try {
+          const range = deserializeRange(node.text, config.root ?? document.body);
+          return range ? validateTextRange(range, captureOptions()) !== null : true;
+        } catch {
+          return true;
+        }
+      },
     });
     // `message`: user messages when sent, assistant replies when finished.
     const seen = new Set<string>();
@@ -338,6 +493,7 @@ export function createDci(input: DciConfig): DciInstance {
       ...selectionOptions(),
       selection,
       bus,
+      textSelection: makeTextPlumbing(),
       ...(config.modifier ? { modifier: config.modifier } : {}),
       ...(config.bindings ? { bindings: config.bindings } : {}),
       overlay:
@@ -379,6 +535,7 @@ export function createDci(input: DciConfig): DciInstance {
       ...uiOptions,
       controller,
       interactions: { selection, tree, bus },
+      textSelection: { flash: (node) => flashTextNode(node) },
       ...(config.actions ? { actions: config.actions } : {}),
       ...(config.attribute ? { attribute: config.attribute } : {}),
       ...(config.infer ? { infer: config.infer } : {}),
@@ -409,18 +566,20 @@ export function createDci(input: DciConfig): DciInstance {
     if (changed(SELECTION_KEYS)) {
       // Everything reads the selection: rebuild all but the session.
       const carry = selection.get();
+      const carryText = selection.textItems();
       destroyInteractions();
       cleanups.controller.forEach((off) => off());
       buildSelection(carry);
       buildRegistry();
       buildController();
       buildInteractions();
+      for (const item of carryText) addTextItem(item);
       const fresh = controller.getState();
       for (const fn of [...chatListeners]) fn(fresh);
       return;
     }
     if (changed(['builtinActions'])) buildRegistry();
-    if (changed(INTERACTION_KEYS)) {
+    if (changed(INTERACTION_KEYS) || changed(TEXT_KEYS)) {
       buildInteractions();
       return;
     }
@@ -483,6 +642,7 @@ export function createDci(input: DciConfig): DciInstance {
   return {
     selection: selectionApi,
     chat: chatApi,
+    textSelection: textSelectionApi,
     session,
     get config() {
       return config;
@@ -525,6 +685,8 @@ export function createDci(input: DciConfig): DciInstance {
       if (destroyed) return;
       destroyed = true;
       destroyInteractions();
+      textHighlight?.destroy();
+      textHighlight = null;
       cleanups.controller.forEach((off) => off());
       cleanups.selection.forEach((off) => off());
       offHover();

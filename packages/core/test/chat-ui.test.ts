@@ -1,4 +1,4 @@
-import type { DciEvent, DciRequest } from '@samirdamle/dci-protocol';
+import type { DciContextNode, DciEvent, DciRequest } from '@samirdamle/dci-protocol';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createChatController, type ChatControllerOptions } from '../src/chat/controller';
 import { createChatUi, type ChatUiOptions } from '../src/chat/ui/chat-ui';
@@ -6,6 +6,7 @@ import { DEFAULT_STRINGS, type ChatStrings } from '../src/chat/ui/strings';
 import { createInteractions } from '../src/interactions';
 import { fakeTransport, reply, tick } from './chat-utils';
 import { mountFixture } from './test-utils';
+import { createTextSelectionStore, makeTextItem } from './text-test-utils';
 
 const FIXTURE = `
   <section id="page" data-dci='{"id":"page","type":"page","label":"Dashboard"}'>
@@ -223,6 +224,134 @@ describe('chips and breadcrumb', () => {
     expect(shadow.querySelector('.limit')?.textContent).toBe(
       'Showing 1 of 2. Selection limit reached.',
     );
+  });
+});
+
+describe('text chips', () => {
+  const TEXT_FIXTURE = `
+    <section id="page" data-dci='{"id":"page","type":"page","label":"Dashboard"}'>
+      <div id="a" data-dci='{"id":"inv_1","type":"invoice","label":"Invoice 1"}'></div>
+      <p id="note">Q3 focus: convert Proposal-stage deals before winter.</p>
+    </section>
+    <button id="outside">outside</button>`;
+
+  function textSetup(flash = vi.fn()) {
+    const f = mountFixture(TEXT_FIXTURE);
+    const store = createTextSelectionStore({ root: f.root });
+    const interactions = createInteractions({ root: f.root, overlay: false, selection: store });
+    const fake = fakeTransport(() => reply('Hello **world**'));
+    const controller = createChatController({
+      transport: fake.transport,
+      selection: store,
+      contextOptions: { root: f.root },
+      page: () => ({ url: 'https://x.test/', title: 'X' }),
+    });
+    const chat = createChatUi({
+      controller,
+      interactions,
+      autoOpen: false,
+      textSelection: { flash: (node) => flash(node) },
+    });
+    cleanup.push(() => {
+      chat.destroy();
+      controller.destroy();
+      interactions.destroy();
+    });
+    const shadow = document.querySelector('dci-root')!.shadowRoot!;
+    const $ = <T extends Element = HTMLElement>(sel: string) => shadow.querySelector<T>(sel);
+    const $$ = <T extends Element = HTMLElement>(sel: string) => [
+      ...shadow.querySelectorAll<T>(sel),
+    ];
+    return {
+      f,
+      store,
+      interactions,
+      controller,
+      chat,
+      requests: fake.requests,
+      shadow,
+      $,
+      $$,
+      flash,
+    };
+  }
+
+  async function selectText(s: ReturnType<typeof textSetup>, text: string) {
+    const item = makeTextItem(s.f.get('#note'), text);
+    s.store.addText(item);
+    await tick();
+    await frame();
+    return item;
+  }
+
+  it('shows a text chip with a quoted excerpt, a text tag and its marker', async () => {
+    const s = textSetup();
+    await selectText(s, 'convert Proposal-stage');
+    expect(text(s.$$('.chip .name'))).toEqual(['convert Proposal-stage']);
+    expect(text(s.$$('.chip small'))).toEqual(['text']);
+    expect(text(s.$$('.chip .marker'))).toEqual(['A']);
+    const chip = s.$<HTMLButtonElement>('.chip button')!;
+    expect(chip.getAttribute('aria-label')).toBe('“convert Proposal-stage”');
+    expect(chip.title).toBe('convert Proposal-stage');
+    expect(s.$('.chip')!.hasAttribute('data-text')).toBe(true);
+    // The header shows the text marker too.
+    expect(s.$('h2')?.textContent).toContain('A');
+  });
+
+  it('shows element and text chips together, in selection order', async () => {
+    const s = textSetup();
+    s.interactions.selection.set([s.f.get('#a')]);
+    await selectText(s, 'convert Proposal-stage');
+    expect(text(s.$$('.chip .name'))).toEqual(['Invoice 1', 'convert Proposal-stage']);
+    expect(text(s.$$('.chip small'))).toEqual(['#inv_1', 'text']);
+    expect(text(s.$$('.chip .marker'))).toEqual(['A', 'B']);
+  });
+
+  it('clicking a text chip scrolls its range into view and flashes it', async () => {
+    const s = textSetup();
+    const item = await selectText(s, 'convert Proposal-stage');
+    s.$<HTMLButtonElement>('.chip button')!.click();
+    expect(s.flash).toHaveBeenCalledWith(expect.objectContaining({ source: 'text' }));
+    const flashed = s.flash.mock.calls[0]![0] as unknown as { text: { excerpt: string } };
+    const expected = item.node as unknown as { text: { excerpt: string } };
+    expect(flashed.text.excerpt).toBe(expected.text.excerpt);
+  });
+
+  it('× on a text chip removes the context item (and its highlight)', async () => {
+    const cleared: DciContextNode[] = [];
+    const f = mountFixture(TEXT_FIXTURE);
+    const store = createTextSelectionStore({ root: f.root });
+    const interactions = createInteractions({ root: f.root, overlay: false, selection: store });
+    const controller = createChatController({
+      transport: fakeTransport(() => reply('ok')).transport,
+      selection: store,
+      clearTextHighlight: (node) => cleared.push(node),
+    });
+    const chat = createChatUi({ controller, interactions, autoOpen: false });
+    cleanup.push(() => {
+      chat.destroy();
+      controller.destroy();
+      interactions.destroy();
+    });
+    const shadow = document.querySelector('dci-root')!.shadowRoot!;
+    const item = makeTextItem(f.get('#note'), 'convert Proposal-stage');
+    store.addText(item);
+    await tick();
+    await frame();
+    expect(shadow.querySelectorAll('.chip')).toHaveLength(1);
+    (shadow.querySelector('.chip .x') as HTMLButtonElement).click();
+    await tick();
+    await frame();
+    expect(shadow.querySelectorAll('.chip')).toHaveLength(0);
+    expect(store.textItems()).toEqual([]);
+    expect(cleared).toHaveLength(1);
+    expect(cleared[0]!.source).toBe('text');
+  });
+
+  it('no breadcrumb appears for a text-only selection', async () => {
+    const s = textSetup();
+    await selectText(s, 'convert Proposal-stage');
+    expect(s.$('.crumbs')).toBeNull();
   });
 });
 

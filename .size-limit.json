@@ -11,7 +11,7 @@
     "path": "packages/core/dist/index.js",
     "import": "{ createInteractions, createChatController, createSSETransport, createActionRegistry }",
     "ignore": ["@floating-ui/dom"],
-    "limit": "16 KB",
+    "limit": "20 KB",
     "gzip": true
   },
   {

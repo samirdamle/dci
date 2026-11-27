@@ -23,6 +23,21 @@ interface DciFallbackInfo {
     /** Short CSS path, e.g. `main > table.invoices > tbody > tr:nth-child(3)`. */
     path: string;
 }
+/** One end of a serialized text range: the CSS path of the endpoint's container element plus the character offset within that container's collapsed-whitespace text. */
+interface DciTextEndpoint {
+    path: string;
+    offset: number;
+}
+/** The selected text carried by a `source: 'text'` context node. */
+interface DciTextInfo {
+    /** The selected text, whitespace-collapsed, capped at `maxTextSelectionLength`. */
+    excerpt: string;
+    /** `true` when the selection was longer than the cap. */
+    truncated: boolean;
+    /** Serialized range endpoints (transport detail for the client's highlight). */
+    start: DciTextEndpoint;
+    end: DciTextEndpoint;
+}
 /** A selected node as sent to the backend. */
 interface DciContextNode {
     id?: string;
@@ -37,9 +52,11 @@ interface DciContextNode {
     /** Parsed `data-dci` payload with reserved keys removed (empty for fallback nodes). */
     data: Record<string, unknown>;
     ancestors?: DciAncestor[];
-    source: 'annotated' | 'fallback';
+    source: 'annotated' | 'fallback' | 'text';
     /** Present only when `source` is `'fallback'`. */
     fallback?: DciFallbackInfo;
+    /** Present only when `source` is `'text'`. */
+    text?: DciTextInfo;
 }
 /** Body of `POST {endpoint}`. */
 interface DciRequest {
@@ -152,4 +169,4 @@ declare function decodeSSEStream(stream: ReadableStream<Uint8Array>): AsyncGener
 /** Package version. */
 declare const VERSION: string;
 
-export { type ClientActionEvent, type CustomEvent, type DciAncestor, type DciContextNode, type DciEvent, type DciEventType, type DciFallbackInfo, type DciRequest, type DoneEvent, ERROR_CODES, type ErrorEvent, PROTOCOL_VERSION, type SSEDecoder, type TextDeltaEvent, type ToolEndEvent, type ToolStartEvent, VERSION, type ValidationResult, createSSEDecoder, decodeSSEStream, encodeComment, encodeEvent, isDciRequest, isSupportedVersion, toEvent, validateRequest };
+export { type ClientActionEvent, type CustomEvent, type DciAncestor, type DciContextNode, type DciEvent, type DciEventType, type DciFallbackInfo, type DciRequest, type DciTextEndpoint, type DciTextInfo, type DoneEvent, ERROR_CODES, type ErrorEvent, PROTOCOL_VERSION, type SSEDecoder, type TextDeltaEvent, type ToolEndEvent, type ToolStartEvent, VERSION, type ValidationResult, createSSEDecoder, decodeSSEStream, encodeComment, encodeEvent, isDciRequest, isSupportedVersion, toEvent, validateRequest };

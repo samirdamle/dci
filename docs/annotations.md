@@ -175,6 +175,45 @@ The full request (prompt, session, page URL and title) is described in the
 `dci.previewRequest('Why is this overdue?')`, or open the request inspector in the demo's
 Playground.
 
+### Text: selected words
+
+Dragging over prose captures the exact words as a context node with
+`source: 'text'` — no stable `id`, so the node is identified by its
+serialized range:
+
+```json
+{
+  "label": "Q3 focus: convert Proposal-stage tent deals before…",
+  "marker": "A",
+  "data": {},
+  "ancestors": [{ "id": "home", "type": "page", "label": "Sales Home" }],
+  "source": "text",
+  "text": {
+    "excerpt": "Q3 focus: convert Proposal-stage tent deals before the winter catalog ships.",
+    "truncated": false,
+    "start": { "path": "main > div.card > p:nth-child(2)", "offset": 0 },
+    "end": { "path": "main > div.card > p:nth-child(2)", "offset": 74 }
+  }
+}
+```
+
+- `text.excerpt` is the selected text, whitespace-collapsed, capped at
+  `maxTextSelectionLength` (default 2000); `truncated` says whether it was
+  cut. The highlight covers the full range even when the excerpt is capped.
+- `text.start` / `text.end` are the range endpoints (CSS path of the
+  endpoint's container element plus the character offset within it) — the
+  client uses them to re-find and re-highlight the range; backends should
+  not print them. The prompt rendering uses the excerpt and the ancestors
+  only.
+- `label` is the first ~80 characters; `data` is always `{}` for text
+  nodes. Ancestors are the annotated ancestors of the range's common
+  ancestor container. A text item gets a marker like any other node and
+  counts toward `maxSelection`.
+
+See [text selection](text-selection.md) for the gestures (drag → pill,
+Alt+Click on a range, Alt+Enter), the privacy rule (a range touching a
+`private` node is refused whole), and the edge cases.
+
 ### Fallback: unannotated elements
 
 With `fallback: true` (the default), Alt+Click on an element with no annotated ancestor selects the

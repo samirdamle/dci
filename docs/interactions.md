@@ -6,18 +6,20 @@ lists every gesture and key and shows how to remap or turn each one off.
 
 ## Mouse
 
-| Gesture                               | What it does                                                                   |
-| ------------------------------------- | ------------------------------------------------------------------------------ |
-| Hold **Alt**                          | Hover preview: the DCI node under the pointer is outlined (dashed)             |
-| **Alt+Click**                         | Select that node, replacing the selection                                      |
-| **Alt+Shift+Click**                   | Toggle that node in or out of the selection                                    |
-| **Alt+Click** on empty space          | Clear the selection (inside DCI's `root` only)                                 |
-| **Alt+Wheel**                         | Move the hover target up (toward the root) or down the tree, then click        |
-| **Alt+Drag** left → right             | Window select: nodes fully inside the box                                      |
-| **Alt+Drag** right → left             | Window select: nodes the box touches                                           |
-| …with **Shift** / **Ctrl** or **Cmd** | Add to / subtract from the selection                                           |
-| **Esc** during a drag                 | Cancel it; the selection stays as it was                                       |
-| **Alt+Double-click**                  | Select every sibling with the same `type` (e.g. every invoice row); Shift adds |
+| Gesture                               | What it does                                                                                        |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Hold **Alt**                          | Hover preview: the DCI node under the pointer is outlined (dashed)                                  |
+| **Alt+Click**                         | Select that node, replacing the selection                                                           |
+| **Alt+Shift+Click**                   | Toggle that node in or out of the selection                                                         |
+| **Alt+Click** on empty space          | Clear the selection (inside DCI's `root` only)                                                      |
+| **Alt+Wheel**                         | Move the hover target up (toward the root) or down the tree, then click                             |
+| **Alt+Drag** left → right             | Window select: nodes fully inside the box                                                           |
+| **Alt+Drag** right → left             | Window select: nodes the box touches                                                                |
+| …with **Shift** / **Ctrl** or **Cmd** | Add to / subtract from the selection                                                                |
+| **Esc** during a drag                 | Cancel it; the selection stays as it was                                                            |
+| **Alt+Double-click**                  | Select every sibling with the same `type` (e.g. every invoice row); Shift adds                      |
+| **Drag over text** (no modifier)      | Select the words; a floating pill offers to ask about them ([text selection](#text-selection))      |
+| **Alt+Click on a highlighted range**  | Capture the live text range instead of the node under the click ([text selection](#text-selection)) |
 
 Notes:
 
@@ -30,6 +32,34 @@ Notes:
   page doesn't scroll while the modifier is held.
 - DCI only swallows an event when a gesture actually used it. Set `passthroughClicks: true` if your
   app's own click handlers should run for DCI clicks too.
+
+## Text selection
+
+DCI can quote words, not just point at things: drag over a sentence and ask about exactly those
+words. The full spec is [text selection](text-selection.md).
+
+- **Drag, then the pill.** Dragging over text (no modifier) shows a small floating pill next to
+  the selection: **Ask about this**, or **+ Add to chat** when a chat is already open. Tapping it
+  captures the range as a context item: if no chat is open, the chat opens with the text as a
+  pending chip and focus on the input; if one is open, the item is added silently — nothing is
+  sent and the draft is untouched. The pill shows no excerpt itself; its tooltip carries a short
+  excerpt and the character count.
+- **The text stays highlighted** after the native selection is gone, via the CSS Custom Highlight
+  API (`::highlight(dci-text)`). Removing the chip removes the highlight and the context item.
+  Clicking a text chip scrolls its range into view and flashes the highlight.
+- **Text chips** look like other chips but carry a quoted excerpt (first ~80 characters) and a
+  `text` tag instead of an `#id`. They get markers (A, B, C…) like element nodes and count toward
+  `maxSelection`.
+- **Alt+Click on a live range** captures the range instead of selecting the node under the click.
+  Alt+Click outside the range behaves exactly as today. **Alt+Enter with a live range** captures
+  the range; without one it selects the focused element's node, as before.
+- **Alt+Drag never selects text**: while Alt is held, a drag draws the window-select box.
+- **Esc** dismisses a visible pill first, then closes the chat, then clears the selection.
+- **Private text is never captured**: a range intersecting a `private` node shows no pill and
+  captures nothing, in whole (no partial capture).
+- **Limits:** the sent excerpt is capped at `maxTextSelectionLength` (default 2000); the highlight
+  still covers the full range. Turn it all off with `textSelection: false`; the keyboard path alone
+  goes with `bindings: { textSelect: false }`. See [configuration](configuration.md#createdci-options).
 
 ## Touch screens
 
@@ -68,14 +98,14 @@ dci.on('selectmodechange', (on) => selectButton.classList.toggle('active', on));
 
 These keys work **while something is selected** and focus isn't in a text field or a dialog:
 
-| Key               | What it does                                            |
-| ----------------- | ------------------------------------------------------- |
-| **↑**             | Select the parent node                                  |
-| **↓**             | Select the first child                                  |
-| **← / →**         | Previous / next sibling                                 |
-| **Shift + arrow** | Extend the selection instead of moving it               |
-| **Esc**           | Close the chat first; the next Esc clears the selection |
-| **Alt+Enter**     | Select the focused element's node (no mouse needed)     |
+| Key               | What it does                                                                                        |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| **↑**             | Select the parent node                                                                              |
+| **↓**             | Select the first child                                                                              |
+| **← / →**         | Previous / next sibling                                                                             |
+| **Shift + arrow** | Extend the selection instead of moving it                                                           |
+| **Esc**           | Dismiss the pill first, then close the chat, then clear the selection                               |
+| **Alt+Enter**     | Capture a live text range if there is one, else select the focused element's node (no mouse needed) |
 
 - **Alt+arrows are left alone** because Alt+← is the browser's Back shortcut.
 - At the edge of the tree (no parent, no next sibling), the primary box gives a small shake instead
@@ -118,22 +148,23 @@ createDci({
 });
 ```
 
-| Binding                   | Default        | Controls                                    |
-| ------------------------- | -------------- | ------------------------------------------- |
-| `select`                  | `true`         | Mod+Click selects                           |
-| `toggle`                  | `'Shift'`      | The extra key for Mod+<key>+Click toggle    |
-| `wheelTraverse`           | `true`         | Mod+Wheel moves up and down the tree        |
-| `windowSelect`            | `true`         | Mod+Drag window select                      |
-| `selectSameType`          | `true`         | Mod+Double-click selects same-type siblings |
-| `longPress`               | `true`         | Long press turns Select mode on (touch)     |
-| `keyboard`                | see below      | `false` turns off all selection keys        |
-| `keyboard.parent`         | `'ArrowUp'`    | Parent                                      |
-| `keyboard.child`          | `'ArrowDown'`  | First child                                 |
-| `keyboard.prevSibling`    | `'ArrowLeft'`  | Previous sibling                            |
-| `keyboard.nextSibling`    | `'ArrowRight'` | Next sibling                                |
-| `keyboard.extendModifier` | `'Shift'`      | Held with an arrow to extend                |
-| `keyboard.clear`          | `'Escape'`     | Clear                                       |
-| `keyboard.selectFocused`  | `'Alt+Enter'`  | Select the focused element's node           |
+| Binding                   | Default        | Controls                                                                            |
+| ------------------------- | -------------- | ----------------------------------------------------------------------------------- |
+| `select`                  | `true`         | Mod+Click selects                                                                   |
+| `toggle`                  | `'Shift'`      | The extra key for Mod+<key>+Click toggle                                            |
+| `wheelTraverse`           | `true`         | Mod+Wheel moves up and down the tree                                                |
+| `windowSelect`            | `true`         | Mod+Drag window select                                                              |
+| `selectSameType`          | `true`         | Mod+Double-click selects same-type siblings                                         |
+| `longPress`               | `true`         | Long press turns Select mode on (touch)                                             |
+| `keyboard`                | see below      | `false` turns off all selection keys                                                |
+| `keyboard.parent`         | `'ArrowUp'`    | Parent                                                                              |
+| `keyboard.child`          | `'ArrowDown'`  | First child                                                                         |
+| `keyboard.prevSibling`    | `'ArrowLeft'`  | Previous sibling                                                                    |
+| `keyboard.nextSibling`    | `'ArrowRight'` | Next sibling                                                                        |
+| `keyboard.extendModifier` | `'Shift'`      | Held with an arrow to extend                                                        |
+| `keyboard.clear`          | `'Escape'`     | Clear                                                                               |
+| `keyboard.selectFocused`  | `'Alt+Enter'`  | Select the focused element's node                                                   |
+| `textSelect`              | `'Alt+Enter'`  | Capture a live text range (text selection); `false` disables the keyboard path only |
 
 Key combos are written like `'Alt+Enter'` or `'Shift+ArrowUp'`, using `KeyboardEvent.key` names.
 Bindings can be changed at runtime with `dci.update({ bindings })`; the selection is kept.

@@ -35,38 +35,41 @@ const dci = createDci({
 });
 ```
 
-| Option              | Default             | Description                                                                                                     |
-| ------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `endpoint`          | —                   | Backend URL (`POST`, answered with the [SSE protocol](protocol.md))                                             |
-| `headers`           | —                   | Request headers, or a (possibly async) function called on every request                                         |
-| `fetch`             | global `fetch`      | Custom `fetch` (auth wrapper, test double)                                                                      |
-| `credentials`       | `'same-origin'`     | Request credentials mode                                                                                        |
-| `transport`         | SSE over fetch      | Your own transport instead of `endpoint` ([recipe](recipes.md#custom-transport-vercel-ai-sdk))                  |
-| `root`              | `document.body`     | Only nodes inside this element count                                                                            |
-| `attribute`         | `'data-dci'`        | The attribute that marks DCI nodes                                                                              |
-| `modifier`          | `'Alt'`             | The key that arms DCI: `'Alt'`, `'Control'`, `'Meta'` or `'Shift'`                                              |
-| `bindings`          | all on              | Remap or disable gestures and keys ([interactions](interactions.md#remapping-or-disabling-gestures))            |
-| `gestures`          | built-ins           | Replace the gesture modules ([custom gestures](interactions.md#custom-gestures))                                |
-| `maxSelection`      | `50`                | Cap on selected nodes; the chat shows a notice and `selectionlimit` fires                                       |
-| `markers`           | `'letters'`         | Badges on selected nodes: `'letters'`, `'numbers'`, a function, or `false` ([markers](interactions.md#markers)) |
-| `includeAncestors`  | `true`              | Send each node's annotated ancestor chain                                                                       |
-| `ancestorData`      | `'compact'`         | `'full'` also sends ancestors' data                                                                             |
-| `fallback`          | `true`              | Allow selecting unannotated elements                                                                            |
-| `infer`             | —                   | Annotate unannotated elements from their markup ([inferred annotations](annotations.md#inferred-annotations))   |
-| `maxTextLength`     | `500`               | Truncation for fallback text                                                                                    |
-| `windowSelectLevel` | `'leaf'`            | Window select picks innermost (`'leaf'`) or outermost (`'top'`) nodes                                           |
-| `clearOnEmptyClick` | `true`              | Mod+Click on empty space clears the selection                                                                   |
-| `passthroughClicks` | `false`             | Let DCI clicks reach your app's handlers too                                                                    |
-| `overlay`           | boxes, hover labels | `{ mode: 'boxes' \| 'outline', labels: 'hover' \| 'all' \| 'none' }`, or `false` to draw your own               |
-| `theme`             | `'auto'`            | `'light'`, `'dark'` or `'auto'` (follows the OS)                                                                |
-| `container`         | `document.body`     | Where the `<dci-root>` UI host is appended                                                                      |
-| `chat`              | see below           | Chat UI and controller options                                                                                  |
-| `actions`           | —                   | [Suggested actions](#suggested-actions) per `type`                                                              |
-| `builtinActions`    | `true`              | Built-in client actions: `true`, `false` or a list                                                              |
-| `beforeSend`        | —                   | Redact or enrich each request; return `false` to cancel                                                         |
-| `session`           | per page load       | `{ scope: 'page' }` or `{ scope: 'manual', id }` for your own ids                                               |
-| `page`              | location, title     | Page info sent with each request                                                                                |
-| `onCustomEvent`     | —                   | Receives custom `x-…` stream events                                                                             |
+| Option                   | Default             | Description                                                                                                                                                                                               |
+| ------------------------ | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `endpoint`               | —                   | Backend URL (`POST`, answered with the [SSE protocol](protocol.md))                                                                                                                                       |
+| `headers`                | —                   | Request headers, or a (possibly async) function called on every request                                                                                                                                   |
+| `fetch`                  | global `fetch`      | Custom `fetch` (auth wrapper, test double)                                                                                                                                                                |
+| `credentials`            | `'same-origin'`     | Request credentials mode                                                                                                                                                                                  |
+| `transport`              | SSE over fetch      | Your own transport instead of `endpoint` ([recipe](recipes.md#custom-transport-vercel-ai-sdk))                                                                                                            |
+| `root`                   | `document.body`     | Only nodes inside this element count                                                                                                                                                                      |
+| `attribute`              | `'data-dci'`        | The attribute that marks DCI nodes                                                                                                                                                                        |
+| `modifier`               | `'Alt'`             | The key that arms DCI: `'Alt'`, `'Control'`, `'Meta'` or `'Shift'`                                                                                                                                        |
+| `bindings`               | all on              | Remap or disable gestures and keys ([interactions](interactions.md#remapping-or-disabling-gestures)) — including `bindings.textSelect` (`'Alt+Enter'`), the keyboard path for capturing a live text range |
+| `gestures`               | built-ins           | Replace the gesture modules ([custom gestures](interactions.md#custom-gestures))                                                                                                                          |
+| `maxSelection`           | `50`                | Cap on selected nodes; the chat shows a notice and `selectionlimit` fires                                                                                                                                 |
+| `markers`                | `'letters'`         | Badges on selected nodes: `'letters'`, `'numbers'`, a function, or `false` ([markers](interactions.md#markers))                                                                                           |
+| `includeAncestors`       | `true`              | Send each node's annotated ancestor chain                                                                                                                                                                 |
+| `ancestorData`           | `'compact'`         | `'full'` also sends ancestors' data                                                                                                                                                                       |
+| `fallback`               | `true`              | Allow selecting unannotated elements                                                                                                                                                                      |
+| `infer`                  | —                   | Annotate unannotated elements from their markup ([inferred annotations](annotations.md#inferred-annotations))                                                                                             |
+| `maxTextLength`          | `500`               | Truncation for fallback text                                                                                                                                                                              |
+| `textSelection`          | `true`              | Drag-to-quote text selection (pill, Alt+Click on a range, Alt+Enter); `false` disables it, element selection untouched ([text selection](text-selection.md))                                              |
+| `maxTextSelectionLength` | `2000`              | Characters of selected text sent per text item; the highlight still covers the full range                                                                                                                 |
+| `textSelectionAction`    | `'Ask about this'`  | Label for the floating pill when the chat is closed (reads `'+ Add to chat'` when one is open)                                                                                                            |
+| `windowSelectLevel`      | `'leaf'`            | Window select picks innermost (`'leaf'`) or outermost (`'top'`) nodes                                                                                                                                     |
+| `clearOnEmptyClick`      | `true`              | Mod+Click on empty space clears the selection                                                                                                                                                             |
+| `passthroughClicks`      | `false`             | Let DCI clicks reach your app's handlers too                                                                                                                                                              |
+| `overlay`                | boxes, hover labels | `{ mode: 'boxes' \| 'outline', labels: 'hover' \| 'all' \| 'none' }`, or `false` to draw your own                                                                                                         |
+| `theme`                  | `'auto'`            | `'light'`, `'dark'` or `'auto'` (follows the OS)                                                                                                                                                          |
+| `container`              | `document.body`     | Where the `<dci-root>` UI host is appended                                                                                                                                                                |
+| `chat`                   | see below           | Chat UI and controller options                                                                                                                                                                            |
+| `actions`                | —                   | [Suggested actions](#suggested-actions) per `type`                                                                                                                                                        |
+| `builtinActions`         | `true`              | Built-in client actions: `true`, `false` or a list                                                                                                                                                        |
+| `beforeSend`             | —                   | Redact or enrich each request; return `false` to cancel                                                                                                                                                   |
+| `session`                | per page load       | `{ scope: 'page' }` or `{ scope: 'manual', id }` for your own ids                                                                                                                                         |
+| `page`                   | location, title     | Page info sent with each request                                                                                                                                                                          |
+| `onCustomEvent`          | —                   | Receives custom `x-…` stream events                                                                                                                                                                       |
 
 **Merging and updates.** Plain objects merge deeply, so `dci.update({ chat: { mode: 'panel' } })`
 keeps the other chat options; arrays, functions and elements replace. `update()` does the least
@@ -142,17 +145,18 @@ function of the selected nodes.
 
 ## The instance API
 
-| API                           | What it does                                                                                                     |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `dci.selection`               | `get()` (payloads), `elements()`, `set/add/remove/toggle(elementOrId)`, `has()`, `clear()`, `selectSameType()`   |
-| `dci.chat`                    | `open()`, `close()`, `send(prompt?, { action })`, `stop()`, `retry()`, `state()`, `subscribe()`                  |
-| `dci.session`                 | `id`, `reset()` (start a new conversation)                                                                       |
-| `dci.onAction(name, fn)`      | Handle a `client-action` from the backend; returns an unsubscribe function                                       |
-| `dci.on(event, fn)`           | `selectionchange`, `selectionlimit`, `hover`, `chatopen`, `chatclose`, `message`, `actionerror`, `sessionchange` |
-| `dci.update(patch)`           | Change options at runtime                                                                                        |
-| `dci.disable()` / `enable()`  | Detach and reattach gestures and the chat (state is kept)                                                        |
-| `dci.previewRequest(prompt?)` | The exact request the next send would make (after `beforeSend`), or `false`                                      |
-| `dci.destroy()`               | Remove every listener and all DCI UI                                                                             |
+| API                           | What it does                                                                                                                                                                        |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dci.selection`               | `get()` (payloads), `elements()`, `set/add/remove/toggle(elementOrId)`, `has()`, `clear()`, `selectSameType()`                                                                      |
+| `dci.textSelection`           | `get()` (the live range as a node, or `null`), `capture()`, `items()`, `remove(node)` — the text-selection API ([text selection](text-selection.md#9-public-api-and-configuration)) |
+| `dci.chat`                    | `open()`, `close()`, `send(prompt?, { action })`, `stop()`, `retry()`, `state()`, `subscribe()`                                                                                     |
+| `dci.session`                 | `id`, `reset()` (start a new conversation)                                                                                                                                          |
+| `dci.onAction(name, fn)`      | Handle a `client-action` from the backend; returns an unsubscribe function                                                                                                          |
+| `dci.on(event, fn)`           | `selectionchange`, `selectionlimit`, `hover`, `chatopen`, `chatclose`, `message`, `actionerror`, `sessionchange`                                                                    |
+| `dci.update(patch)`           | Change options at runtime                                                                                                                                                           |
+| `dci.disable()` / `enable()`  | Detach and reattach gestures and the chat (state is kept)                                                                                                                           |
+| `dci.previewRequest(prompt?)` | The exact request the next send would make (after `beforeSend`), or `false`                                                                                                         |
+| `dci.destroy()`               | Remove every listener and all DCI UI                                                                                                                                                |
 
 ```ts
 import { createDci } from '@samirdamle/dci-core';

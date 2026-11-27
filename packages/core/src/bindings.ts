@@ -27,6 +27,8 @@ export interface Bindings {
   selectSameType: boolean;
   /** Long-pressing a node on a touch screen turns Select mode on and selects it. */
   longPress: boolean;
+  /** Capture a live text range (when one exists); `false` disables the keyboard path only. Default `'Alt+Enter'`. */
+  textSelect: string | false;
   keyboard: KeyboardBindings | false;
 }
 
@@ -51,6 +53,7 @@ export const DEFAULT_BINDINGS: Bindings = {
   windowSelect: true,
   selectSameType: true,
   longPress: true,
+  textSelect: 'Alt+Enter',
   keyboard: DEFAULT_KEYBOARD_BINDINGS,
 };
 

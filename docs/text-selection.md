@@ -1,6 +1,8 @@
 # Text selection — specification
 
-> **Status:** Draft, for review. Approved strategy only — no implementation code yet.
+> **Status:** Implemented (Phase 1, issue
+> [#114](https://github.com/samirdamle/dci/issues/114)). The Phase 0 spike
+> passed in all three browsers — see §12.
 > Issue: [#112](https://github.com/samirdamle/dci/issues/112).
 > Source: the strategy Samir approved 2026-11-26 ("Go. Good with your reco.").
 > This document is the spec the implementation PR will follow. Where it
@@ -330,6 +332,14 @@ is pending.
   and the context item remain valid regardless — the highlight is a visual
   aid, not the context itself. The spec does not require a `<mark>` fallback.
 
+**Deviation from the spec as written (shipped):** the `::highlight()` rule
+cannot live in the Shadow DOM stylesheet the spec names — a shadow
+stylesheet can only highlight text inside that shadow root, never the host
+page's text. The rule therefore lives in a document-level adopted
+stylesheet (with an injected `<style>` fallback), in the theme accent
+colour. The highlight itself is one named registry entry (`dci-text`)
+shared by all captured ranges, not one named highlight per item.
+
 ## 8. Protocol and server
 
 ### 8.1 Request
@@ -366,11 +376,12 @@ existing `context` array, with `source: 'text'` and the `text` object from
 
 `formatContextForPrompt` in `@samirdamle/dci-server` must render a text
 item as a quoted block, with its marker, its excerpt, and its ancestor path,
-so a backend that just prints context still gets something readable:
+so a backend that just prints context still gets something readable. The
+shipped Markdown rendering is:
 
 ```text
-Selected text A ("Q3 focus: convert Proposal-stage tent deals before…" in Sales Home):
-> Q3 focus: convert Proposal-stage tent deals before the winter catalog ships.
+1. Selected text A ("Q3 focus: convert Proposal-stage tent deals before the winter catalog ships." in Sales Home):
+   > Q3 focus: convert Proposal-stage tent deals before the winter catalog ships.
 ```
 
 The `text.start` / `text.end` endpoints are transport detail for the
@@ -450,6 +461,12 @@ items in its snapshot, and `useChat()` must already see them through
 `useTextSelection()` hook only if the snapshot shape cannot carry text
 items without it. The `dci()` annotation helper is unchanged.
 
+**Shipped:** no `useTextSelection()` hook was needed — `useSelection()`
+includes text items in its snapshot (`nodes`), and `useChat()` sees them
+in `pendingContext`. The instance API is `dci.textSelection` with
+`get()` / `capture()` / `items()` / `remove(node)`, exactly as proposed
+above.
+
 ## 10. Privacy and safety
 
 ### 10.1 Private nodes
@@ -465,6 +482,12 @@ make the model answer about a different quote than the one on screen. The
 pill does not appear for a range that intersects a private node; Alt+Click
 and Alt+Enter on such a range do nothing (and do not select the node
 either — the existing private transparency rule already handles that).
+
+**Shipped deviation:** the refusal reason exists (`validateTextRange`
+returns `"Selection includes private content and was not added."`), but no
+visible notice is surfaced to the user — the pill simply never appears and
+the capture silently refuses. Surfacing that reason as a notice is
+follow-up work, not part of this implementation.
 
 The last line of defence from SPEC §5.3 applies unchanged: if a text item
 whose excerpt came from a private node still reaches an outgoing request
@@ -534,6 +557,24 @@ depends on:
 2. **CSS Custom Highlight API support.** `CSS.highlights` exists and a
    `::highlight()` rule renders, in the browsers in
    `docs/compatibility.md`. Record which browsers need the §7 fallback.
+
+**Result — PASS in all three browsers (spike run 2026-11-26, real mouse
+drags, DCI running from the built workspace sources):**
+
+| Browser                | Range intact at pointerdown | Range intact after the click settles | `::highlight()` renders                                    |
+| ---------------------- | --------------------------- | ------------------------------------ | ---------------------------------------------------------- |
+| Chromium 141.0.7390.37 | yes                         | yes (56 chars, `[12, 68)`)           | yes — 29.3% magenta px in the range clip, 0 in the control |
+| Firefox 142.0.1        | yes                         | yes (56 chars, `[12, 68)`)           | yes — 32.1% magenta px, 0 in the control                   |
+| WebKit 26.0            | yes                         | yes (56 chars, `[12, 68)`)           | yes — 32.4% magenta px, 0 in the control                   |
+
+Without DCI the range collapses (at click dispatch in Firefox, by settle in
+Chromium/WebKit); with DCI running, the marquee gesture's pointerdown
+`preventDefault()` keeps it alive past the click in all three, so
+capture-on-pointerdown is viable everywhere. **Alt+Click stays in v1; no
+browser needs the §7 fallback on current versions** (the fallback is still
+specified for older browsers). The highlight check is a real render check
+(screenshot pixels), not API presence: ~30% of the two-line range box is
+solid magenta, the control paragraph has zero.
 
 The spike is a short note in the implementation PR body, not a code change.
 No implementation code is written until the spike passes or the scope is
@@ -612,6 +653,15 @@ implementation PR adds a changeset for `core` (minor), `protocol`
 - Private text: no pill, no capture, with the notice.
 - Axe checks on the pill and on a chat containing a text chip.
 
+**Shipped:** all of the above is covered by `e2e/text-selection.spec.ts`
+(10 tests), run in Chromium, Firefox and WebKit against the Sales Home
+"Org notes" prose (private case: the account record's Credit Limit field).
+Two qualifications: the highlight is asserted at the DOM/CSS level
+(`CSS.highlights` registry membership), not by pixels — pixel rendering is
+spike-verified in §12; and the private case asserts no pill / no capture
+only — the §10.1 notice is not surfaced by the shipped UI (see §10.1),
+so there is no notice to assert.
+
 Happy-dom has no layout engine, so anything geometric (pill position,
 highlight rendering) is Playwright-only, matching the existing split in
 CONTRIBUTING.md.
@@ -646,3 +696,7 @@ None that block writing the implementation PR, except the Phase 0 spike
 (§12). If the spike cuts Alt+Click, this spec is amended before
 implementation starts; the pill and Alt+Enter paths are unaffected by its
 outcome.
+
+**Follow-ups filed from the implementation (not blockers):** surfacing the
+§10.1 private-refusal reason as a visible notice (the reason string exists
+in `validateTextRange`, but the UI never shows it).

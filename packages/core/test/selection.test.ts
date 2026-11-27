@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { MarkerSeries } from '../src/markers';
 import { createSelectionStore, type SelectionChange } from '../src/selection';
+import {
+  captureTextRange,
+  toTextSelectionItem,
+  type TextSelectionItem,
+} from '../src/text-selection';
 import { mountFixture } from './test-utils';
 
 const tick = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
@@ -292,5 +297,144 @@ describe('createSelectionStore', () => {
     await tick();
     expect(fn).not.toHaveBeenCalled();
     expect(observe).not.toHaveBeenCalled();
+  });
+});
+
+describe('createSelectionStore with text items', () => {
+  function textSetup(maxSelection?: number) {
+    const f = mountFixture(`
+      <div id="page" data-dci='{"id":"home","type":"page","label":"Sales Home"}'>
+        <p id="p1">Q3 focus: convert Proposal-stage deals before the winter catalog ships.</p>
+        <p id="p2">Second paragraph with more words to select from here.</p>
+      </div>
+      <ul data-dci="list">
+        <li id="n0" data-dci="n0">0</li>
+        <li id="n1" data-dci="n1">1</li>
+        <li id="n2" data-dci="n2">2</li>
+      </ul>`);
+    const store = createSelectionStore({
+      root: f.root,
+      ...(maxSelection ? { maxSelection } : {}),
+    });
+    const events: SelectionChange[] = [];
+    store.subscribe((e) => events.push(e));
+    const itemFor = (startOff: number, endOff: number, sel = '#p1'): TextSelectionItem => {
+      const text = f.get(sel).firstChild as Text;
+      const range = document.createRange();
+      range.setStart(text, startOff);
+      range.setEnd(text, endOff);
+      const node = captureTextRange(range, { root: f.root })!;
+      return toTextSelectionItem(node, range);
+    };
+    return { f, store, events, itemFor };
+  }
+
+  it('assigns markers across mixed element and text selections, in order', () => {
+    const { f, store, itemFor } = textSetup();
+    const [a, b] = [f.get('#n0'), f.get('#n1')];
+    const t1 = itemFor(0, 8);
+    const t2 = itemFor(20, 30);
+    store.add(a);
+    expect(store.addText(t1)).toBe(true);
+    store.add(b);
+    expect(store.marker(a)).toBe('A');
+    expect(store.markerForText(t1)).toBe('B');
+    expect(store.marker(b)).toBe('C');
+    expect(store.items()).toEqual([a, t1, b]);
+    // Removing B leaves A and C; the next item added gets D.
+    store.removeText(t1);
+    expect(store.marker(a)).toBe('A');
+    expect(store.marker(b)).toBe('C');
+    expect(store.markerForText(t1)).toBeNull();
+    expect(store.addText(t2)).toBe(true);
+    expect(store.markerForText(t2)).toBe('D');
+  });
+
+  it('merges both kinds into toContext in selection order', () => {
+    const { f, store, itemFor } = textSetup();
+    const a = f.get('#n0');
+    const t1 = itemFor(0, 8);
+    store.add(a);
+    store.addText(t1);
+    expect(store.toContext()).toEqual([
+      expect.objectContaining({ id: 'n0', source: 'annotated', marker: 'A' }),
+      expect.objectContaining({ source: 'text', marker: 'B' }),
+    ]);
+  });
+
+  it('treats capturing the identical range twice as a no-op', async () => {
+    const { store, events, itemFor } = textSetup();
+    expect(store.addText(itemFor(0, 8))).toBe(true);
+    expect(store.addText(itemFor(0, 8))).toBe(false);
+    expect(store.textItems()).toHaveLength(1);
+    expect(store.hasText(itemFor(0, 8))).toBe(true);
+    await tick();
+    expect(events).toHaveLength(1);
+    expect(events[0]!.addedText).toHaveLength(1);
+    expect(events[0]!.textItems).toHaveLength(1);
+  });
+
+  it('reports text items in selectionchange events', async () => {
+    const { store, events, itemFor } = textSetup();
+    const t1 = itemFor(0, 8);
+    store.addText(t1);
+    await tick();
+    expect(events[0]!.addedText).toEqual([t1]);
+    expect(events[0]!.removedText).toEqual([]);
+    store.removeText(t1);
+    await tick();
+    expect(events[1]!.removedText).toEqual([t1]);
+    expect(events[1]!.textItems).toEqual([]);
+    expect(events[1]!.elements).toEqual([]);
+  });
+
+  it('set() replaces both kinds and clear() clears both', () => {
+    const { f, store, itemFor } = textSetup();
+    const a = f.get('#n0');
+    const t1 = itemFor(0, 8);
+    store.add(a);
+    store.addText(t1);
+    store.set([f.get('#n1')]);
+    expect(store.get()).toHaveLength(1);
+    expect(store.textItems()).toEqual([]);
+    expect(store.items()).toHaveLength(1);
+    // Markers restart after a replace.
+    expect(store.marker(f.get('#n1'))).toBe('A');
+    store.addText(t1);
+    expect(store.markerForText(t1)).toBe('B');
+    store.clear();
+    expect(store.items()).toEqual([]);
+    expect(store.primary()).toBeNull();
+    const t2 = itemFor(20, 30);
+    store.addText(t2);
+    expect(store.markerForText(t2)).toBe('A');
+  });
+
+  it('counts text items toward maxSelection and fires selectionlimit', async () => {
+    const { f, store, itemFor } = textSetup(2);
+    const limits = vi.fn();
+    store.on('selectionlimit', limits);
+    store.add(f.get('#n0'));
+    expect(store.addText(itemFor(0, 8))).toBe(true);
+    expect(store.addText(itemFor(20, 30))).toBe(false);
+    expect(store.items()).toHaveLength(2);
+    await tick();
+    expect(limits).toHaveBeenCalledWith({ dropped: 1, max: 2 });
+  });
+
+  it('prunes text items whose text changes or whose element leaves the DOM', async () => {
+    const { f, store, events, itemFor } = textSetup();
+    const t1 = itemFor(0, 8);
+    const t2 = itemFor(20, 30, '#p2');
+    store.addText(t1);
+    store.addText(t2);
+    await tick();
+    (f.get('#p1').firstChild as Text).data = 'Completely different words now.';
+    await tick();
+    expect(store.textItems()).toEqual([t2]);
+    expect(events[events.length - 1]!.removedText).toEqual([t1]);
+    f.get('#p2').remove();
+    await tick();
+    expect(store.textItems()).toEqual([]);
   });
 });

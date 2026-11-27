@@ -5,9 +5,10 @@ import { announceGesture } from './announce';
 import { createHoverState, type HoverState } from './hover';
 import { createInputManager, type InputManager } from './input';
 import type { ModifierKey } from './keys';
-import { clickGesture, hoverGesture } from './pointer';
+import { clickGesture, hoverGesture, textPointerGesture } from './pointer';
 import { keyboardGesture } from './keyboard';
 import { marqueeGesture } from './marquee';
+import { textPillGesture, type TextSelectionPlumbing } from './text-pill';
 import type { LabelMode, OverlayMode } from './overlay';
 import { overlayGesture } from './overlay-gesture';
 import { longPressGesture, selectModeGesture } from './touch';
@@ -72,6 +73,14 @@ export interface InteractionOptions extends SelectionOptions {
   onEscape?: () => boolean;
   /** Window select picks the innermost (`'leaf'`, default) or outermost (`'top'`) matches. */
   windowSelectLevel?: 'leaf' | 'top';
+  /**
+   * Text-selection plumbing (see `text-pill.ts`), built by `createDci()`
+   * from `captureTextRange` / the selection store / the highlight module.
+   * `false` disables the pill, Alt+Click-on-range and Alt+Enter capture;
+   * element selection is untouched. Absent in headless / custom setups
+   * that do not wire text selection.
+   */
+  textSelection?: TextSelectionPlumbing | false;
   /** Gesture modules to attach. Defaults to every built-in gesture. */
   gestures?: Gesture[];
   /**
@@ -91,6 +100,8 @@ export interface GestureContext {
   selection: SelectionStore;
   bus: Emitter<InteractionEvents>;
   hover: HoverState;
+  /** Text-selection plumbing, when wired (see `InteractionOptions.textSelection`). */
+  textSelection?: TextSelectionPlumbing;
 }
 
 /** A gesture wires itself to the context and returns its cleanup. */
@@ -107,9 +118,14 @@ export const DEFAULT_GESTURES: Gesture[] = [
   hoverGesture,
   // Before the click gesture, so a double tap's second tap isn't a toggle.
   selectModeGesture,
+  // Before the click gesture, so it can snapshot a live text range on
+  // pointerdown and win the click that follows (spec §4.3).
+  textPointerGesture,
   clickGesture,
   wheelGesture,
   marqueeGesture,
+  // After the marquee, so an Alt+Drag window select never shows the pill.
+  textPillGesture,
   sameTypeGesture,
   longPressGesture,
   keyboardGesture,
@@ -133,6 +149,7 @@ export function createInteractions(options: InteractionOptions = {}): Interactio
     selection: options.selection ?? createSelectionStore(options),
     bus,
     hover: createHoverState(tree, bus),
+    ...(options.textSelection ? { textSelection: options.textSelection } : {}),
   };
   const offArm = input.onArmChange((armed) => {
     // A new gesture: re-infer annotations once, then reuse them while it lasts.
