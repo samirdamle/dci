@@ -19,8 +19,14 @@ test.describe('selection markers', () => {
     await expect(app.chat.root.locator('.chip .marker')).toHaveText(['A', 'B', 'C']);
     await expect(app.chat.root.locator('.head h2')).toHaveText('Ask about A B C');
     // Each chip's badge sits inside its chip (not pinned to the chat's corner).
-    const chip = (await app.chat.root.locator('.chip').first().boundingBox())!;
-    const badge = (await app.chat.root.locator('.chip .marker').first().boundingBox())!;
+    // Wait for layout first: boundingBox() is null until the chips render,
+    // and the read below raced that render (flaky TypeError on CI).
+    const chipLoc = app.chat.root.locator('.chip').first();
+    const badgeLoc = app.chat.root.locator('.chip .marker').first();
+    await expect(chipLoc).toBeVisible();
+    await expect(badgeLoc).toBeVisible();
+    const chip = (await chipLoc.boundingBox())!;
+    const badge = (await badgeLoc.boundingBox())!;
     expect(badge.x).toBeGreaterThanOrEqual(chip.x);
     expect(badge.y).toBeGreaterThanOrEqual(chip.y);
     expect(badge.x + badge.width).toBeLessThanOrEqual(chip.x + chip.width);

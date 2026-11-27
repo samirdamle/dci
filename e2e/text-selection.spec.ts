@@ -140,18 +140,20 @@ test.describe('text selection', () => {
     await expect(page.getByTestId('request-preview')).toContainText('"source": "text"');
   });
 
-  test('Alt+Click on a live range captures the text instead of the node', async ({ app, page }) => {
+  test('Mod+Click on a live range captures the text instead of the node', async ({ app, page }) => {
     await app.open('/sales');
     await dragSelect(page, notes(page));
     const rect = await page.evaluate(() => {
       const r = window.getSelection()!.getRangeAt(0).getBoundingClientRect();
       return { x: r.x, y: r.y, width: r.width, height: r.height };
     });
-    await page.keyboard.down('Alt');
+    // The pointer gesture arms on the project's configured modifier
+    // (Alt in chromium, Control in chromium-ctrl) — never a hardcoded key.
+    await page.keyboard.down(app.mod);
     await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
     await page.mouse.down();
     await page.mouse.up();
-    await page.keyboard.up('Alt');
+    await page.keyboard.up(app.mod);
     await expect(textChips(page)).toHaveCount(1);
     // The whole unannotated card was not selected as a fallback node.
     await expect(app.chat.chips).toHaveCount(1);
@@ -164,6 +166,8 @@ test.describe('text selection', () => {
   }) => {
     await app.open('/sales');
     await dragSelect(page, notes(page));
+    // Alt+Enter is a literal key binding (keys.ts matchesCombo), not the
+    // configured modifier, so it stays 'Alt+Enter' in every project.
     await page.keyboard.press('Alt+Enter');
     await expect(textChips(page)).toHaveCount(1);
     await expect(app.chat.root).toBeVisible();
